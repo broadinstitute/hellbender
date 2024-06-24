@@ -69,6 +69,8 @@ public abstract class GATKBaseTest extends BaseTest {
     // All of chromosomes 20 and 21 from the b38 reference
     public static final String b38_reference_20_21 = largeFileTestDir + "Homo_sapiens_assembly38.20.21.fasta";
 
+    public static final String b38_2bit_reference_20_21 = largeFileTestDir + "Homo_sapiens_assembly38.20.21.2bit";
+
     // ~600,000 reads from chromosomes 20 and 21 of an NA12878 WGS bam aligned to b37, plus ~50,000 unmapped reads
     public static final String NA12878_20_21_WGS_bam = largeFileTestDir + "CEUTrio.HiSeq.WGS.b37.NA12878.20.21.bam";
     public static final String NA12878_20_21_WGS_mmp2_bam = largeFileTestDir + "CEUTrio.HiSeq.WGS.b37.NA12878.20.21.mmp2.bam";

@@ -33,7 +33,6 @@ public class FlowPairHMMAlignReadsToHaplotypesIntegrationTest extends CommandLin
                 "--flow-use-t0-tag",
                 "-E", "FlowBased",
                 "--flow-fill-empty-bins-value", "0.00001",
-                "--flow-probability-threshold", "0.00001",
                 "--flow-likelihood-optimized-comp"
         };
 
@@ -65,7 +64,6 @@ public class FlowPairHMMAlignReadsToHaplotypesIntegrationTest extends CommandLin
                 "--flow-use-t0-tag",
                 "-E", "FlowBased",
                 "--flow-fill-empty-bins-value", "0.00001",
-                "--flow-probability-threshold", "0.00001",
                 "--flow-likelihood-optimized-comp"
         };
 

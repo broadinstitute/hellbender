@@ -91,19 +91,16 @@ public final class FeatureInputUnitTest extends GATKBaseTest {
                 {"argName:myname", "gendb://myJsons", "gendb://myJsons", "myname"},
                 {"argName:myname,key1=value1", "gendb://myJsons", "gendb://myJsons", "myname"},
                 {"argName:myname//", "gendb://myJsons", "gendb://myJsons", "myname//"},
-                {"argName:myname", "gendb://", "gendb://", "myname"},
 
                 {"argName", "gendb.gs://myBucket/myJsons", "gendb.gs://myBucket/myJsons", "gendb.gs://myBucket/myJsons"},
                 {"argName:myname", "gendb.gs://myJsons", "gendb.gs://myJsons", "myname"},
                 {"argName:myname,key1=value1", "gendb.gs://myJsons", "gendb.gs://myJsons", "myname"},
                 {"argName:myname//", "gendb.gs://myJsons", "gendb.gs://myJsons", "myname//"},
-                {"argName:myname", "gendb.gs://", "gendb.gs://", "myname"},
 
                 {"argName", "gendb.hdfs://localhost/myJsons", "gendb.hdfs://localhost/myJsons", "gendb.hdfs://localhost/myJsons"},
                 {"argName:myname", "gendb.hdfs://myJsons", "gendb.hdfs://myJsons", "myname"},
                 {"argName:myname,key1=value1", "gendb.hdfs://myJsons", "gendb.hdfs://myJsons", "myname"},
                 {"argName:myname//", "gendb.hdfs://myJsons", "gendb.hdfs://myJsons", "myname//"},
-                {"argName:myname", "gendb.hdfs://", "gendb.hdfs://", "myname"}
         };
     }
     

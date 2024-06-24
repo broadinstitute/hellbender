@@ -132,12 +132,13 @@ public class FlowBasedHMMEngine implements ReadLikelihoodCalculationEngine {
     @Override
     public ToDoubleFunction<GATKRead> log10MinTrueLikelihood(final double expectedErrorRate, final boolean capLikelihoods) {
         final double log10ErrorRate = Math.log10(expectedErrorRate);
-        final double catastrophicErrorRate = Math.log10(fbargs.fillingValue);
+        final double largeEventErrorRate = 0.001; // error rate for non-hmer/snv errors that are not seq. errors.
+        final double log10catastrophicErrorRate = Math.log10(largeEventErrorRate);
 
         return read -> {
             final double maxErrorsForRead = Math.max(3.0, Math.ceil(read.getLength() * expectedErrorRate));
-            final double maxCatastrophicErrorsForRead = Math.max(2.0, Math.ceil(read.getLength() * fbargs.fillingValue));
-            return maxErrorsForRead * log10ErrorRate + maxCatastrophicErrorsForRead*catastrophicErrorRate;
+            final double maxCatastrophicErrorsForRead = Math.max(2.0, Math.ceil(read.getLength() * largeEventErrorRate));
+            return maxErrorsForRead * log10ErrorRate + maxCatastrophicErrorsForRead*log10catastrophicErrorRate;
         };
     }
 

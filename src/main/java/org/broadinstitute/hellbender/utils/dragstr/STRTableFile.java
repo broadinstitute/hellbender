@@ -46,7 +46,7 @@ public final class STRTableFile implements AutoCloseable {
         this.dir = dir;
         final String source = new File(dir, REF_DICTIONARY_FILE_NAME).toString();
         try (final LineReader lineReader = new BufferedLineReader(new FileInputStream(source))) {
-            this.dictionary = new SAMSequenceDictionaryCodec(new NullWriter()).decode(lineReader, source);
+            this.dictionary = new SAMSequenceDictionaryCodec(NullWriter.INSTANCE).decode(lineReader, source);
         } catch (FileNotFoundException e) {
             throw new GATKException("cannot read dictionary for str-table-file in " + dir);
         }

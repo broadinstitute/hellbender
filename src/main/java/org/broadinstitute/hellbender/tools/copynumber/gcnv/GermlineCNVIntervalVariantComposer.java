@@ -95,7 +95,7 @@ public final class GermlineCNVIntervalVariantComposer extends GermlineCNVVariant
 
         /* header lines related to genotype formatting */
         result.addMetaDataLine(new VCFFormatHeaderLine(VCFConstants.GENOTYPE_KEY, 1,
-                VCFHeaderLineType.Integer, "Genotype"));
+                VCFHeaderLineType.String, "Genotype"));
         result.addMetaDataLine(new VCFFormatHeaderLine(CN, 1,
                 VCFHeaderLineType.Integer, "Copy number maximum a posteriori value"));
         result.addMetaDataLine(new VCFFormatHeaderLine(CNLP, VCFHeaderLineCount.UNBOUNDED,

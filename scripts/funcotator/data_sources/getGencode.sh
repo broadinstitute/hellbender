@@ -15,7 +15,7 @@ MAXARGS=0
 
 # Latest release numbers for our references.
 # Update these numbers when a new Gencode is released.
-LATEST_RELEASE=34
+LATEST_RELEASE=43
 
 DATA_SOURCE_NAME="Gencode"
 OUT_DIR_NAME='gencode'

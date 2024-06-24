@@ -25,15 +25,15 @@ public final class PileupSparkIntegrationTest extends CommandLineProgramTest {
         return new Object[][] { { false }, { true } };
     }
 
-    private File createTempFile() throws IOException {
+    private File createAndDeleteTempFile() {
         final File out = IOUtils.createTempFile("out", ".txt");
         out.delete();
         return out;
     }
-
+    
     @Test(dataProvider = "shuffle")
     public void testSimplePileup(boolean useShuffle) throws Exception {
-        final File out = createTempFile();
+        final File out = createAndDeleteTempFile();
         final ArgumentsBuilder args = new ArgumentsBuilder();
         args.addRaw("--input");
         args.addRaw(NA12878_20_21_WGS_bam);
@@ -53,7 +53,7 @@ public final class PileupSparkIntegrationTest extends CommandLineProgramTest {
 
     @Test(dataProvider = "shuffle")
     public void testVerbosePileup(boolean useShuffle) throws Exception {
-        final File out = createTempFile();
+        final File out = createAndDeleteTempFile();
         final ArgumentsBuilder args = new ArgumentsBuilder();
         args.addRaw("--input");
         args.addRaw(NA12878_20_21_WGS_bam);
@@ -74,7 +74,7 @@ public final class PileupSparkIntegrationTest extends CommandLineProgramTest {
 
     @Test(dataProvider = "shuffle")
     public void testFeaturesPileup(boolean useShuffle) throws Exception {
-        final File out = createTempFile();
+        final File out = createAndDeleteTempFile();
         final ArgumentsBuilder args = new ArgumentsBuilder();
         args.addRaw("--input");
         args.addRaw(NA12878_20_21_WGS_bam);
@@ -95,7 +95,7 @@ public final class PileupSparkIntegrationTest extends CommandLineProgramTest {
 
     @Test(dataProvider = "shuffle")
     public void testInsertLengthPileup(boolean useShuffle) throws Exception {
-        final File out = createTempFile();
+        final File out = createAndDeleteTempFile();
         final ArgumentsBuilder args = new ArgumentsBuilder();
         args.addRaw("--input");
         args.addRaw(NA12878_20_21_WGS_bam);
@@ -128,7 +128,7 @@ public final class PileupSparkIntegrationTest extends CommandLineProgramTest {
             cluster.getFileSystem().copyFromLocalFile(new Path(dbsnp_138_b37_20_21_vcf), vcfPath);
             cluster.getFileSystem().copyFromLocalFile(new Path(dbsnp_138_b37_20_21_vcf + ".idx"), idxPath);
 
-            final File out = createTempFile();
+            final File out = createAndDeleteTempFile();
             final ArgumentsBuilder args = new ArgumentsBuilder();
             args.addRaw("--input");
             args.addRaw(NA12878_20_21_WGS_bam);

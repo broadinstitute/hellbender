@@ -3,14 +3,19 @@ package org.broadinstitute.hellbender.tools.walkers.annotator;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.VariantContext;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import htsjdk.variant.vcf.VCFHeaderLineCount;
+import htsjdk.variant.vcf.VCFInfoHeaderLine;
 import org.broadinstitute.hellbender.tools.walkers.annotator.allelespecific.*;
 import org.broadinstitute.hellbender.utils.genotyper.AlleleLikelihoods;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
+import org.broadinstitute.hellbender.utils.variant.GATKVCFHeaderLines;
 
 import java.util.*;
 
 public final class AnnotationUtils {
+
+    public static final String ALLELE_SPECIFIC_ANNOTATION_KEY_PREFIX = "AS_";
     public static final String ALLELE_SPECIFIC_RAW_DELIM = "|";
     public static final String ALLELE_SPECIFIC_REDUCED_DELIM = ",";
     public static final String ALLELE_SPECIFIC_SPLIT_REGEX = "\\|"; //String.split takes a regex, so we need to escape the pipe
@@ -74,16 +79,23 @@ public final class AnnotationUtils {
      * @param annotation the annotation to be tested
      * @return true if the annotation is expected to have values per-allele
      */
-    public static boolean isAlleleSpecific(final InfoFieldAnnotation annotation) {
+    public static boolean isAlleleSpecific(final VariantAnnotation annotation) {
         return annotation instanceof AlleleSpecificAnnotation;
     }
 
+    public static boolean isAlleleSpecificGatkKey(final String annotationKey) {
+        final VCFInfoHeaderLine header = GATKVCFHeaderLines.getInfoLine(annotationKey);
+        return header.getCountType().equals(VCFHeaderLineCount.A) ||
+                header.getCountType().equals(VCFHeaderLineCount.R) ||
+                annotationKey.startsWith(ALLELE_SPECIFIC_ANNOTATION_KEY_PREFIX);
+    }
+
     /**
-     * Handles all the Java and htsjdk parsing shenanigans
-     * @param rawDataString should not have surrounding brackets
+     * Handles all the Java and htsjdk parsing shenanigans from getAttributeAsString
+     * @param rawDataString may have surrounding brackets, with raw delimiter
      * @return
      */
-    public static List<String> getAlleleLengthListOfString(String rawDataString) {
+    public static List<String> getAlleleLengthListOfStringFromRawData(String rawDataString) {
         if (rawDataString == null) {
             return Collections.emptyList();
         }
@@ -91,6 +103,21 @@ public final class AnnotationUtils {
             rawDataString = rawDataString.substring(1, rawDataString.length() - 1).replaceAll("\\s", "");
         }
         return Arrays.asList(rawDataString.split(ALLELE_SPECIFIC_SPLIT_REGEX, -1)); //-1 to keep empty data
+    }
+
+    /**
+     * Handles all the Java and htsjdk parsing shenanigans from getAttributeAsString
+     * @param dataString may have surrounding brackets, with reduced delimieter
+     * @return
+     */
+    public static List<String> getAlleleLengthListOfString(String dataString) {
+        if (dataString == null) {
+            return Collections.emptyList();
+        }
+        if (dataString.startsWith("[")) {
+            dataString = dataString.substring(1, dataString.length() - 1).replaceAll("\\s", "");
+        }
+        return Arrays.asList(dataString.split(ALLELE_SPECIFIC_REDUCED_DELIM, -1)); //-1 to keep empty data
     }
 
     static public String generateMissingDataWarning(final VariantContext vc, final Genotype g, final AlleleLikelihoods<GATKRead, Allele> likelihoods) {

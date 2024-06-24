@@ -239,6 +239,25 @@ public final class AddFlowBaseQuality extends ReadWalker {
         return result;
     }
 
+    /**
+     * The following functions estimate the error probability for an hmer. specifically two error
+     * probability values are generated: one for the first base of the hmer and another for the
+     * rest of its bases.
+     *
+     * The computation itself is performed in a subsequent function: generateSidedHmerBaseErrorProbability
+     * It iterates over the possible valid combinations of errors and sums them up.
+     *
+     * @param key - key (hmer length) in flow space
+     * @param errorProbBands - for each flow (position in the key) three error probabilities are provided:
+     *                       [0] - for the hmer being one base shorter
+     *                       [1] - for the hmer to be at its length
+     *                       [2] - for the hmer to be one base longer
+     * @param flow - the flow (index) for which to generate the probabilities (0 <= flow < key.length)
+     * @param flowOrderLength - the cycle length of of the flow order (usually 4)
+     * @return an array of two probabilities:
+     * [0] - probability for the first base of the hmer
+     * [1] - probability for the rest of the bases of the hmer
+     */
     @VisibleForTesting
     protected static double[] generateHmerBaseErrorProbabilities(final int[] key, final double[][] errorProbBands, final int flow, final int flowOrderLength) {
 

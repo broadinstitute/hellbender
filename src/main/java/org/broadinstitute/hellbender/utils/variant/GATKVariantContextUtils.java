@@ -296,55 +296,75 @@ public final class GATKVariantContextUtils {
     /**
      * Add the genotype call (GT) field to GenotypeBuilder using the requested {@link GenotypeAssignmentMethod}
      *
+     * @param ploidy output ploidy for no-call GTs and likelihood array length
      * @param gb the builder where we should put our newly called alleles, cannot be null
      * @param assignmentMethod the method to use to do the assignment, cannot be null
      * @param genotypeLikelihoods a vector of likelihoods to use if the method requires PLs, should be log10 likelihoods, cannot be null
      * @param allelesToUse the alleles with respect to which the likelihoods are defined
+     * @param originalGT Genotype that includes GQ when available
+     * @param gpc utility class to help with likelihood calculations
      */
     public static void makeGenotypeCall(final int ploidy,
                                         final GenotypeBuilder gb,
                                         final GenotypeAssignmentMethod assignmentMethod,
                                         final double[] genotypeLikelihoods,
                                         final List<Allele> allelesToUse,
-                                        final List<Allele> originalGT,
+                                        final Genotype originalGT,
                                         final GenotypePriorCalculator gpc) {
         if(originalGT == null && assignmentMethod == GenotypeAssignmentMethod.BEST_MATCH_TO_ORIGINAL) {
             throw new IllegalArgumentException("original GT cannot be null if assignmentMethod is BEST_MATCH_TO_ORIGINAL");
+        }
+        //only do this if we're not no-calling so CombineGVCFs and GenomicsDB keep attributes
+        if (assignmentMethod != GenotypeAssignmentMethod.SET_TO_NO_CALL && (originalGT.isHomRef() || originalGT.isNoCall()) && originalGT.hasGQ() && originalGT.getGQ() == 0) {
+            gb.alleles(noCallAlleles(ploidy));
+            //in the "no data" case set to plain no-call (./.)
+            if (originalGT.hasDP() && originalGT.getDP() == 0) {
+                gb.noPL().noDP().noAD().noGQ().noAttributes();
+                return;
+            }
         }
         if (assignmentMethod == GenotypeAssignmentMethod.SET_TO_NO_CALL) {
             gb.alleles(noCallAlleles(ploidy));
         } else if (assignmentMethod == GenotypeAssignmentMethod.USE_PLS_TO_ASSIGN ||
                     assignmentMethod == GenotypeAssignmentMethod.PREFER_PLS) {
-            if ( genotypeLikelihoods == null || !isInformative(genotypeLikelihoods) ) {
-                if (assignmentMethod == GenotypeAssignmentMethod.PREFER_PLS) {
-                    if (originalGT == null) {
-                        throw new IllegalArgumentException("original GT cannot be null if assignmentMethod is PREFER_PLS");
-                    } else {
-                        gb.alleles(bestMatchToOriginalGT(allelesToUse, originalGT));
-                    }
+            if ((genotypeLikelihoods == null || !isInformative(genotypeLikelihoods)) && assignmentMethod == GenotypeAssignmentMethod.PREFER_PLS) {
+                if (originalGT == null) {
+                    throw new IllegalArgumentException("original GT cannot be null if assignmentMethod is PREFER_PLS");
                 } else {
-                    gb.alleles(noCallAlleles(ploidy)).noGQ();
+                    gb.alleles(bestMatchToOriginalGT(allelesToUse, originalGT.getAlleles()));
                 }
             } else {
-                final int maxLikelihoodIndex = MathUtils.maxElementIndex(genotypeLikelihoods);
-                final GenotypeAlleleCounts alleleCounts = GenotypesCache.get(ploidy, maxLikelihoodIndex);
-                final List<Allele> finalAlleles = alleleCounts.asAlleleList(allelesToUse);
-                if (finalAlleles.contains(Allele.NON_REF_ALLELE)) {
-                    final Allele ref = allelesToUse.stream().filter(Allele::isReference).collect(Collectors.toList()).get(0);
-                    gb.alleles(Collections.nCopies(ploidy, ref));
-                    gb.PL(new int[genotypeLikelihoods.length]).log10PError(0);
+                if (genotypeLikelihoods == null) {
+                    gb.alleles(bestMatchToOriginalGT(allelesToUse, originalGT.getAlleles()));
                 } else {
-                    gb.alleles(finalAlleles);
-                }
-                final int numAltAlleles = allelesToUse.size() - 1;
-                if ( numAltAlleles > 0 ) {
-                    gb.log10PError(GenotypeLikelihoods.getGQLog10FromLikelihoods(maxLikelihoodIndex, genotypeLikelihoods));
+                    final int maxLikelihoodIndex = MathUtils.maxElementIndex(genotypeLikelihoods);
+                    final GenotypeAlleleCounts alleleCounts = GenotypesCache.get(ploidy, maxLikelihoodIndex);
+                    final List<Allele> finalAlleles = alleleCounts.asAlleleList(allelesToUse);
+                    final double gq = GenotypeLikelihoods.getGQLog10FromLikelihoods(maxLikelihoodIndex, genotypeLikelihoods);
+                    if (finalAlleles.contains(Allele.NON_REF_ALLELE)) {
+                        final Allele ref = allelesToUse.stream().filter(Allele::isReference).collect(Collectors.toList()).get(0);
+                        gb.alleles(Collections.nCopies(ploidy, ref));
+                        gb.PL(new int[genotypeLikelihoods.length]).log10PError(0);
+                    } else if (maxLikelihoodIndex == 0 && gq > GATKVariantContextUtils.SUM_GL_THRESH_NOCALL) { //GLs are log10s, so they're negative, GQ is also negative, so less negative is greater than
+                        gb.alleles(Collections.nCopies(ploidy, Allele.NO_CALL));
+                    } else {
+                        gb.alleles(finalAlleles);
+                    }
+                    final int numAltAlleles = allelesToUse.size() - 1;
+                    if (numAltAlleles > 0) {
+                        gb.log10PError(gq);
+                    }
                 }
             }
         } else if (assignmentMethod == GenotypeAssignmentMethod.SET_TO_NO_CALL_NO_ANNOTATIONS) {
             gb.alleles(noCallAlleles(ploidy)).noGQ().noAD().noPL().noAttributes();
         } else if (assignmentMethod == GenotypeAssignmentMethod.BEST_MATCH_TO_ORIGINAL) {
-            gb.alleles(bestMatchToOriginalGT(allelesToUse, originalGT));
+            if (originalGT.hasGQ() && originalGT.getGQ() == 0 &&
+                    (!originalGT.hasPL() || originalGT.getPL()[0] == 0)) {
+                gb.alleles(noCallAlleles(ploidy));
+            } else {
+                gb.alleles(bestMatchToOriginalGT(allelesToUse, originalGT.getAlleles()));
+            }
         } else if (assignmentMethod == GenotypeAssignmentMethod.USE_POSTERIOR_PROBABILITIES) {
             if (gpc == null) {
                 throw new GATKException("cannot uses posteriors without an genotype prior calculator present");
@@ -436,15 +456,6 @@ public final class GATKVariantContextUtils {
             repeatedList.add(allele);
         }
         return repeatedList;
-    }
-
-    public static void makeGenotypeCall(final int ploidy,
-                                        final GenotypeBuilder gb,
-                                        final GenotypeAssignmentMethod assignmentMethod,
-                                        final double[] genotypeLikelihoods,
-                                        final List<Allele> allelesToUse,
-                                        final GenotypePriorCalculator gpc){
-        makeGenotypeCall(ploidy,gb,assignmentMethod,genotypeLikelihoods,allelesToUse,null, gpc);
     }
 
     /**

@@ -1,12 +1,14 @@
 package org.broadinstitute.hellbender.tools.walkers.filters;
 
 import htsjdk.variant.variantcontext.VariantContext;
+import htsjdk.variant.vcf.VCFHeader;
 import org.broadinstitute.hellbender.CommandLineProgramTest;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
 import org.broadinstitute.hellbender.engine.FeatureDataSource;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.testutils.ArgumentsBuilder;
 import org.broadinstitute.hellbender.testutils.IntegrationTestSpec;
+import org.broadinstitute.hellbender.testutils.VariantContextTestUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -89,6 +91,22 @@ public final class VariantFiltrationIntegrationTest extends CommandLineProgramTe
         );
 
         spec.executeTest("testMaskReversed", this);
+    }
+
+    @Test
+    public void testMaskDescription() throws IOException {
+        final File output = createTempFile("testHeader", ".vcf");
+
+        final ArgumentsBuilder args = new ArgumentsBuilder();
+        args.add("V", getTestFile("vcfexample2.vcf"))
+                .add("mask-name", "foo")
+                .add("mask-description", "description")
+                .add("mask:BED", getToolTestDataDir() + "goodMask.bed");
+        args.addOutput(output);
+
+        runCommandLine(args);
+        VCFHeader header = VariantContextTestUtils.getVCFHeader(output.getAbsolutePath());
+        header.getFilterLines().stream().filter(f -> f.getID().equals("foo")).forEach(f -> Assert.assertEquals(f.getDescription(), "description"));
     }
 
     @Test

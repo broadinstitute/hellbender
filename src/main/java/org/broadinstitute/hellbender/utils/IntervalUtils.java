@@ -473,6 +473,52 @@ public final class IntervalUtils {
     }
 
     /**
+     * Merges a list of potentially-overlapping SimpleIntervals from a single contig into a new sorted list
+     * of intervals covering the same genomic territory but with all overlapping (and, if specified, adjacent)
+     * intervals merged.
+     *
+     * Since this method does not take a sequence dictionary, it imposes the restriction that all supplied intervals
+     * must be on the same contig (otherwise we would not know the contig ordering).
+     *
+     * @param raw List of intervals to merge, all from the same contig. Does not need to be sorted.
+     * @param rule Whether to merge adjacent intervals, or just overlapping intervals
+     * @return A new list of merged disjoint intervals, sorted by start position
+     */
+    public static List<SimpleInterval> sortAndMergeIntervalsFromSameContig(final List<SimpleInterval> raw, final IntervalMergingRule rule) {
+        if (raw.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Since we're merging overlapping/adjacent intervals, we only need to sort by the start positions
+        final List<SimpleInterval> rawSorted = new ArrayList<>(raw);
+        Collections.sort(rawSorted, Comparator.comparing(SimpleInterval::getStart));
+
+        final List<SimpleInterval> merged = new ArrayList<>();
+        final Iterator<SimpleInterval> it = rawSorted.iterator();
+        SimpleInterval prev = it.next();
+        final String commonContig = prev.getContig();
+
+        while (it.hasNext()) {
+            final SimpleInterval curr = it.next();
+            if ( ! curr.getContig().equals(commonContig) ) {
+                throw new IllegalArgumentException("This method can handle only intervals on the same contig, " +
+                        "but found intervals from contigs " + commonContig + " and " + curr.getContig());
+            }
+
+            if (prev.overlaps(curr)) {
+                prev = prev.mergeWithContiguous(curr);
+            } else if (prev.contiguous(curr) && (rule == null || rule == IntervalMergingRule.ALL)) {
+                prev = prev.mergeWithContiguous(curr);
+            } else {
+                merged.add(prev);
+                prev = curr;
+            }
+        }
+        merged.add(prev);
+        return merged;
+    }
+
+    /**
      * computes whether the test interval list is equivalent to master.  To be equivalent, test must
      * contain GenomeLocs covering every base in master, exactly once.  Note that this algorithm
      * assumes that master genomelocs are all discontiguous (i.e., we don't have locs like 1-3 and 4-6 but

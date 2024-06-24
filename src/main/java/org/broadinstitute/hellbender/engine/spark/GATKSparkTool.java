@@ -334,22 +334,11 @@ public abstract class GATKSparkTool extends SparkCommandLineProgram {
     }
 
     protected JavaRDD<GATKRead> getGatkReadJavaRDD(TraversalParameters traversalParameters, ReadsSparkSource source, GATKPath inputSpecifier) {
-        JavaRDD<GATKRead> output;
-        // TODO: This if statement is a temporary hack until #959 gets resolve
-        if (inputSpecifier.hasExtension(".adam")) {
-            try {
-                output = source.getADAMReads(inputSpecifier, traversalParameters, getHeaderForReads());
-            } catch (IOException e) {
-                throw new UserException("Failed to read ADAM file " + inputSpecifier, e);
-            }
-
-        } else {
-            if (hasCramInput() && !hasReference()){
-                throw UserException.MISSING_REFERENCE_FOR_CRAM;
-            }
-            output = source.getParallelReads(inputSpecifier, referenceArguments.getReferenceSpecifier(), traversalParameters, bamPartitionSplitSize, useNio);
+        if (hasCramInput() && !hasReference()) {
+            throw UserException.MISSING_REFERENCE_FOR_CRAM;
         }
-        return output;
+
+        return source.getParallelReads(inputSpecifier, referenceArguments.getReferenceSpecifier(), traversalParameters, bamPartitionSplitSize, useNio);
     }
 
     /**

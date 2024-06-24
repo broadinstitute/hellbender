@@ -8,4 +8,6 @@ public class FlowTestConstants {
     public static String GROUND_TRUTH_DATA_DIR = "large/groundTruth";
     public static String READ_FILTER_DATA_DIR = "large/readFilter";
 
+    public static String ADD_FLOW_SNVQ_DATA_DIR = "large/add_flow_snvq";
+
 }

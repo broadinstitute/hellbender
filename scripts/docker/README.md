@@ -21,7 +21,7 @@ This repo contains the scripts for creating and pushing two docker images:
 - gatkbase -- a basic docker image that we do not expect to change very often.  The GATK4 docker image uses this one (``FROM``)
 - gatk4 -- the official docker image for GATK4.  The instructions in this document pertain to this image, unless otherwise stated.
 
-``scripts/docker/gatkbase/build_docker_base.sh`` is a script to create the gatkbase docker image. 
+``scripts/docker/gatkbase/build_docker_base_cloud.sh`` and ``scripts/docker/gatkbase/build_docker_base_locally.sh`` are scripts to create the gatkbase docker image. 
 ``build_docker.sh`` is a script to create the full gatk4 docker image.
 ``build_docker_remote.sh`` is a script to create the full gatk4 docker image using google cloud build remotely. This is useful if you can't build the docker image locally (for example if you have an M1 Macbook) NOTE: this requires the user first specify their project with the command `gcloud config set project <PROJECT>` to a project that has access to google cloud build. 
 
@@ -148,19 +148,24 @@ exit
 This is a base image that does not require any files in the gatk repo (except the build script and Dockerfile, obviously).  GATK docker images are dependent on this one.
 
 **IMPORTANT** 
-- The gatkbase build script should be run from the ``scripts/docker/gatkbase`` directory.
-- If you want to create a new version, you must modify the ``build_docker_base.sh`` script directly.  Any changes should be committed to the repo.
+- The gatkbase build scripts should be run from the ``scripts/docker/gatkbase`` directory.
 
-#### Create gatkbase docker image and push it to docker hub
+#### Build the gatkbase docker image on your local machine:
 
 ```bash
-build_docker_base.sh -p
+build_docker_base_locally.sh <docker_image_version>
 ```
 
-#### Create gatkbase docker image and do not push it to docker hub
+#### Build the gatkbase docker image remotely using Google Cloud Build:
+
+```bash
+build_docker_base_cloud.sh <docker_image_version>
+```
+
+#### Release a pre-built gatkbase image to the official repositories, after testing it:
  
 ```bash
-build_docker_base.sh -p
+release_prebuilt_base_image.sh <prebuilt_image> <version_number_for_release>
 ```
 
 

@@ -153,7 +153,7 @@ public abstract class AS_StrandBiasTest extends StrandBiasTest implements Reduci
     }
 
     protected void parseRawDataString(ReducibleAnnotationData<List<Integer>> myData) {
-        List<String> values = AnnotationUtils.getAlleleLengthListOfString(myData.getRawData());
+        List<String> values = AnnotationUtils.getAlleleLengthListOfStringFromRawData(myData.getRawData());
         if (values.size() != myData.getAlleles().size()) {
             throw new IllegalStateException("Number of alleles and number of allele-specific entries do not match.  " +
                     "Allele-specific annotations should have an entry for each allele including the reference.");

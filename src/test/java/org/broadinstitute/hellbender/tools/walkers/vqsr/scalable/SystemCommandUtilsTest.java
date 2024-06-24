@@ -2,6 +2,7 @@ package org.broadinstitute.hellbender.tools.walkers.vqsr.scalable;
 
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.broadinstitute.hellbender.exceptions.GATKException;
+import org.broadinstitute.hellbender.utils.runtime.ProcessController;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -16,47 +17,66 @@ public final class SystemCommandUtilsTest extends GATKBaseTest {
             "org/broadinstitute/hellbender/tools/walkers/vqsr/scalable/extract");
     private static final File EXPECTED_TEST_FILES_DIR = new File(TEST_FILES_DIR, "expected");
 
-    static void runSystemCommand(final String command) {
-        logger.debug(String.format("Testing command: %s", command));
-        try {
-            final ProcessBuilder processBuilder = new ProcessBuilder("sh", "-c", command).redirectErrorStream(true);
-            final Process process = processBuilder.start();
+    /**
+     * Run the h5diff utility to compare the specified files. If h5diff exits with a non-zero
+     * status code (indicating that there were differences), the differences will get printed
+     * in the exception message and show up in the TestNG logs on github.
+     *
+     * @param expected HDF5 file with the expected results
+     * @param actual HDF5 file with the actual results
+     */
+    static void runH5Diff(final String expected, final String actual) {
+        final ProcessController controller = ProcessController.getThreadLocal();
 
-            final BufferedReader stdInReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String stdInLine;
-            while ((stdInLine = stdInReader.readLine()) != null) {
-                Assert.fail(String.format("The command \"%s\" resulted in: %s", command, stdInLine));
-            }
-            stdInReader.close();
+        // -r: Report mode. Print the differences.
+        // --use-system-epsilon: Return a difference if and only if the difference between two data values exceeds
+        //                       the system value for epsilon.
+        final String[] command = new String[] { "h5diff", "-r", "--use-system-epsilon", expected, actual };
 
-        } catch (final IOException e) {
-            throw new GATKException.ShouldNeverReachHereException(e.getMessage());
-        }
+        runProcessAndCaptureOutputInExceptionMessage(controller, command);
+    }
+
+    /**
+     * Run the standard diff utility to compare the specified files. If diff exits with a non-zero
+     * status code (indicating that there were differences), the differences will get printed
+     * in the exception message and show up in the TestNG logs on github.
+     *
+     * @param expected file with the expected results
+     * @param actual file with the actual results
+     */
+    static void runDiff(final String expected, final String actual) {
+        final ProcessController controller = ProcessController.getThreadLocal();
+        final String[] command = new String[] { "diff", expected, actual };
+        runProcessAndCaptureOutputInExceptionMessage(controller, command);
     }
 
     @Test(groups = {"python"}) // python environment is required to use h5diff
-    public void testRunSystemCommand() {
-        runSystemCommand(String.format("h5diff %s/extract.AS.indel.pos.annot.hdf5 %s/extract.AS.indel.pos.annot.hdf5",
-                EXPECTED_TEST_FILES_DIR, EXPECTED_TEST_FILES_DIR));
-        runSystemCommand(String.format("diff %s/extract.AS.indel.pos.vcf %s/extract.AS.indel.pos.vcf",
-                EXPECTED_TEST_FILES_DIR, EXPECTED_TEST_FILES_DIR));
+    public void testRunH5DiffIdenticalFile() {
+        runH5Diff(String.format("%s/extract.AS.indel.pos.annot.hdf5", EXPECTED_TEST_FILES_DIR),
+                  String.format("%s/extract.AS.indel.pos.annot.hdf5", EXPECTED_TEST_FILES_DIR));
+    }
+
+    @Test
+    public void testRunDiffIdenticalFile() {
+        runDiff(String.format("%s/extract.AS.indel.pos.vcf", EXPECTED_TEST_FILES_DIR),
+                String.format("%s/extract.AS.indel.pos.vcf", EXPECTED_TEST_FILES_DIR));
     }
 
     @Test(expectedExceptions = AssertionError.class, groups = {"python"}) // python environment is required to use h5diff
-    public void testRunSystemCommandH5diffException() {
-        runSystemCommand(String.format("h5diff %s/extract.AS.indel.pos.annot.hdf5 %s/extract.AS.snp.pos.annot.hdf5",
-                EXPECTED_TEST_FILES_DIR, EXPECTED_TEST_FILES_DIR));
+    public void testRunH5DiffException() {
+        runH5Diff(String.format("%s/extract.AS.indel.pos.annot.hdf5", EXPECTED_TEST_FILES_DIR),
+                  String.format("%s/extract.AS.snp.pos.annot.hdf5", EXPECTED_TEST_FILES_DIR));
     }
 
     @Test(expectedExceptions = AssertionError.class)
-    public void testRunSystemCommandDiffException() {
-        runSystemCommand(String.format("diff %s/extract.AS.indel.pos.vcf %s/extract.AS.snp.pos.vcf",
-                EXPECTED_TEST_FILES_DIR, EXPECTED_TEST_FILES_DIR));
+    public void testRunDiffException() {
+        runDiff(String.format("%s/extract.AS.indel.pos.vcf", EXPECTED_TEST_FILES_DIR),
+                String.format("%s/extract.AS.snp.pos.vcf", EXPECTED_TEST_FILES_DIR));
     }
 
     @Test(expectedExceptions = AssertionError.class)
-    public void testRunSystemCommandDiffNoSuchFileException() {
-        runSystemCommand(String.format("diff %s/blahblah %s/extract.AS.snp.pos.vcf",
-                EXPECTED_TEST_FILES_DIR, EXPECTED_TEST_FILES_DIR));
+    public void testRunDiffNoSuchFile() {
+        runDiff(String.format("%s/blahblah", EXPECTED_TEST_FILES_DIR),
+                String.format("%s/extract.AS.snp.pos.vcf", EXPECTED_TEST_FILES_DIR));
     }
 }

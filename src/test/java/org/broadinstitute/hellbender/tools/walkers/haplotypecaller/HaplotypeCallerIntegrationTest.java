@@ -671,7 +671,8 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
     public Object[][] getForceCallingInputs() {
         return new Object[][] {
                 {NA12878_20_21_WGS_bam, new File(TEST_FILES_DIR, "testGenotypeGivenAllelesMode_givenAlleles.vcf"), "20:10000000-10010000"},
-                {NA12878_20_21_WGS_bam, new File(toolsTestDir, "mutect/gga_mode.vcf"), "20:9998500-10010000"}
+                {NA12878_20_21_WGS_bam, new File(toolsTestDir, "mutect/gga_mode.vcf"), "20:9998500-10010000"},
+                {NA12878_20_21_WGS_bam, new File(TEST_FILES_DIR, "testGenotypeGivenAllelesMode_givenAlleles_ExtremeLengthDeletion.vcf"), "20:9998500-10010000"} // This is designed to test https://github.com/broadinstitute/gatk/issues/8675, which stemmed from an edge case in the force calling logic where a deletion allele that is longer than the assembly window padding spans into the assembly window. This tests that we do not see an exception in this case.
         };
     }
 
@@ -944,6 +945,125 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
         if ( ! UPDATE_EXACT_MATCH_EXPECTED_OUTPUTS ) {
             IntegrationTestSpec.assertEqualTextFiles(output, expected);
         }
+    }
+
+    @Test(dataProvider="HaplotypeCallerTestInputs")
+    public void testCustomPloidyRegions(final String inputFileName, final String referenceFileName) throws Exception {
+        Utils.resetRandomGenerator();
+
+        final File output = createTempFile("output", ".vcf");
+        final File expected = new File(TEST_FILES_DIR, "expected.testPloidyRegions.vcf");
+        final File ploidyRegions = new File(TEST_FILES_DIR, "testPloidyRegions.bed");
+
+        final String[] args = {
+                "-I", inputFileName,
+                "-R", referenceFileName,
+                "-L", "20:10000000-10100000",
+                "-O", output.getAbsolutePath(),
+                "-ploidy", "3",
+                "--ploidy-regions", ploidyRegions.getAbsolutePath(),
+                "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false"
+        };
+
+        runCommandLine(args);
+
+        IntegrationTestSpec.assertEqualTextFiles(output, expected);
+    }
+
+    // Should fail due to non-integer values in name column of bed
+    @Test(dataProvider="HaplotypeCallerTestInputs", expectedExceptions = IllegalArgumentException.class)
+    public void testNonIntegerCustomPloidyRegions(final String inputFileName, final String referenceFileName) throws Exception {
+        Utils.resetRandomGenerator();
+
+        final File output = createTempFile("output", ".vcf");
+        final File expected = new File(TEST_FILES_DIR, "expected.testPloidyRegions.vcf");
+        final File ploidyRegions = new File(TEST_FILES_DIR, "testNonIntegerPloidyRegions.bed");
+
+        final String[] args = {
+                "-I", inputFileName,
+                "-R", referenceFileName,
+                "-L", "20:10000000-10100000",
+                "-O", output.getAbsolutePath(),
+                "-ploidy", "3",
+                "--ploidy-regions", ploidyRegions.getAbsolutePath(),
+                "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false"
+        };
+
+        runCommandLine(args);
+
+        IntegrationTestSpec.assertEqualTextFiles(output, expected);
+    }
+
+    // Should fail due to negative integer values in name column of bed
+    @Test(dataProvider="HaplotypeCallerTestInputs", expectedExceptions = IllegalArgumentException.class)
+    public void testNonPositiveCustomPloidyRegions(final String inputFileName, final String referenceFileName) throws Exception {
+        Utils.resetRandomGenerator();
+
+        final File output = createTempFile("output", ".vcf");
+        final File expected = new File(TEST_FILES_DIR, "expected.testPloidyRegions.vcf");
+        final File ploidyRegions = new File(TEST_FILES_DIR, "testNegativePloidyRegions.bed");
+
+        final String[] args = {
+                "-I", inputFileName,
+                "-R", referenceFileName,
+                "-L", "20:10000000-10100000",
+                "-O", output.getAbsolutePath(),
+                "-ploidy", "3",
+                "--ploidy-regions", ploidyRegions.getAbsolutePath(),
+                "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false"
+        };
+
+        runCommandLine(args);
+
+        IntegrationTestSpec.assertEqualTextFiles(output, expected);
+    }
+
+    // Should fail due to using chr20 contig name in ploidy-regions file when BAM sequence dictionary uses 20
+    @Test(dataProvider="HaplotypeCallerTestInputs", expectedExceptions = UserException.class)
+    public void testMismatchPloidyRegionsAndSequenceDictionary(final String inputFileName, final String referenceFileName) throws Exception {
+        Utils.resetRandomGenerator();
+
+        final File output = createTempFile("output", ".vcf");
+        final File expected = new File(TEST_FILES_DIR, "expected.testPloidyRegions.vcf");
+        final File ploidyRegions = new File(TEST_FILES_DIR, "testMismatchPloidyRegions.bed");
+
+        final String[] args = {
+                "-I", inputFileName,
+                "-R", referenceFileName,
+                "-L", "20:10000000-10100000",
+                "-O", output.getAbsolutePath(),
+                "-ploidy", "3",
+                "--ploidy-regions", ploidyRegions.getAbsolutePath(),
+                "--" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE, "false"
+        };
+
+        runCommandLine(args);
+
+        IntegrationTestSpec.assertEqualTextFiles(output, expected);
+    }
+
+    // Tests the somewhat ad hoc implementation of copying hcArgs instances in the engine, used for managing multiple ploidies used based on user inputs
+    @Test
+    public void testArgCollectionCopiesAreSynchronized() {
+        Utils.resetRandomGenerator();
+
+        HaplotypeCallerArgumentCollection hcArgs = new HaplotypeCallerArgumentCollection();
+        hcArgs.applyBQD = !hcArgs.applyBQD;
+        hcArgs.dontGenotype = !hcArgs.dontGenotype;
+        hcArgs.standardArgs.annotateAllSitesWithPLs = !hcArgs.standardArgs.annotateAllSitesWithPLs;
+        hcArgs.standardArgs.genotypeArgs.ANNOTATE_NUMBER_OF_ALLELES_DISCOVERED = !hcArgs.standardArgs.genotypeArgs.ANNOTATE_NUMBER_OF_ALLELES_DISCOVERED;
+
+        // Create copy with different ploidy and check tweaked values (and one control non-changed value) remain in sync
+        HaplotypeCallerArgumentCollection hcArgsCopy = hcArgs.copyWithNewPloidy(3);
+        Assert.assertEquals(hcArgs.applyBQD, hcArgsCopy.applyBQD);
+        Assert.assertEquals(hcArgs.dontGenotype, hcArgsCopy.dontGenotype);
+        Assert.assertEquals(hcArgs.standardArgs.annotateAllSitesWithPLs, hcArgsCopy.standardArgs.annotateAllSitesWithPLs);
+        Assert.assertEquals(hcArgs.standardArgs.CONTAMINATION_FRACTION, hcArgsCopy.standardArgs.CONTAMINATION_FRACTION);
+        Assert.assertEquals(hcArgs.standardArgs.genotypeArgs.ANNOTATE_NUMBER_OF_ALLELES_DISCOVERED, hcArgsCopy.standardArgs.genotypeArgs.ANNOTATE_NUMBER_OF_ALLELES_DISCOVERED);
+
+        // Modify other values of copy and check they are now distinct, i.e. a "deep copy" was created above
+        hcArgsCopy.applyBQD = !hcArgsCopy.applyBQD;
+        Assert.assertNotEquals(hcArgs.applyBQD, hcArgsCopy.applyBQD);
     }
 
     // test that ReadFilterLibrary.NON_ZERO_REFERENCE_LENGTH_ALIGNMENT removes reads that consume zero reference bases

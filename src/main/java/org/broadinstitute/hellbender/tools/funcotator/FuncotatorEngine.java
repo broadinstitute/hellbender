@@ -80,6 +80,12 @@ public final class FuncotatorEngine implements AutoCloseable {
     private final boolean mustConvertInputContigsToHg19;
 
     /**
+     * Whether the output variant contigs must be converted back to B37 from hg19 before being returned.
+     * (NOTE: this means that the output contigs will continue to use B37 contig names even if internally we converted them to hg19)
+     */
+    private boolean mustRevertVariantContigsFromHg19ToB37 = false;
+
+    /**
      * Whether this {@link FuncotatorEngine} has only produced annotations on variants that have been labeled by the
      * {@link org.broadinstitute.hellbender.tools.funcotator.dataSources.gencode.GencodeFuncotationFactory} as {@link org.broadinstitute.hellbender.tools.funcotator.dataSources.gencode.GencodeFuncotation.VariantClassification#IGR}.
      */
@@ -328,6 +334,22 @@ public final class FuncotatorEngine implements AutoCloseable {
     }
 
     /**
+     * Create a new {@link VariantContext} which will match the given Reference if there is a mismatch for input between the B37 reference and the HG19 reference.
+     * @param variant A {@link VariantContext} object containing the variant to convert.
+     * @return A {@link VariantContext} whose contig has been transformed to HG19 if requested by the user.  Otherwise, an identical variant.
+     */
+    VariantContext getCorrectVariantContextForOutput(final VariantContext variant) {
+        if ( mustRevertVariantContigsFromHg19ToB37 ) {
+            final VariantContextBuilder vcb = new VariantContextBuilder(variant);
+            vcb.chr(FuncotatorUtils.convertHG19ContigToB37Contig(variant.getContig()));
+            return vcb.make();
+        }
+        else {
+            return variant;
+        }
+    }
+
+    /**
      * @return The default {@link VariantTransformer} which will automatically convert from the B37 reference standard to the HG19 reference standard for contig names.
      */
     public VariantTransformer getDefaultVariantTransformer() {
@@ -483,7 +505,7 @@ public final class FuncotatorEngine implements AutoCloseable {
         }
         else if ( funcotatorArgs.referenceVersion.equals(BaseFuncotatorArgumentCollection.FuncotatorReferenceVersionHg19) &&
                         FuncotatorUtils.isSequenceDictionaryUsingB37Reference(sequenceDictionaryForDrivingVariants) ) {
-            logger.info("VCF sequence dictionary detected as B37 in HG19 annotation mode.  Performing conversion.");
+            logger.info("VCF sequence dictionary detected as B37 in HG19 annotation mode.  Performing conversion. (NOTE: the output VCF will still be B37)");
             mustConvertInputContigsToHg19 = true;
         }
         else {
@@ -503,6 +525,11 @@ public final class FuncotatorEngine implements AutoCloseable {
             logger.warn("WARNING: You are using B37 as a reference.  " +
                     "Funcotator will convert your variants to GRCh37, and this will be fine in the vast majority of cases.  " +
                     "There MAY be some errors (e.g. in the Y chromosome, but possibly in other places as well) due to changes between the two references.");
+        }
+
+        // Record whether we need to revert the contigs back to B37 after annotation:
+        if (mustConvertInputContigsToHg19 && FuncotatorUtils.isSequenceDictionaryUsingB37Reference(sequenceDictionaryForDrivingVariants)) {
+            this.mustRevertVariantContigsFromHg19ToB37 = true;
         }
 
         return mustConvertInputContigsToHg19;

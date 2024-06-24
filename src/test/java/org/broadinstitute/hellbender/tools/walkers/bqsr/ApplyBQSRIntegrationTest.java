@@ -5,7 +5,7 @@ import com.google.common.jimfs.Jimfs;
 import htsjdk.samtools.SamReaderFactory;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.barclay.argparser.CommandLineException;
 import org.broadinstitute.hellbender.CommandLineProgramTest;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;

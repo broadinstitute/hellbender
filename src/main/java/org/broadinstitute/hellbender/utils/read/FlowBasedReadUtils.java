@@ -1,17 +1,18 @@
 package org.broadinstitute.hellbender.utils.read;
 
 import gov.nih.nlm.ncbi.ngs.NGS;
-import htsjdk.samtools.SAMFileHeader;
-import htsjdk.samtools.SAMReadGroupRecord;
-import htsjdk.samtools.SAMRecord;
+import htsjdk.samtools.*;
 import htsjdk.samtools.util.SequenceUtil;
+import org.apache.commons.lang3.ArrayUtils;
 import org.broadinstitute.hellbender.cmdline.argumentcollections.MarkDuplicatesSparkArgumentCollection;
+import org.broadinstitute.hellbender.engine.ReferenceContext;
 import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.tools.FlowBasedArgumentCollection;
 import org.broadinstitute.hellbender.utils.NGSPlatform;
 import org.broadinstitute.hellbender.utils.SequencerFlowClass;
 import org.broadinstitute.hellbender.utils.Utils;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -32,6 +33,23 @@ public class FlowBasedReadUtils {
     static final public int FLOW_BASED_INSIGNIFICANT_END = 0;
 
     private static final Map<String, ReadGroupInfo> readGroupInfo = new LinkedHashMap<>();
+
+    public enum CycleSkipStatus {
+        NS(0),         // no skip
+        PCS(1),        // possible cycle skip
+        CS(2);         // cycle skip
+
+        private int priority;
+
+        CycleSkipStatus(final int priority) {
+            this.priority = priority;
+        }
+
+        int getPriority() {
+            return this.priority;
+        }
+
+    }
 
     static public class ReadGroupInfo {
         final public String  flowOrder;
@@ -303,7 +321,7 @@ public class FlowBasedReadUtils {
                     hmersLeft--;
                 }
 
-            int         hmerSize = 1;
+            int hmerSize = 1;
             for ( ; hmerSize < bases.length ; hmerSize++ )
                 if (bases[hmerSize] != hmerBase) {
                     if ( --hmersLeft <= 0 )
@@ -411,5 +429,61 @@ public class FlowBasedReadUtils {
         } else {
             return null;
         }
+    }
+
+    public static CycleSkipStatus getCycleSkipStatus(FlowBasedRead read, ReferenceContext referenceContext) {
+
+        CycleSkipStatus      status = CycleSkipStatus.NS;
+
+        // walk cigar elements of read
+        int     readOfs = 0;
+        int     refOfs = 0;
+        byte[]  bases = read.getBasesNoCopy();
+        for (CigarElement cigarElement : read.getCigarElements() ) {
+            if ( cigarElement.getOperator() == CigarOperator.M ) {
+
+                // extract bases from element and reference, continue only if different
+                byte[]      elemBases = ArrayUtils.subarray(bases, readOfs, readOfs + cigarElement.getLength());
+                byte[]      refBases = ArrayUtils.subarray(referenceContext.getBases(), refOfs, refOfs + cigarElement.getLength());
+                if ( !Arrays.equals(elemBases, refBases) ) {
+
+                    // create keys
+                    int[]  altKey = FlowBasedKeyCodec.baseArrayToKey(elemBases, read.getFlowOrder());
+                    int[]  refKey = FlowBasedKeyCodec.baseArrayToKey(refBases, read.getFlowOrder());
+
+                    // assign initial css
+                    CycleSkipStatus      cssValue = (refKey.length != altKey.length) ? CycleSkipStatus.CS : CycleSkipStatus.NS;
+
+                    // if same length (NS) then see if it is possible-cycle-skip
+                    if ( cssValue == CycleSkipStatus.NS ) {
+                        for ( int n = 0 ; n < refKey.length ; n++ ) {
+                            if ( (refKey[n] == 0) ^ (altKey[n] == 0) ) {
+                                cssValue = CycleSkipStatus.PCS;
+                                break;
+                            }
+                        }
+                    }
+
+                    // integrate into status
+                    if ( cssValue.getPriority() > status.getPriority() ) {
+                        status = cssValue;
+                    }
+                }
+
+            }
+            readOfs += (cigarElement.getOperator().consumesReadBases() ? cigarElement.getLength() : 0);
+            refOfs += (cigarElement.getOperator().consumesReferenceBases() ? cigarElement.getLength() : 0);
+            if ( status == CycleSkipStatus.CS )
+                break;
+        }
+
+        return status;
+    }
+
+    public static int calcFlowOrderLength(String flowOrder) {
+
+        final int i = flowOrder.indexOf(flowOrder.charAt(0), 1);
+
+        return (i < 0) ? flowOrder.length() : i;
     }
 }

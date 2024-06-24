@@ -13,7 +13,6 @@ import htsjdk.variant.variantcontext.SimpleAllele;
 import htsjdk.variant.vcf.VCFHeaderLineType;
 import htsjdk.variant.vcf.VCFInfoHeaderLine;
 import org.apache.spark.serializer.KryoRegistrator;
-import org.bdgenomics.adam.serialization.ADAMKryoRegistrator;
 import org.broadinstitute.hellbender.tools.funcotator.FuncotationMap;
 import org.broadinstitute.hellbender.tools.funcotator.dataSources.TableFuncotation;
 import org.broadinstitute.hellbender.tools.funcotator.metadata.VcfFuncotationMetadata;
@@ -34,8 +33,6 @@ import java.util.LinkedHashMap;
  * and UnmodifiableCollectionsSerializer from a bug in the version of Kryo we're on.
  */
 public class GATKRegistrator implements KryoRegistrator {
-
-    private final ADAMKryoRegistrator ADAMregistrator = new ADAMKryoRegistrator();
 
     public GATKRegistrator() {}
 
@@ -76,32 +73,6 @@ public class GATKRegistrator implements KryoRegistrator {
 
     @Override
     public void registerClasses(Kryo kryo) {
-
-        registerGATKClasses(kryo);
-
-
-        // register the ADAM data types using Avro serialization, including:
-        //     AlignmentRecord
-        //     Genotype
-        //     Variant
-        //     DatabaseVariantAnnotation
-        //     NucleotideContigFragment
-        //     Contig
-        //     StructuralVariant
-        //     VariantCallingAnnotations
-        //     VariantEffect
-        //     DatabaseVariantAnnotation
-        //     Dbxref
-        //     Feature
-        //     ReferencePosition
-        //     ReferencePositionPair
-        //     SingleReadBucket
-        //     IndelRealignmentTarget
-        //     TargetSet
-        //     ZippedTargetSet
-        ADAMregistrator.registerClasses(kryo);
-
-        //do this before and after ADAM to try and force our registrations to win out
         registerGATKClasses(kryo);
     }
 

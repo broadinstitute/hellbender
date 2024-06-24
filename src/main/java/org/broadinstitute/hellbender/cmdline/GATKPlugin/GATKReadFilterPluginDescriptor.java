@@ -175,7 +175,7 @@ public class GATKReadFilterPluginDescriptor extends CommandLinePluginDescriptor<
         // for the user to subsequently disable the required predecessor. That case is caught during final
         // validation done by the validateArguments method.
         String predecessorName = predecessorClass.getSimpleName();
-        boolean isAllowed = userArgs.getUserEnabledReadFilterNames().contains(predecessorName)
+        boolean isAllowed = userArgs.getAllUserEnabledReadFilterNames().contains(predecessorName)
                 || (toolDefaultReadFilters.get(predecessorName) != null);
         if (isAllowed) {
             // Keep track of the ones we allow so we can validate later that they weren't subsequently disabled
@@ -223,6 +223,10 @@ public class GATKReadFilterPluginDescriptor extends CommandLinePluginDescriptor<
         final ArrayList<ReadFilter> filters = new ArrayList<>(userArgs.getUserEnabledReadFilterNames().size());
         userArgs.getUserEnabledReadFilterNames().forEach(s -> {
             ReadFilter rf = allDiscoveredReadFilters.get(s);
+            filters.add(rf);
+        });
+        userArgs.getUserEnabledInvertedReadFilterNames().forEach(s -> {
+            ReadFilter rf = allDiscoveredReadFilters.get(s).negate();
             filters.add(rf);
         });
         return filters;
@@ -294,12 +298,21 @@ public class GATKReadFilterPluginDescriptor extends CommandLinePluginDescriptor<
         }
 
         // throw if a filter is both enabled *and* disabled by the user
-        final Set<String> enabledAndDisabled = new HashSet<>(userArgs.getUserEnabledReadFilterNames());
+        final Set<String> enabledAndDisabled = new HashSet<>(userArgs.getAllUserEnabledReadFilterNames());
         enabledAndDisabled.retainAll(userArgs.getUserDisabledReadFilterNames());
         if (!enabledAndDisabled.isEmpty()) {
             final String badFiltersList = Utils.join(", ", enabledAndDisabled);
             throw new CommandLineException(
                     String.format("The read filter(s): %s are both enabled and disabled", badFiltersList));
+        }
+
+        // throw if a filter is enabled and inverted by the user
+        final Set<String> enabledAndInverted = new HashSet<>(userArgs.getUserEnabledReadFilterNames());
+        enabledAndInverted.retainAll(userArgs.getUserEnabledInvertedReadFilterNames());
+        if (!enabledAndInverted.isEmpty()) {
+            final String badFiltersList = Utils.join(", ", enabledAndDisabled);
+            throw new CommandLineException(
+                    String.format("The read filter(s): %s are both enabled and inverted", badFiltersList));
         }
 
         // throw if a disabled filter doesn't exist; warn if it wasn't enabled by the tool in the first place
@@ -318,6 +331,14 @@ public class GATKReadFilterPluginDescriptor extends CommandLinePluginDescriptor<
             s -> {
                 logger.warn(String.format("Redundant enabled filter (%s) is enabled for this tool by default", s));
             });
+
+        // throw if a filter is both default and inverted by the user as we do not want to inadvertently filter all reads from the input
+        final Set<String> redundantInv = new HashSet<>(toolDefaultReadFilters.keySet());
+        redundantInv.retainAll(userArgs.getUserEnabledInvertedReadFilterNames());
+        if (!userArgs.getDisableToolDefaultReadFilters() && redundantInv.size() > 0) {
+            throw new CommandLineException(
+                    String.format("The read filter(s): %s exist as tool default filters and were inverted, disable tool default read filters in order to use this filter", redundantInv));
+        }
 
         // Throw if args were specified for a filter that was also disabled, or that was not enabled by the
         // tool by default.
@@ -346,7 +367,7 @@ public class GATKReadFilterPluginDescriptor extends CommandLinePluginDescriptor<
 
         // throw if a filter name was specified that has no corresponding instance
         final Map<String, ReadFilter> requestedReadFilters = new HashMap<>();
-        userArgs.getUserEnabledReadFilterNames().forEach(s -> {
+        userArgs.getAllUserEnabledReadFilterNames().forEach(s -> {
             ReadFilter trf = allDiscoveredReadFilters.get(s);
             if (null == trf) {
                 if (!toolDefaultReadFilters.containsKey(s)) {
@@ -370,7 +391,7 @@ public class GATKReadFilterPluginDescriptor extends CommandLinePluginDescriptor<
      */
     public boolean isDisabledFilter(final String filterName) {
         return userArgs.getUserDisabledReadFilterNames().contains(filterName)
-                || (userArgs.getDisableToolDefaultReadFilters() && !userArgs.getUserEnabledReadFilterNames().contains(filterName));
+                || (userArgs.getDisableToolDefaultReadFilters() && !userArgs.getAllUserEnabledReadFilterNames().contains(filterName));
     }
 
     /**

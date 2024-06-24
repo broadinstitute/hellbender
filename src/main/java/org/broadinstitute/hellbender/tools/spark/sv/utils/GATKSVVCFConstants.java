@@ -89,7 +89,10 @@ public final class GATKSVVCFConstants {
         piDUP_RF,
         dDUP,
         dDUP_iDEL,
-        INS_iDEL
+        INS_iDEL,
+        CTX_PP_QQ,
+        CTX_PQ_QP,
+        CTX_INV
     }
 
     // not defined in output vcf header but used in internal id that is currently output in the ID column
@@ -163,6 +166,7 @@ public final class GATKSVVCFConstants {
     public static final String NONCODING_BREAKPOINT = "PREDICTED_NONCODING_BREAKPOINT";
     public static final String NEAREST_TSS = "PREDICTED_NEAREST_TSS";
     public static final String TSS_DUP = "PREDICTED_TSS_DUP";
+    public static final String PARTIAL_DISPERSED_DUP = "PREDICTED_PARTIAL_DISPERSED_DUP";
 
     // SVTYPE classes
     public enum StructuralVariantAnnotationType {

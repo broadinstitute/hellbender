@@ -1,6 +1,6 @@
 package org.broadinstitute.hellbender.utils.dragstr;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.broadinstitute.hellbender.utils.Utils;
 
 import java.util.Arrays;

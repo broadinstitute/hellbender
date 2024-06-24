@@ -13,6 +13,7 @@ import org.broadinstitute.hellbender.tools.walkers.vqsr.scalable.modeling.Python
 import org.broadinstitute.hellbender.tools.walkers.vqsr.scalable.modeling.VariantAnnotationsModelBackend;
 import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.hellbender.utils.io.Resource;
+import org.broadinstitute.hellbender.utils.runtime.ProcessController;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -179,14 +180,13 @@ public final class TrainVariantAnnotationsModelIntegrationTest extends CommandLi
         final String tagAndVariantType = String.format("%s.%s", tag, variantType);
         final String outputPrefixAndVariantType = String.format("%s.%s", outputPrefix, variantType);
 
-        SystemCommandUtilsTest.runSystemCommand(String.format("h5diff %s/%s %s",
-                EXPECTED_TEST_FILES_DIR,
-                tagAndVariantType + TrainVariantAnnotationsModel.TRAINING_SCORES_HDF5_SUFFIX,
-                outputPrefixAndVariantType + TrainVariantAnnotationsModel.TRAINING_SCORES_HDF5_SUFFIX));
-        SystemCommandUtilsTest.runSystemCommand(String.format("h5diff %s/%s %s",
-                EXPECTED_TEST_FILES_DIR,
-                tagAndVariantType + TrainVariantAnnotationsModel.CALIBRATION_SCORES_HDF5_SUFFIX,
-                outputPrefixAndVariantType + TrainVariantAnnotationsModel.CALIBRATION_SCORES_HDF5_SUFFIX));
+        SystemCommandUtilsTest.runH5Diff(
+                String.format("%s/%s", EXPECTED_TEST_FILES_DIR, tagAndVariantType + TrainVariantAnnotationsModel.TRAINING_SCORES_HDF5_SUFFIX),
+                String.format("%s", outputPrefixAndVariantType + TrainVariantAnnotationsModel.TRAINING_SCORES_HDF5_SUFFIX));
+
+        SystemCommandUtilsTest.runH5Diff(
+                String.format("%s/%s", EXPECTED_TEST_FILES_DIR, tagAndVariantType + TrainVariantAnnotationsModel.CALIBRATION_SCORES_HDF5_SUFFIX),
+                String.format("%s", outputPrefixAndVariantType + TrainVariantAnnotationsModel.CALIBRATION_SCORES_HDF5_SUFFIX));
 
         assertScorerExpectedOutputs(tagAndVariantType, outputPrefixAndVariantType);
 
@@ -252,12 +252,13 @@ public final class TrainVariantAnnotationsModelIntegrationTest extends CommandLi
                 .apply(argsBuilderSNPPlusIndel);
         runCommandLine(argsBuilderSNPPlusIndel);
 
-        SystemCommandUtilsTest.runSystemCommand(String.format("h5diff %s %s",
+        SystemCommandUtilsTest.runH5Diff(
                 outputPrefixSNPOnly + ".snp" + TrainVariantAnnotationsModel.TRAINING_SCORES_HDF5_SUFFIX,
-                outputPrefixSNPPlusIndel + ".snp" + TrainVariantAnnotationsModel.TRAINING_SCORES_HDF5_SUFFIX));
-        SystemCommandUtilsTest.runSystemCommand(String.format("h5diff %s %s",
+                outputPrefixSNPPlusIndel + ".snp" + TrainVariantAnnotationsModel.TRAINING_SCORES_HDF5_SUFFIX);
+
+        SystemCommandUtilsTest.runH5Diff(
                 outputPrefixSNPOnly + ".snp" + TrainVariantAnnotationsModel.CALIBRATION_SCORES_HDF5_SUFFIX,
-                outputPrefixSNPPlusIndel + ".snp" + TrainVariantAnnotationsModel.CALIBRATION_SCORES_HDF5_SUFFIX));
+                outputPrefixSNPPlusIndel + ".snp" + TrainVariantAnnotationsModel.CALIBRATION_SCORES_HDF5_SUFFIX);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class) // python environment is required to run tool

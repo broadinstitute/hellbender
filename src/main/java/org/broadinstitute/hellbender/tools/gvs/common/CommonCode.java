@@ -3,7 +3,7 @@ package org.broadinstitute.hellbender.tools.gvs.common;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFConstants;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.hellbender.utils.genotyper.IndexedAlleleList;
 
 import java.util.ArrayList;

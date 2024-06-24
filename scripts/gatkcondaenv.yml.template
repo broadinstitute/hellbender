@@ -10,6 +10,8 @@
 # used by the testGATKPythonEnvironmentPackagePresent test in PythonEnvironmentIntegrationTest needs to be updated
 # to reflect the changes.
 #
+# NOTE: If you update any of the packages below, please make sure the main README is up to date with the latest package install information.
+#
 name: $condaEnvName
 channels:
 # if channels other than conda-forge are added and the channel order is changed (note that conda channel_priority is currently set to flexible),
@@ -20,7 +22,7 @@ dependencies:
 
 # core python dependencies
 - conda-forge::python=3.6.10        # do not update
-- pip=20.0.2                        # specifying channel may cause a warning to be emitted by conda
+- conda-forge::pip=21.3.1
 - conda-forge::mkl=2019.5           # MKL typically provides dramatic performance increases for theano, tensorflow, and other key dependencies
 - conda-forge::mkl-service=2.3.0
 - conda-forge::joblib=1.1.1         # must pin joblib - versions after 1.1.1 no longer support python 3.6

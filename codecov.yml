@@ -25,9 +25,15 @@ coverage:
         branches: null
         informational: true
 
+ignore:
+  - "src/test"
 
 comment:
   layout: "header, diff, changes, sunburst, uncovered, tree"
   branches: null
   behavior: default
   after_n_builds: 8 # Wait until all 8 of the test suite jacoco test builds have been uploaded before writing a comment to the pr (no more incomplete coverage report emails)
+
+# Disable line-by-line codecov comments in the github diff page
+github_checks:
+  annotations: false

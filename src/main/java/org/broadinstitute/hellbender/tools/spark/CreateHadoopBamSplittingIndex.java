@@ -1,5 +1,6 @@
 package org.broadinstitute.hellbender.tools.spark;
 
+import com.google.common.io.Files;
 import htsjdk.samtools.*;
 import htsjdk.samtools.BAMSBIIndexer;
 import htsjdk.samtools.seekablestream.SeekableFileStream;
@@ -18,7 +19,6 @@ import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.hellbender.utils.read.ReadConstants;
-import org.codehaus.plexus.util.FileUtils;
 import picard.cmdline.programgroups.OtherProgramGroup;
 
 import java.io.*;
@@ -166,7 +166,7 @@ public final class CreateHadoopBamSplittingIndex extends CommandLineProgram {
     private static void assertIsBam(final File inputBam) {
         if(!BamFileIoUtils.isBamFile(inputBam)) {
             throw new UserException.BadInput("A splitting index is only relevant for a bam file, but a "
-                    + "file with extension "+ FileUtils.getExtension(inputBam.getName()) + " was specified.");
+                    + "file with extension "+ Files.getFileExtension(inputBam.getName()) + " was specified.");
         }
     }
 

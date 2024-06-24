@@ -1,6 +1,6 @@
 package org.broadinstitute.hellbender.tools.funcotator.dataSources;
 
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.testng.Assert;
@@ -318,7 +318,7 @@ public class DataSourceUtilsUnitTest extends GATKBaseTest {
     }
 
     @DataProvider
-    private Iterator<Object[]> provideForTestVersionRegex() {
+    private Iterator<Object[]> provideForTestOldVersionRegex() {
 
         final ArrayList<Object[]> testArgs = new ArrayList<>();
 
@@ -343,6 +343,44 @@ public class DataSourceUtilsUnitTest extends GATKBaseTest {
                                     whitespaceString
                             }
                     );
+                }
+            }
+        }
+
+        return testArgs.iterator();
+
+    }
+
+    @DataProvider
+    private Iterator<Object[]> provideForTestNewVersionRegex() {
+
+        final ArrayList<Object[]> testArgs = new ArrayList<>();
+
+        final List<Object[]> baseArgs = createBaseTestVersionData();
+        final String[] refVersions = new String[] { "hg19", "hg38"};
+
+        for ( final Object[] args : baseArgs ) {
+            for ( int whitespace = 0; whitespace < 2; ++whitespace ) {
+                for ( int decoratorCount = 0; decoratorCount < 10; ++decoratorCount ) {
+                    for ( int refidx = 0; refidx < refVersions.length; ++refidx ) {
+
+                        // Some sanity checks here for proper version numbers:
+                        if (((Integer) args[0]) < 0 || ((Integer) args[1]) < 0) {
+                            continue;
+                        }
+
+                        final String whitespaceString = whitespace != 0 ? "\t \t \t " : " ";
+                        final String decoratorString = decoratorCount != 0 ? RandomStringUtils.randomAlphanumeric(decoratorCount) : "";
+
+                        testArgs.add(
+                                new Object[]{
+                                        args[0], args[1], args[2],
+                                        refVersions[refidx],
+                                        decoratorString,
+                                        whitespaceString
+                                }
+                        );
+                    }
                 }
             }
         }
@@ -409,10 +447,11 @@ public class DataSourceUtilsUnitTest extends GATKBaseTest {
     @Test
     public void testGetDataSourceMaxVersionString() {
         Assert.assertEquals(
-                DataSourceUtils.getDataSourceMaxVersionString(),
-                DataSourceUtils.getDataSourceVersionString(
+                DataSourceUtils.getDataSourceMaxVersionString(38),
+                DataSourceUtils.getNewDataSourceVersionString(
                         DataSourceUtils.MAX_MAJOR_VERSION_NUMBER,
                         DataSourceUtils.MAX_MINOR_VERSION_NUMBER,
+                        38,
                         DataSourceUtils.MAX_DATE
                 )
         );
@@ -430,8 +469,51 @@ public class DataSourceUtilsUnitTest extends GATKBaseTest {
         );
     }
 
-    @Test(dataProvider = "provideForTestVersionRegex")
-    public void testVersionRegex(final Integer major,
+    @Test(dataProvider = "provideForTestNewVersionRegex")
+    public void testNewVersionRegex(final Integer major,
+                                    final Integer minor,
+                                    final LocalDate releaseDate,
+                                    final String reference,
+                                    final String decorator,
+                                    final String leadingWhitespace ) {
+
+        // Construct the string:
+        final String versionString = String.format(
+                "%s%s%d.%d.%s.%4d%02d%02d%s",
+                DataSourceUtils.MANIFEST_VERSION_LINE_START,
+                leadingWhitespace,
+                major,
+                minor,
+                reference,
+                releaseDate.getYear(),
+                releaseDate.getMonthValue(),
+                releaseDate.getDayOfMonth(),
+                decorator
+        );
+
+        final Matcher matcher = DataSourceUtils.NEW_VERSION_PATTERN.matcher(versionString);
+
+        Assert.assertTrue(matcher.matches());
+
+        final Integer versionMajor     = Integer.valueOf(matcher.group(1));
+        final Integer versionMinor     = Integer.valueOf(matcher.group(2));
+        final Integer versionRef       = Integer.valueOf(matcher.group(3));
+        final Integer versionYear      = Integer.valueOf(matcher.group(4));
+        final Integer versionMonth     = Integer.valueOf(matcher.group(5));
+        final Integer versionDay       = Integer.valueOf(matcher.group(6));
+        final String  versionDecorator = matcher.group(7);
+
+        Assert.assertEquals( versionMajor, major );
+        Assert.assertEquals( versionMinor, minor );
+        Assert.assertEquals( "hg"+versionRef, reference );
+        Assert.assertEquals( versionYear.intValue(), releaseDate.getYear() );
+        Assert.assertEquals( versionMonth.intValue(), releaseDate.getMonthValue() );
+        Assert.assertEquals( versionDay.intValue(), releaseDate.getDayOfMonth() );
+        Assert.assertEquals( versionDecorator, decorator );
+    }
+
+    @Test(dataProvider = "provideForTestOldVersionRegex")
+    public void testOldVersionRegex(final Integer major,
                                  final Integer minor,
                                  final LocalDate releaseDate,
                                  final String decorator,
@@ -450,7 +532,7 @@ public class DataSourceUtilsUnitTest extends GATKBaseTest {
                 decorator
         );
 
-        final Matcher matcher = DataSourceUtils.VERSION_PATTERN.matcher(versionString);
+        final Matcher matcher = DataSourceUtils.OLD_VERSION_PATTERN.matcher(versionString);
 
         Assert.assertTrue(matcher.matches());
 
@@ -479,7 +561,10 @@ public class DataSourceUtilsUnitTest extends GATKBaseTest {
                         "." + DataSourceUtils.getDataSourceMinVersionString(),
                 DataSourceUtils.DATA_SOURCES_BUCKET_PATH +
                         DataSourceUtils.DATA_SOURCES_NAME_PREFIX +
-                        "." + DataSourceUtils.getDataSourceMaxVersionString()
+                        "." + DataSourceUtils.getDataSourceMaxVersionString(38),
+                DataSourceUtils.DATA_SOURCES_BUCKET_PATH +
+                        DataSourceUtils.DATA_SOURCES_NAME_PREFIX +
+                        "." + DataSourceUtils.getDataSourceMaxVersionString(19)
         );
         for (final String basePath : dataSourcesBasePaths) {
             for (final String useCaseModifier : Arrays.asList(DataSourceUtils.DS_SOMATIC_NAME_MODIFIER, DataSourceUtils.DS_GERMLINE_NAME_MODIFIER)) {

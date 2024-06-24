@@ -40,16 +40,17 @@ runs:
         name: test-results-${{ inputs.is-docker == 'true' && 'docker-' ||  '' }}${{ matrix.Java }}-${{ matrix.testType }}
         path: build/reports/tests
 
-    - name: Upload to codecov
-      run: bash <(curl -s https://raw.githubusercontent.com/broadinstitute/codecov-bash-uploader/main/codecov-verified.bash)
-      shell: bash
+          # Disabling codecov because it is timing out and failing builds that otherwise succeed.
+          ##    - name: Upload to codecov
+          ##      run: bash <(curl -s https://raw.githubusercontent.com/broadinstitute/codecov-bash-uploader/main/codecov-verified.bash)
+          ##      shell: bash
 
     - name: Upload Reports
       if: ${{ inputs.only-artifact != 'true' }}
       id: uploadreports
       run: |
         gsutil -m cp -z html -z js -z xml -z css -r build/reports/tests gs:/${{ env.HELLBENDER_TEST_LOGS }}${{ inputs.repo-path }}/;
-        VIEW_URL=https://storage.googleapis.com${{ env.HELLBENDER_TEST_LOGS }}${{ inputs.repo-path }}/tests/testOnPackagedReleaseJar/index.html
+        VIEW_URL=https://storage.googleapis.com${{ env.HELLBENDER_TEST_LOGS }}${{ inputs.repo-path }}/tests/test/index.html
         echo "See the test report at ${VIEW_URL}";
         echo view_url="${VIEW_URL}" >> $GITHUB_OUTPUT
 

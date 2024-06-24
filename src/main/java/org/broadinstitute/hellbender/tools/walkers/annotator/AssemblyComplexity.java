@@ -4,12 +4,13 @@ package org.broadinstitute.hellbender.tools.walkers.annotator;
 import htsjdk.samtools.util.Locatable;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.VariantContext;
-import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.broadinstitute.barclay.argparser.Argument;
 import org.apache.commons.lang3.tuple.Triple;
 import org.broadinstitute.barclay.help.DocumentedFeature;
 import org.broadinstitute.hellbender.engine.FeatureContext;
 import org.broadinstitute.hellbender.engine.ReferenceContext;
+import org.broadinstitute.hellbender.tools.walkers.annotator.allelespecific.AlleleSpecificAnnotation;
 import org.broadinstitute.hellbender.utils.MathUtils;
 import org.broadinstitute.hellbender.utils.genotyper.AlleleLikelihoods;
 import org.broadinstitute.hellbender.utils.haplotype.Event;
@@ -27,7 +28,7 @@ import java.util.stream.IntStream;
  */
 @DocumentedFeature(groupName= HelpConstants.DOC_CAT_ANNOTATORS, groupSummary=HelpConstants.DOC_CAT_ANNOTATORS_SUMMARY,
         summary="Describe the complexity of an assembly region")
-public class AssemblyComplexity implements JumboInfoAnnotation {
+public class AssemblyComplexity implements JumboInfoAnnotation, AlleleSpecificAnnotation {
 
     @Argument(fullName = "assembly-complexity-reference-mode",
             doc="If enabled will treat the reference as the basis for assembly complexity as opposed to estimated germline haplotypes",
@@ -189,5 +190,4 @@ public class AssemblyComplexity implements JumboInfoAnnotation {
     private static int editDistance(final Haplotype hap1, final Haplotype hap2, final int excludedPosition) {
         return uniqueVariants(hap1, hap2, excludedPosition) + uniqueVariants(hap2, hap1, excludedPosition);
     }
-
 }

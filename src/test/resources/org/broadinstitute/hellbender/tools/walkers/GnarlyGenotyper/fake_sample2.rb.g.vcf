@@ -1,0 +1,140 @@
+##fileformat=VCFv4.2
+##ALT=<ID=NON_REF,Description="Represents any possible alternative allele at this location">
+##FILTER=<ID=LowQual,Description="Low quality">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads with MQ=255 or with bad mates are filtered)">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=MIN_DP,Number=1,Type=Integer,Description="Minimum DP observed within the GVCF block">
+##FORMAT=<ID=PGT,Number=1,Type=String,Description="Physical phasing haplotype information, describing how the alternate alleles are phased in relation to one another">
+##FORMAT=<ID=PID,Number=1,Type=String,Description="Physical phasing ID information, where each unique ID within a given sample (but not across samples) connects records within a phasing group">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
+##FORMAT=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">
+##GATKCommandLine.HaplotypeCaller=<ID=HaplotypeCaller,Version=3.5-75-gcfe332a,Date="Thu Mar 17 14:29:20 EDT 2016",Epoch=1458239360191,CommandLineOptions="analysis_type=HaplotypeCaller input_file=[/seq/picard_aggregation/C1422/GTEX-RVPV-0003/v1/GTEX-RVPV-0003.bam] showFullBamList=false read_buffer_size=null phone_home=AWS gatk_key=null tag=NA read_filter=[] disable_read_filter=[] intervals=[20:10000000-11000000] excludeIntervals=null interval_set_rule=UNION interval_merging=ALL interval_padding=0 reference_sequence=/humgen/1kg/reference/human_g1k_v37_decoy.fasta nonDeterministicRandomSeed=false disableDithering=false maxRuntime=-1 maxRuntimeUnits=MINUTES downsampling_type=BY_SAMPLE downsample_to_fraction=null downsample_to_coverage=500 baq=OFF baqGapOpenPenalty=40.0 refactor_NDN_cigar_string=false fix_misencoded_quality_scores=false allow_potentially_misencoded_quality_scores=false useOriginalQualities=false defaultBaseQualities=-1 performanceLog=null BQSR=null quantize_quals=0 static_quantized_quals=null round_down_quantized=false disable_indel_quals=false emit_original_quals=false preserve_qscores_less_than=6 globalQScorePrior=-1.0 validation_strictness=SILENT remove_program_records=false keep_program_records=false sample_rename_mapping_file=null unsafe=null disable_auto_index_creation_and_locking_when_reading_rods=false no_cmdline_in_header=false sites_only=false never_trim_vcf_format_field=false bcf=false bam_compression=null simplifyBAM=false disable_bam_indexing=false generate_md5=false num_threads=1 num_cpu_threads_per_data_thread=1 num_io_threads=0 monitorThreadEfficiency=false num_bam_file_handles=null read_group_black_list=null pedigree=[] pedigreeString=[] pedigreeValidationType=STRICT allow_intervals_with_unindexed_bam=false generateShadowBCF=false variant_index_type=LINEAR variant_index_parameter=128000 reference_window_stop=0 logging_level=INFO log_to_file=null help=false version=false likelihoodCalculationEngine=PairHMM heterogeneousKmerSizeResolution=COMBO_MIN dbsnp=(RodBinding name= source=UNBOUND) dontTrimActiveRegions=false maxDiscARExtension=25 maxGGAARExtension=300 paddingAroundIndels=150 paddingAroundSNPs=20 comp=[] annotation=[DepthPerSampleHC, StrandBiasBySample, StrandBiasBySample] excludeAnnotation=[SpanningDeletions, TandemRepeatAnnotator, ChromosomeCounts, FisherStrand, StrandOddsRatio, QualByDepth] group=[Standard, StandardHCAnnotation] debug=false useFilteredReadsForAnnotations=false emitRefConfidence=GVCF bamOutput=null bamWriterType=CALLED_HAPLOTYPES disableOptimizations=false annotateNDA=false heterozygosity=0.001 indel_heterozygosity=1.25E-4 standard_min_confidence_threshold_for_calling=-0.0 standard_min_confidence_threshold_for_emitting=-0.0 max_alternate_alleles=6 input_prior=[] sample_ploidy=2 genotyping_mode=DISCOVERY alleles=(RodBinding name= source=UNBOUND) contamination_fraction_to_filter=0.0 contamination_fraction_per_sample_file=null p_nonref_model=null exactcallslog=null output_mode=EMIT_VARIANTS_ONLY allSitePLs=true gcpHMM=10 pair_hmm_implementation=VECTOR_LOGLESS_CACHING pair_hmm_sub_implementation=ENABLE_ALL always_load_vector_logless_PairHMM_lib=false phredScaledGlobalReadMismappingRate=45 noFpga=false sample_name=null kmerSize=[10, 25] dontIncreaseKmerSizesForCycles=false allowNonUniqueKmersInRef=false numPruningSamples=1 recoverDanglingHeads=false doNotRecoverDanglingBranches=false minDanglingBranchLength=4 consensus=false maxNumHaplotypesInPopulation=128 errorCorrectKmers=false minPruning=2 debugGraphTransformations=false allowCyclesInKmerGraphToGeneratePaths=false graphOutput=null kmerLengthForReadErrorCorrection=25 minObservationsForKmerToBeSolid=20 GVCFGQBands=[5, 20, 60] indelSizeToEliminateInRefModel=10 min_base_quality_score=10 includeUmappedReads=false useAllelesTrigger=false doNotRunPhysicalPhasing=false keepRG=null justDetermineActiveRegions=false dontGenotype=false dontUseSoftClippedBases=false captureAssemblyFailureBAM=false errorCorrectReads=false pcr_indel_model=CONSERVATIVE maxReadsInRegionPerSample=10000 minReadsPerAlignmentStart=10 mergeVariantsViaLD=false activityProfileOut=null activeRegionOut=null activeRegionIn=null activeRegionExtension=null forceActive=false activeRegionMaxSize=null bandPassSigma=null maxProbPropagationDistance=50 activeProbabilityThreshold=0.002 min_mapping_quality_score=20 filter_reads_with_N_cigar=false filter_mismatching_base_and_quals=false filter_bases_not_stored=false">
+##GATKCommandLine=<ID=ReblockGVCF,CommandLine="ReblockGVCF --output fake_sample2.rb.g.vcf --floor-blocks true --gvcf-gq-bands 20 --gvcf-gq-bands 30 --gvcf-gq-bands 40 --do-qual-score-approximation true --variant fake_sample2.vcf --reference /Users/gauthier/workspaces/gatk/src/test/resources/large/Homo_sapiens_assembly19.fasta.gz --use-posteriors-to-calculate-qual false --dont-use-dragstr-priors false --use-new-qual-calculator true --annotate-with-num-discovered-alleles false --heterozygosity 0.001 --indel-heterozygosity 1.25E-4 --heterozygosity-stdev 0.01 --standard-min-confidence-threshold-for-calling 30.0 --max-alternate-alleles 6 --max-genotype-count 1024 --sample-ploidy 2 --num-reference-samples-if-no-call 0 --genotype-assignment-method USE_PLS_TO_ASSIGN --drop-low-quals false --rgq-threshold-to-no-call 0.0 --tree-score-threshold-to-no-call 0.0 --allow-missing-hom-ref-data false --keep-all-alts false --keep-site-filters false --add-site-filters-to-genotype false --interval-set-rule UNION --interval-padding 0 --interval-exclusion-padding 0 --interval-merging-rule ALL --read-validation-stringency SILENT --seconds-between-progress-updates 10.0 --disable-sequence-dictionary-validation false --create-output-bam-index true --create-output-bam-md5 false --create-output-variant-index true --create-output-variant-md5 false --max-variants-per-shard 0 --lenient false --add-output-sam-program-record true --add-output-vcf-command-line true --cloud-prefetch-buffer 40 --cloud-index-prefetch-buffer -1 --disable-bam-index-caching false --sites-only-vcf-output false --help false --version false --showHidden false --verbosity INFO --QUIET false --use-jdk-deflater false --use-jdk-inflater false --gcs-max-retries 20 --gcs-project-for-requester-pays  --disable-tool-default-read-filters false --disable-tool-default-annotations false --enable-all-annotations false --allow-old-rms-mapping-quality-annotation-data false",Version="4.5.0.0-SNAPSHOT",Date="March 5, 2024 at 12:59:02 PM EST">
+##GVCFBlock0-20=minGQ=0(inclusive),maxGQ=20(exclusive)
+##GVCFBlock20-30=minGQ=20(inclusive),maxGQ=30(exclusive)
+##GVCFBlock30-40=minGQ=30(inclusive),maxGQ=40(exclusive)
+##GVCFBlock40-100=minGQ=40(inclusive),maxGQ=100(exclusive)
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">
+##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
+##INFO=<ID=AS_BaseQRankSum,Number=A,Type=Float,Description="allele specific Z-score from Wilcoxon rank sum test of each Alt Vs. Ref base qualities">
+##INFO=<ID=AS_FS,Number=A,Type=Float,Description="allele specific phred-scaled p-value using Fisher's exact test to detect strand bias of each alt allele">
+##INFO=<ID=AS_InbreedingCoeff,Number=A,Type=Float,Description="Allele-specific inbreeding coefficient as estimated from the genotype likelihoods per-sample when compared against the Hardy-Weinberg expectation">
+##INFO=<ID=AS_MQ,Number=A,Type=Float,Description="Allele-specific RMS Mapping Quality">
+##INFO=<ID=AS_MQRankSum,Number=A,Type=Float,Description="Allele-specific Mapping Quality Rank Sum">
+##INFO=<ID=AS_QD,Number=A,Type=Float,Description="Allele-specific Variant Confidence/Quality by Depth">
+##INFO=<ID=AS_QUALapprox,Number=1,Type=String,Description="Allele-specific QUAL approximations">
+##INFO=<ID=AS_ReadPosRankSum,Number=A,Type=Float,Description="allele specific Z-score from Wilcoxon rank sum test of each Alt vs. Ref read position bias">
+##INFO=<ID=AS_SOR,Number=A,Type=Float,Description="Allele specific strand Odds Ratio of 2x|Alts| contingency table to detect allele specific strand bias">
+##INFO=<ID=AS_VarDP,Number=1,Type=String,Description="Allele-specific (informative) depth over variant genotypes -- including ref, RAW format">
+##INFO=<ID=BaseQRankSum,Number=1,Type=Float,Description="Z-score from Wilcoxon rank sum test of Alt Vs. Ref base qualities">
+##INFO=<ID=ClippingRankSum,Number=1,Type=Float,Description="Z-score From Wilcoxon rank sum test of Alt vs. Ref number of hard clipped bases">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth; some reads may have been filtered">
+##INFO=<ID=END,Number=1,Type=Integer,Description="Stop position of the interval">
+##INFO=<ID=ExcessHet,Number=1,Type=Float,Description="Phred-scaled p-value for exact test of excess heterozygosity">
+##INFO=<ID=FS,Number=1,Type=Float,Description="Phred-scaled p-value using Fisher's exact test to detect strand bias">
+##INFO=<ID=InbreedingCoeff,Number=1,Type=Float,Description="Inbreeding coefficient as estimated from the genotype likelihoods per-sample when compared against the Hardy-Weinberg expectation">
+##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">
+##INFO=<ID=MQRankSum,Number=1,Type=Float,Description="Z-score From Wilcoxon rank sum test of Alt vs. Ref read mapping qualities">
+##INFO=<ID=MQ_DP,Number=1,Type=Integer,Description="Depth over variant samples for better MQ calculation (deprecated -- use RAW_MQandDP instead.)">
+##INFO=<ID=QD,Number=1,Type=Float,Description="Variant Confidence/Quality by Depth">
+##INFO=<ID=QUALapprox,Number=1,Type=Integer,Description="Sum of PL[0] values; used to approximate the QUAL score">
+##INFO=<ID=RAW_GT_COUNT,Number=3,Type=Integer,Description="Counts of genotypes w.r.t. the reference allele in the following order: 0/0, 0/*, */*, i.e. all alts lumped together; for use in calculating excess heterozygosity">
+##INFO=<ID=RAW_MQ,Number=1,Type=Float,Description="Raw data for RMS Mapping Quality (deprecated -- use RAW_MQandDP instead.)">
+##INFO=<ID=RAW_MQandDP,Number=2,Type=Integer,Description="Raw data (sum of squared MQ and total depth) for improved RMS Mapping Quality calculation. Incompatible with deprecated RAW_MQ formulation.">
+##INFO=<ID=ReadPosRankSum,Number=1,Type=Float,Description="Z-score from Wilcoxon rank sum test of Alt vs. Ref read position bias">
+##INFO=<ID=SOR,Number=1,Type=Float,Description="Symmetric Odds Ratio of 2x2 contingency table to detect strand bias">
+##INFO=<ID=VarDP,Number=1,Type=Integer,Description="(informative) depth over variant genotypes">
+##contig=<ID=1,length=249250621,assembly=b37>
+##contig=<ID=2,length=243199373,assembly=b37>
+##contig=<ID=3,length=198022430,assembly=b37>
+##contig=<ID=4,length=191154276,assembly=b37>
+##contig=<ID=5,length=180915260,assembly=b37>
+##contig=<ID=6,length=171115067,assembly=b37>
+##contig=<ID=7,length=159138663,assembly=b37>
+##contig=<ID=8,length=146364022,assembly=b37>
+##contig=<ID=9,length=141213431,assembly=b37>
+##contig=<ID=10,length=135534747,assembly=b37>
+##contig=<ID=11,length=135006516,assembly=b37>
+##contig=<ID=12,length=133851895,assembly=b37>
+##contig=<ID=13,length=115169878,assembly=b37>
+##contig=<ID=14,length=107349540,assembly=b37>
+##contig=<ID=15,length=102531392,assembly=b37>
+##contig=<ID=16,length=90354753,assembly=b37>
+##contig=<ID=17,length=81195210,assembly=b37>
+##contig=<ID=18,length=78077248,assembly=b37>
+##contig=<ID=19,length=59128983,assembly=b37>
+##contig=<ID=20,length=63025520,assembly=b37>
+##contig=<ID=21,length=48129895,assembly=b37>
+##contig=<ID=22,length=51304566,assembly=b37>
+##contig=<ID=X,length=155270560,assembly=b37>
+##contig=<ID=Y,length=59373566,assembly=b37>
+##contig=<ID=MT,length=16569,assembly=b37>
+##contig=<ID=GL000207.1,length=4262,assembly=b37>
+##contig=<ID=GL000226.1,length=15008,assembly=b37>
+##contig=<ID=GL000229.1,length=19913,assembly=b37>
+##contig=<ID=GL000231.1,length=27386,assembly=b37>
+##contig=<ID=GL000210.1,length=27682,assembly=b37>
+##contig=<ID=GL000239.1,length=33824,assembly=b37>
+##contig=<ID=GL000235.1,length=34474,assembly=b37>
+##contig=<ID=GL000201.1,length=36148,assembly=b37>
+##contig=<ID=GL000247.1,length=36422,assembly=b37>
+##contig=<ID=GL000245.1,length=36651,assembly=b37>
+##contig=<ID=GL000197.1,length=37175,assembly=b37>
+##contig=<ID=GL000203.1,length=37498,assembly=b37>
+##contig=<ID=GL000246.1,length=38154,assembly=b37>
+##contig=<ID=GL000249.1,length=38502,assembly=b37>
+##contig=<ID=GL000196.1,length=38914,assembly=b37>
+##contig=<ID=GL000248.1,length=39786,assembly=b37>
+##contig=<ID=GL000244.1,length=39929,assembly=b37>
+##contig=<ID=GL000238.1,length=39939,assembly=b37>
+##contig=<ID=GL000202.1,length=40103,assembly=b37>
+##contig=<ID=GL000234.1,length=40531,assembly=b37>
+##contig=<ID=GL000232.1,length=40652,assembly=b37>
+##contig=<ID=GL000206.1,length=41001,assembly=b37>
+##contig=<ID=GL000240.1,length=41933,assembly=b37>
+##contig=<ID=GL000236.1,length=41934,assembly=b37>
+##contig=<ID=GL000241.1,length=42152,assembly=b37>
+##contig=<ID=GL000243.1,length=43341,assembly=b37>
+##contig=<ID=GL000242.1,length=43523,assembly=b37>
+##contig=<ID=GL000230.1,length=43691,assembly=b37>
+##contig=<ID=GL000237.1,length=45867,assembly=b37>
+##contig=<ID=GL000233.1,length=45941,assembly=b37>
+##contig=<ID=GL000204.1,length=81310,assembly=b37>
+##contig=<ID=GL000198.1,length=90085,assembly=b37>
+##contig=<ID=GL000208.1,length=92689,assembly=b37>
+##contig=<ID=GL000191.1,length=106433,assembly=b37>
+##contig=<ID=GL000227.1,length=128374,assembly=b37>
+##contig=<ID=GL000228.1,length=129120,assembly=b37>
+##contig=<ID=GL000214.1,length=137718,assembly=b37>
+##contig=<ID=GL000221.1,length=155397,assembly=b37>
+##contig=<ID=GL000209.1,length=159169,assembly=b37>
+##contig=<ID=GL000218.1,length=161147,assembly=b37>
+##contig=<ID=GL000220.1,length=161802,assembly=b37>
+##contig=<ID=GL000213.1,length=164239,assembly=b37>
+##contig=<ID=GL000211.1,length=166566,assembly=b37>
+##contig=<ID=GL000199.1,length=169874,assembly=b37>
+##contig=<ID=GL000217.1,length=172149,assembly=b37>
+##contig=<ID=GL000216.1,length=172294,assembly=b37>
+##contig=<ID=GL000215.1,length=172545,assembly=b37>
+##contig=<ID=GL000205.1,length=174588,assembly=b37>
+##contig=<ID=GL000219.1,length=179198,assembly=b37>
+##contig=<ID=GL000224.1,length=179693,assembly=b37>
+##contig=<ID=GL000223.1,length=180455,assembly=b37>
+##contig=<ID=GL000195.1,length=182896,assembly=b37>
+##contig=<ID=GL000212.1,length=186858,assembly=b37>
+##contig=<ID=GL000222.1,length=186861,assembly=b37>
+##contig=<ID=GL000200.1,length=187035,assembly=b37>
+##contig=<ID=GL000193.1,length=189789,assembly=b37>
+##contig=<ID=GL000194.1,length=191469,assembly=b37>
+##contig=<ID=GL000225.1,length=211173,assembly=b37>
+##contig=<ID=GL000192.1,length=547496,assembly=b37>
+##contig=<ID=NC_007605,length=171823,assembly=b37>
+##contig=<ID=hs37d5,length=35477943,assembly=b37>
+##reference=file:///humgen/1kg/reference/human_g1k_v37_decoy.fasta
+##source=ReblockGVCF
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	FAKE_SAMPLE
+20	10000000	.	T	G,<NON_REF>	22.58	.	AS_QUALapprox=|89|0;AS_VarDP=0|2|0;DP=2;MQ_DP=2;QUALapprox=89;RAW_GT_COUNT=0,0,1;RAW_MQ=7200.00;RAW_MQandDP=7200,2;VarDP=2	GT:AD:DP:GQ:PL:SB	1/1:0,2,0:2:6:49,6,0,49,6,49:0,0,1,1
+20	10005724	.	A	<NON_REF>	.	.	END=10012713	GT:DP:GQ	0/0:1:0

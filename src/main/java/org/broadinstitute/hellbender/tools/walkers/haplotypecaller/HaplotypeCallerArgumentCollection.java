@@ -1,7 +1,10 @@
 package org.broadinstitute.hellbender.tools.walkers.haplotypecaller;
 
+import htsjdk.tribble.NamedFeature;
 import htsjdk.variant.variantcontext.VariantContext;
+import org.apache.arrow.util.VisibleForTesting;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.SerializationUtils;
 import org.broadinstitute.barclay.argparser.Advanced;
 import org.broadinstitute.barclay.argparser.Argument;
 import org.broadinstitute.barclay.argparser.ArgumentCollection;
@@ -9,6 +12,7 @@ import org.broadinstitute.barclay.argparser.Hidden;
 import org.broadinstitute.hellbender.cmdline.ReadFilterArgumentDefinitions;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
 import org.broadinstitute.hellbender.cmdline.argumentcollections.DbsnpArgumentCollection;
+import org.broadinstitute.hellbender.engine.FeatureDataSource;
 import org.broadinstitute.hellbender.engine.FeatureInput;
 import org.broadinstitute.hellbender.engine.GATKPath;
 import org.broadinstitute.hellbender.engine.spark.AssemblyRegionArgumentCollection;
@@ -23,8 +27,10 @@ import java.util.List;
 /**
  * Set of arguments for the {@link HaplotypeCallerEngine}
  */
-public class HaplotypeCallerArgumentCollection extends AssemblyBasedCallerArgumentCollection implements Serializable{
+public class HaplotypeCallerArgumentCollection extends AssemblyBasedCallerArgumentCollection implements Serializable {
     private static final long serialVersionUID = 1L;
+
+    public static final String PLOIDY_REGIONS_NAME = "ploidy-regions";
 
     public static final String GQ_BAND_LONG_NAME = "gvcf-gq-bands";
     public static final String GQ_BAND_SHORT_NAME = "GQB";
@@ -60,6 +66,9 @@ public class HaplotypeCallerArgumentCollection extends AssemblyBasedCallerArgume
     protected ReadThreadingAssemblerArgumentCollection getReadThreadingAssemblerArgumentCollection() {
         return new HaplotypeCallerReadThreadingAssemblerArgumentCollection();
     }
+
+    @Argument(fullName = PLOIDY_REGIONS_NAME, shortName = PLOIDY_REGIONS_NAME, doc = "Interval file with column specifying desired ploidy for genotyping models. Overrides default ploidy and user-provided --ploidy argument in specific regions.", optional = true)
+    public FeatureInput<NamedFeature> ploidyRegions = null;
 
     /**
      * You can use this argument to specify that HC should process a single sample out of a multisample BAM file. This
@@ -312,6 +321,12 @@ public class HaplotypeCallerArgumentCollection extends AssemblyBasedCallerArgume
         return flowMode != FlowMode.NONE;
     }
 
+    // Copy method used to create new hcArgs with same fields except input ploidy model
+    public HaplotypeCallerArgumentCollection copyWithNewPloidy(int ploidy) {
+        HaplotypeCallerArgumentCollection newArgsWithNewPloidy = SerializationUtils.clone(this);
+        newArgsWithNewPloidy.standardArgs.genotypeArgs.samplePloidy = ploidy;
+        return newArgsWithNewPloidy;
+    }
 
     /**
      * the different flow modes, in terms of their parameters and their values

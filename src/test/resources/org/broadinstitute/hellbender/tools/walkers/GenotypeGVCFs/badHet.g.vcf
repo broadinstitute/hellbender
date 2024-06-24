@@ -1,0 +1,83 @@
+##fileformat=VCFv4.2
+##ALT=<ID=NON_REF,Description="Represents any possible alternative allele at this location">
+##FILTER=<ID=LowQual,Description="Low quality">
+##FILTER=<ID=PASS,Description="All filters passed">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads with MQ=255 or with bad mates are filtered)">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=MIN_DP,Number=1,Type=Integer,Description="Minimum DP observed within the GVCF block">
+##FORMAT=<ID=PGT,Number=1,Type=String,Description="Physical phasing haplotype information, describing how the alternate alleles are phased in relation to one another">
+##FORMAT=<ID=PID,Number=1,Type=String,Description="Physical phasing ID information, where each unique ID within a given sample (but not across samples) connects records within a phasing group">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
+##FORMAT=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">
+##GATKCommandLine=<ID=GenomicsDBImport,CommandLine="GenomicsDBImport --genomicsdb-workspace-path genomicsdb --batch-size 50 --consolidate true --sample-name-map /cromwell_root/broad-gotc-test-storage/joint_genotyping/exome/plumbing/callset/reblocked_plumbing_sample_map --merge-input-intervals true --reader-threads 5 --intervals /cromwell_root/broad-gotc-dev-cromwell-execution/TestJointGenotyping/29abbc62-6c81-49da-a4e6-d2709dc7ff09/call-JointGenotyping/JointGenotyping/2e324bf8-274e-4325-9d51-02bb6bff2bce/call-SplitIntervalList/glob-d928cd0f5fb17b6bd5e635f48c18ccfb/0009-scattered.interval_list --genomicsdb-segment-size 1048576 --genomicsdb-vcf-buffer-size 16384 --overwrite-existing-genomicsdb-workspace false --validate-sample-name-map false --max-num-intervals-to-import-in-parallel 1 --merge-contigs-into-num-partitions 0 --genomicsdb-shared-posixfs-optimizations false --bypass-feature-reader false --avoid-nio false --genomicsdb-use-gcs-hdfs-connector false --interval-set-rule UNION --interval-padding 0 --interval-exclusion-padding 0 --interval-merging-rule ALL --read-validation-stringency SILENT --seconds-between-progress-updates 10.0 --disable-sequence-dictionary-validation false --create-output-bam-index true --create-output-bam-md5 false --create-output-variant-index true --create-output-variant-md5 false --max-variants-per-shard 0 --lenient false --add-output-sam-program-record true --add-output-vcf-command-line true --cloud-prefetch-buffer 0 --cloud-index-prefetch-buffer 0 --disable-bam-index-caching false --sites-only-vcf-output false --help false --version false --showHidden false --verbosity INFO --QUIET false --use-jdk-deflater false --use-jdk-inflater false --gcs-max-retries 20 --gcs-project-for-requester-pays  --disable-tool-default-read-filters false",Version="4.5.0.0",Date="December 18, 2023 at 4:35:43 PM GMT">
+##GATKCommandLine=<ID=SelectVariants,CommandLine="SelectVariants --output badHet.g.vcf --call-genotypes true --variant gendb://genomicsdb --intervals chr22:45740679 --reference /Users/gauthier/workspaces/gatk/src/test/resources/large/Homo_sapiens_assembly38.fasta.gz --apply-jexl-filters-first false --invertSelect false --exclude-non-variants false --exclude-filtered false --preserve-alleles false --remove-unused-alternates false --restrict-alleles-to ALL --keep-original-ac false --keep-original-dp false --mendelian-violation false --invert-mendelian-violation false --mendelian-violation-qual-threshold 0.0 --select-random-fraction 1.0 --remove-fraction-genotypes 0.0 --ignore-non-ref-in-types false --fully-decode false --max-indel-size 2147483647 --min-indel-size 0 --max-filtered-genotypes 2147483647 --min-filtered-genotypes 0 --max-fraction-filtered-genotypes 1.0 --min-fraction-filtered-genotypes 0.0 --max-nocall-number 2147483647 --max-nocall-fraction 1.0 --set-filtered-gt-to-nocall false --allow-nonoverlapping-command-line-samples false --suppress-reference-path false --fail-on-unsorted-genotype false --genomicsdb-max-alternate-alleles 50 --genomicsdb-use-bcf-codec false --genomicsdb-shared-posixfs-optimizations false --genomicsdb-use-gcs-hdfs-connector false --interval-set-rule UNION --interval-padding 0 --interval-exclusion-padding 0 --interval-merging-rule ALL --read-validation-stringency SILENT --seconds-between-progress-updates 10.0 --disable-sequence-dictionary-validation false --create-output-bam-index true --create-output-bam-md5 false --create-output-variant-index true --create-output-variant-md5 false --max-variants-per-shard 0 --lenient false --add-output-sam-program-record true --add-output-vcf-command-line true --cloud-prefetch-buffer 40 --cloud-index-prefetch-buffer -1 --disable-bam-index-caching false --sites-only-vcf-output false --help false --version false --showHidden false --verbosity INFO --QUIET false --use-jdk-deflater false --use-jdk-inflater false --gcs-max-retries 20 --gcs-project-for-requester-pays  --disable-tool-default-read-filters false",Version="4.5.0.0-23-g91920d3-SNAPSHOT",Date="April 3, 2024 at 10:58:08 AM EDT">
+##GVCFBlock0-20=minGQ=0(inclusive),maxGQ=20(exclusive)
+##GVCFBlock20-30=minGQ=20(inclusive),maxGQ=30(exclusive)
+##GVCFBlock30-40=minGQ=30(inclusive),maxGQ=40(exclusive)
+##GVCFBlock40-100=minGQ=40(inclusive),maxGQ=100(exclusive)
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">
+##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
+##INFO=<ID=AS_BaseQRankSum,Number=A,Type=Float,Description="allele specific Z-score from Wilcoxon rank sum test of each Alt Vs. Ref base qualities">
+##INFO=<ID=AS_FS,Number=A,Type=Float,Description="allele specific phred-scaled p-value using Fisher's exact test to detect strand bias of each alt allele">
+##INFO=<ID=AS_InbreedingCoeff,Number=A,Type=Float,Description="Allele-specific inbreeding coefficient as estimated from the genotype likelihoods per-sample when compared against the Hardy-Weinberg expectation">
+##INFO=<ID=AS_MQ,Number=A,Type=Float,Description="Allele-specific RMS Mapping Quality">
+##INFO=<ID=AS_MQRankSum,Number=A,Type=Float,Description="Allele-specific Mapping Quality Rank Sum">
+##INFO=<ID=AS_QD,Number=A,Type=Float,Description="Allele-specific Variant Confidence/Quality by Depth">
+##INFO=<ID=AS_QUALapprox,Number=1,Type=String,Description="Allele-specific QUAL approximations">
+##INFO=<ID=AS_RAW_BaseQRankSum,Number=1,Type=String,Description="raw data for allele specific rank sum test of base qualities">
+##INFO=<ID=AS_RAW_MQ,Number=1,Type=String,Description="Allele-specfic raw data for RMS Mapping Quality">
+##INFO=<ID=AS_RAW_MQRankSum,Number=1,Type=String,Description="Allele-specfic raw data for Mapping Quality Rank Sum">
+##INFO=<ID=AS_RAW_ReadPosRankSum,Number=1,Type=String,Description="allele specific raw data for rank sum test of read position bias">
+##INFO=<ID=AS_ReadPosRankSum,Number=A,Type=Float,Description="allele specific Z-score from Wilcoxon rank sum test of each Alt vs. Ref read position bias">
+##INFO=<ID=AS_SB_TABLE,Number=1,Type=String,Description="Allele-specific forward/reverse read counts for strand bias tests">
+##INFO=<ID=AS_SOR,Number=A,Type=Float,Description="Allele specific strand Odds Ratio of 2x|Alts| contingency table to detect allele specific strand bias">
+##INFO=<ID=AS_VarDP,Number=1,Type=String,Description="Allele-specific (informative) depth over variant genotypes -- including ref, RAW format">
+##INFO=<ID=BaseQRankSum,Number=1,Type=Float,Description="Z-score from Wilcoxon rank sum test of Alt Vs. Ref base qualities">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth; some reads may have been filtered">
+##INFO=<ID=END,Number=1,Type=Integer,Description="Stop position of the interval">
+##INFO=<ID=ExcessHet,Number=1,Type=Float,Description="Phred-scaled p-value for exact test of excess heterozygosity">
+##INFO=<ID=FS,Number=1,Type=Float,Description="Phred-scaled p-value using Fisher's exact test to detect strand bias">
+##INFO=<ID=InbreedingCoeff,Number=1,Type=Float,Description="Inbreeding coefficient as estimated from the genotype likelihoods per-sample when compared against the Hardy-Weinberg expectation">
+##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">
+##INFO=<ID=MQRankSum,Number=1,Type=Float,Description="Z-score From Wilcoxon rank sum test of Alt vs. Ref read mapping qualities">
+##INFO=<ID=MQ_DP,Number=1,Type=Integer,Description="Depth over variant samples for better MQ calculation (deprecated -- use RAW_MQandDP instead.)">
+##INFO=<ID=QD,Number=1,Type=Float,Description="Variant Confidence/Quality by Depth">
+##INFO=<ID=QUALapprox,Number=1,Type=Integer,Description="Sum of PL[0] values; used to approximate the QUAL score">
+##INFO=<ID=RAW_GT_COUNT,Number=3,Type=Integer,Description="Counts of genotypes w.r.t. the reference allele: 0/0, 0/*, */*, i.e. all alts lumped together; for use in calculating excess heterozygosity">
+##INFO=<ID=RAW_MQandDP,Number=2,Type=Integer,Description="Raw data (sum of squared MQ and total depth) for improved RMS Mapping Quality calculation. Incompatible with deprecated RAW_MQ formulation.">
+##INFO=<ID=ReadPosRankSum,Number=1,Type=Float,Description="Z-score from Wilcoxon rank sum test of Alt vs. Ref read position bias">
+##INFO=<ID=SOR,Number=1,Type=Float,Description="Symmetric Odds Ratio of 2x2 contingency table to detect strand bias">
+##INFO=<ID=VarDP,Number=1,Type=Integer,Description="(informative) depth over variant genotypes">
+##contig=<ID=chr1,length=248956422,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr2,length=242193529,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr3,length=198295559,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr4,length=190214555,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr5,length=181538259,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr6,length=170805979,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr7,length=159345973,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr8,length=145138636,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr9,length=138394717,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr10,length=133797422,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr11,length=135086622,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr12,length=133275309,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr13,length=114364328,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr14,length=107043718,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr15,length=101991189,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr16,length=90338345,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr17,length=83257441,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr18,length=80373285,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr19,length=58617616,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr20,length=64444167,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr21,length=46709983,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chr22,length=50818468,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chrX,length=156040895,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chrY,length=57227415,assembly=Homo_sapiens_assembly38.fasta.gz>
+##contig=<ID=chrM,length=16569,assembly=Homo_sapiens_assembly38.fasta.gz>
+##reference=file:///Users/gauthier/workspaces/gatk/src/test/resources/large/Homo_sapiens_assembly38.fasta.gz
+##source=GenomicsDBImport
+##source=SelectVariants
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	CHMI_CHMI3_Nex1	NA12878	NA12891	NA12892	NA19238	NA20845	NA20846	NA20847	NA20849	NA20850	NA20851	NA20852	NA20853	NA20854	NA20856	NA20858	NA20859	NA20861	NA20862	NA20866	NA20869	NA20870	NA20871	NA20872	NA20873	NA20874	NA20875	NA20876	NA20877	NA20878	NA20881	NA20885	NA20886	NA20887	NA20888	NA20889	NA20890	NA20891	NA20892	NA20893	NA20894	NA20895	NA20896	NA20897	NA20898	NA20899	NA20901	NA20902	NA20903	NA20904	NA20905	NA20906	NA20908	NA20910	NA20911	NA21086	NA21087	NA21088	NA21093	NA21095	NA21114	NA21124	NA21126	NA21129	NA21137
+chr22	45740679	.	TACACACACAC	TACAC,TACACAC,T,<NON_REF>	.	.	AS_QUALapprox=|2241|2023|45|0;AS_RAW_BaseQRankSum=||||;AS_RAW_MQ=0.000|152800.000|122675.000|3600.000|0.000;AS_RAW_MQRankSum=||||;AS_RAW_ReadPosRankSum=||||;AS_SB_TABLE=0,0|0,43|0,30|0,0|0,0;AS_VarDP=0|43|34|0|0;DP=446;QUALapprox=3233;RAW_GT_COUNT=0,1,7;RAW_MQandDP=574275,161;VarDP=82	GT:AD:GQ:PGT:PID:PL:SB:DP	1/2:0,4,10,0,0:60:.:.:573,301,314,103,0,60,505,324,106,498,505,324,106,498,498:0,0,0,14:14	1/2:0,20,10,0,0:99:.:.:1251,303,213,663,0,590,1128,296,653,1072,1128,296,653,1072,1072:0,0,0,30:30	1/2:0,19,10,0,0:99:.:.:1147,287,216,588,0,514,1033,288,580,983,1033,288,580,983,983:0,0,0,29:29	2/2:0,0,1,0,0:4:0|1:45740679_TACAC_T:46,46,46,4,4,0,46,46,4,46,46,46,4,46,46:0,0,0,1:1	0/0:.:0:.:.:.:.:5	0/3:0,0,0,0,0:0:.:.:1,1,1,1,1,1,0,0,0,0,1,1,1,0,1:0,0,0,0:0	0/0:.:0:.:.:.:.:9	0/0:.:0:.:.:.:.:6	0/0:.:0:.:.:.:.:5	0/0:.:0:.:.:.:.:5	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:6	0/0:.:0:.:.:.:.:5	0/0:.:0:.:.:.:.:6	3/3:0,0,0,1,0:3:.:.:45,45,45,45,45,45,3,3,3,0,45,45,45,3,45:0,0,0,1:1	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:3	0/0:.:0:.:.:.:.:5	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:3	0/0:.:0:.:.:.:.:7	0/0:.:0:.:.:.:.:6	0/0:.:0:.:.:.:.:6	0/0:.:0:.:.:.:.:8	0/0:.:0:.:.:.:.:5	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:3	0/0:.:0:.:.:.:.:9	0/0:.:0:.:.:.:.:5	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:6	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:6	0/0:.:0:.:.:.:.:7	2/2:0,0,2,0,0:6:0|1:45740679_TACAC_T:90,90,90,6,6,0,90,90,6,90,90,90,6,90,90:0,0,0,2:2	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:7	0/0:.:0:.:.:.:.:6	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:5	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:8	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:3	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:6	0/0:.:0:.:.:.:.:5	0/0:.:0:.:.:.:.:3	0/0:.:0:.:.:.:.:6	0/0:.:0:.:.:.:.:5	2/2:0,0,2,0,0:6:0|1:45740679_TACAC_T:80,80,80,6,6,0,80,80,6,80,80,80,6,80,80:0,0,0,2:2	0/0:.:0:.:.:.:.:5	0/0:.:0:.:.:.:.:6	0/0:.:0:.:.:.:.:3	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:3	0/0:.:0:.:.:.:.:5	0/0:.:0:.:.:.:.:5	0/0:.:0:.:.:.:.:6	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:4	0/0:.:0:.:.:.:.:4

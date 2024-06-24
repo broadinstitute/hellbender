@@ -20,6 +20,16 @@ public abstract class GATKReadFilterArgumentCollection implements Serializable {
     public abstract List<String> getUserEnabledReadFilterNames();
 
     /**
+     * Returns the inverted enabled read filters. Applied after the regular read filters. Order should be honored.
+     */
+    public abstract List<String> getUserEnabledInvertedReadFilterNames();
+
+    /**
+     * Returns the union of all of the user enabled read filters and the user enabled inverted read filters.
+     */
+    public abstract List<String> getAllUserEnabledReadFilterNames();
+
+    /**
      * Returns the disabled read filter names. Order should be honored.
      */
     public abstract List<String> getUserDisabledReadFilterNames();

@@ -1,7 +1,7 @@
 package org.broadinstitute.hellbender.tools.walkers.vqsr;
 
 import htsjdk.tribble.TribbleException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.hellbender.CommandLineProgramTest;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.testutils.ArgumentsBuilder;

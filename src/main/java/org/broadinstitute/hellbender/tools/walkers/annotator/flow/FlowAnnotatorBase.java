@@ -4,6 +4,7 @@ import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.VariantContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
 import org.broadinstitute.hellbender.engine.ReferenceContext;
 import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.tools.walkers.annotator.InfoFieldAnnotation;
@@ -33,7 +34,6 @@ import java.util.stream.Collectors;
  * are accumulated as well.
  */
 public abstract class FlowAnnotatorBase implements InfoFieldAnnotation {
-    private final static Logger logger = LogManager.getLogger(FlowAnnotatorBase.class);
     protected final OneShotLogger flowMissingOneShotLogger = new OneShotLogger(FlowAnnotatorBase.class);
 
 
@@ -149,7 +149,7 @@ public abstract class FlowAnnotatorBase implements InfoFieldAnnotation {
         // if here, no flow order was found. may we use a default?
         if ( isActualFlowOrderRequired() ) {
             localContext.generateAnnotation = false;
-            flowMissingOneShotLogger.warn("this.getClass().getSimpleName() + \" annotation will not be calculated, no '\" + StandardArgumentDefinitions.FLOW_ORDER_FOR_ANNOTATIONS + \"' argument provided\"");
+            flowMissingOneShotLogger.warn(this.getClass().getSimpleName() + " annotation will not be calculated, no '" + StandardArgumentDefinitions.FLOW_ORDER_FOR_ANNOTATIONS + "' argument provided");
         }
 
         return FlowBasedRead.DEFAULT_FLOW_ORDER;
@@ -201,7 +201,7 @@ public abstract class FlowAnnotatorBase implements InfoFieldAnnotation {
             if (isSpecial(alleles.get(i))){
                 continue;
             }
-            if ((localContext.hmerIndelLength.get(i)==null) || (localContext.hmerIndelLength.get(i)==0)){
+            if ((localContext.hmerIndelLength==null) || (localContext.hmerIndelLength.get(i)==null) || (localContext.hmerIndelLength.get(i)==0)){
                 isHmer=false;
             }
         }
@@ -249,7 +249,12 @@ public abstract class FlowAnnotatorBase implements InfoFieldAnnotation {
             // get byte before and after
             final byte        before = getReferenceNucleotide(localContext, vc.getStart() - 1);
             final byte[]      after = getReferenceHmerPlus(localContext, vc.getEnd() + 1, MOTIF_SIZE);
-
+            if (after.length==0){
+                flowMissingOneShotLogger.warn("Failed to get hmer from reference, probably because the " +
+                        "variant is very close to the end of the chromosome, isHmerIndel and RightMotif annotations will not be calculated. " +
+                        "Variant position: " + vc.getContig() + ":" + vc.getEnd() + 1);
+                return;
+            }
             // build two haplotypes. add byte before and after
             final byte[]      refHap = buildHaplotype(before, ref.getBases(), after);
             final byte[]      altHap = buildHaplotype(before, alt.getBases(), after);
@@ -337,6 +342,12 @@ public abstract class FlowAnnotatorBase implements InfoFieldAnnotation {
             }
 
             String  motif = getRefMotif(localContext, vc.getStart() - MOTIF_SIZE, MOTIF_SIZE);
+            if (motif.length() != MOTIF_SIZE){
+                flowMissingOneShotLogger.warn("Failed to get motif from reference, probably because the variant is very close to the " +
+                        "start of the chromosome. LeftMotif annotation will not be calculated. " +
+                        "Variant position: " + vc.getContig() + ":" + vc.getStart());
+                return;
+            }
             if ( a.length() != refLength ) {
                 motif = motif.substring(1) + vc.getReference().getBaseString().substring(0, 1);
             }
@@ -349,8 +360,13 @@ public abstract class FlowAnnotatorBase implements InfoFieldAnnotation {
     protected void getRightMotif(final VariantContext vc, final LocalContext localContext) {
 
         final int         refLength = vc.getReference().length();
-        final String      motif = getRefMotif(localContext, vc.getStart() + refLength, MOTIF_SIZE);
-
+        String      motif = getRefMotif(localContext, vc.getStart() + refLength, MOTIF_SIZE);
+        if (motif.length() != MOTIF_SIZE){
+            flowMissingOneShotLogger.warn("Failed to get motif from reference, probably because " +
+                    "the variant is close to the end of the chromosome. RightMotif annotation will not be calculated. " +
+                    "Variant position: " + vc.getContig() + ":" + vc.getStart());
+            return;
+        }
         // fill empty entries (non indel alelles)
         for ( int i = 0 ; i < localContext.rightMotif.size() ; i++ ) {
             if ( localContext.rightMotif.get(i) == null ) {
@@ -365,6 +381,11 @@ public abstract class FlowAnnotatorBase implements InfoFieldAnnotation {
 
         final int         begin = vc.getStart() - (GC_CONTENT_SIZE / 2);
         final String      seq = getRefMotif(localContext, begin + 1, GC_CONTENT_SIZE);
+        if ( seq.length() != GC_CONTENT_SIZE ) {
+            flowMissingOneShotLogger.warn("gcContent will not be calculated at position " + vc.getContig() + ":" + vc.getStart() +
+                    " because the variant is too close to the edge of the chromosome");
+            return;
+        }
         int         gcCount = 0;
         for ( byte b : seq.getBytes() ) {
             if ( b == 'G' || b == 'C' ) {
@@ -423,11 +444,11 @@ public abstract class FlowAnnotatorBase implements InfoFieldAnnotation {
         localContext.attributes.put(GATKVCFConstants.FLOW_CYCLESKIP_STATUS, css);
     }
 
-    // get a single nucleoid from reference
+    // get a single nucleotid from reference
     private byte getReferenceNucleotide(final LocalContext localContext, final int start) {
         final int         index = start - localContext.ref.getWindow().getStart();
         final byte[]      bases = localContext.ref.getBases();
-        Utils.validIndex(index, bases.length);
+        Utils.validIndex(index, bases.length); // do not catch, if here the location is outside of the reference, there is a problem!
         return bases[index];
     }
 
@@ -435,7 +456,13 @@ public abstract class FlowAnnotatorBase implements InfoFieldAnnotation {
     private byte[] getReferenceHmerPlus(final LocalContext localContext, final int start, final int additional) {
         int               index = start - localContext.ref.getWindow().getStart();
         final byte[]      bases = localContext.ref.getBases();
-        Utils.validIndex(index, bases.length);
+        try {
+            Utils.validIndex(index, bases.length);
+        } catch (IllegalArgumentException e) {
+            flowMissingOneShotLogger.warn("Failed to get hmer from reference, too close to the edge. " +
+                    "Position: " + localContext.ref.getContig() + ":" + index);
+            return new byte[0];
+        }
 
         // get hmer
         final StringBuilder sb = new StringBuilder();
@@ -457,8 +484,12 @@ public abstract class FlowAnnotatorBase implements InfoFieldAnnotation {
         final byte[]      bases = localContext.ref.getBases();
         final int         startIndex = start - localContext.ref.getWindow().getStart();
         final int         endIndex = startIndex + length;
-        Utils.validIndex(startIndex, bases.length);
-        Utils.validIndex(endIndex-1, bases.length);
+        try {
+            Utils.validIndex(startIndex, bases.length);
+            Utils.validIndex(endIndex-1, bases.length);
+        } catch (IllegalArgumentException e) {
+            return "";
+        }
         return new String(Arrays.copyOfRange(bases, startIndex, endIndex));
     }
 

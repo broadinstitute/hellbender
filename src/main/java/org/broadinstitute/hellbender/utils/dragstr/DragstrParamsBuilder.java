@@ -1,6 +1,6 @@
 package org.broadinstitute.hellbender.utils.dragstr;
 
-import org.apache.commons.lang.math.IntRange;
+import org.apache.commons.lang3.Range;
 import org.broadinstitute.hellbender.utils.Utils;
 
 /**
@@ -23,8 +23,8 @@ public final class DragstrParamsBuilder {
         this.api = new double[maxPeriod][maxRepeats];
     }
 
-    public void set(final int period, final IntRange repeatRange, final double gp, final double gcp, final double api) {
-        for (int i = repeatRange.getMinimumInteger(); i <= repeatRange.getMaximumInteger(); i++) {
+    public void set(final int period, final Range<Integer> repeatRange, final double gp, final double gcp, final double api) {
+        for (int i = repeatRange.getMinimum(); i <= repeatRange.getMaximum(); i++) {
             set(period, i, gp, gcp, api);
         }
     }

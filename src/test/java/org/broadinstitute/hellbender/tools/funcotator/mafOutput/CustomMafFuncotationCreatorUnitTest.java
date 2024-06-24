@@ -21,9 +21,9 @@ import org.broadinstitute.hellbender.tools.funcotator.dataSources.vcf.VcfFuncota
 import org.broadinstitute.hellbender.tools.funcotator.metadata.FuncotationMetadataUtils;
 import org.broadinstitute.hellbender.tools.funcotator.metadata.TumorNormalPair;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
+import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.hellbender.utils.test.FuncotatorTestUtils;
-import org.codehaus.plexus.util.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -183,7 +183,7 @@ public class CustomMafFuncotationCreatorUnitTest extends GATKBaseTest {
         final List<Funcotation> funcotations = vcfFuncotationFactory.createFuncotations(variant, referenceContext, featureContext);
         Assert.assertTrue(funcotations.size() > 0);
         for (final Funcotation f : funcotations) {
-            Assert.assertEquals(StringUtils.split(f.getField(DBSNP_DS_NAME + "_VLD"), "|").length, vcfFuncotationSourceMap.get(DBSNP_DS_NAME).size());
+            Assert.assertEquals(Utils.split(f.getField(DBSNP_DS_NAME + "_VLD"), "|").size(), vcfFuncotationSourceMap.get(DBSNP_DS_NAME).size());
         }
 
         final List<Funcotation> customDbSnpFuncotations = CustomMafFuncotationCreator.createCustomMafDbSnpFields(funcotations);

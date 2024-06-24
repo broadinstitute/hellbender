@@ -1220,4 +1220,26 @@ public class MafOutputRendererUnitTest extends GATKBaseTest {
         maf.getRecords().forEach(r -> Assert.assertTrue(r.hasAnnotation("FAKEDATA_BAZ")));
         maf.getRecords().forEach(r -> Assert.assertEquals(r.getAnnotationValue("FAKEDATA_BAZ"), "_%09_YES_%0A_"));
     }
+
+    @Test
+    // Asserting that we can write a MAF file with a version 43 GencodeFuncotation without error
+    public void testVersion43GencodeFuncotation() {
+        final File outFile = getSafeNonExistentFile("TestMafOutputSanitized.maf");
+        final String dummyTranscriptName = "FAKE00001.1";
+        final VariantContext dummyVariantContext = FuncotatorTestUtils.createSimpleVariantContext(FuncotatorReferenceTestUtils.retrieveHg19Chr3Ref(),"3", 1000000, 1000000, "C", "T");
+        final GencodeFuncotation dummyGencodeFuncotation = (GencodeFuncotation) FuncotatorTestUtils.createDummyGencodeFuncotation(dummyTranscriptName, dummyVariantContext, "43");
+        final Set<String> excludedFields = Collections.emptySet();
+        try ( final MafOutputRenderer mafOutputRenderer = createMafOutputRenderer( outFile, FuncotatorTestConstants.REFERENCE_VERSION_HG19, excludedFields) ) {
+            final FuncotationMap funcotationMap = FuncotationMap.createFromGencodeFuncotations(Collections.singletonList(dummyGencodeFuncotation));
+            funcotationMap.add(dummyTranscriptName, FuncotatorTestUtils.createDummyTableFuncotation());
+            mafOutputRenderer.write(dummyVariantContext, funcotationMap);
+        }
+
+        final AnnotatedIntervalCollection maf = AnnotatedIntervalCollection.create(outFile.toPath(), null);
+        Assert.assertTrue(maf.getRecords().size() > 0);
+        maf.getRecords().forEach(r -> Assert.assertTrue(r.hasAnnotation("FAKEDATA_FOO")));
+        maf.getRecords().forEach(r -> Assert.assertTrue(r.hasAnnotation("FAKEDATA_BAR")));
+        maf.getRecords().forEach(r -> Assert.assertTrue(r.hasAnnotation("FAKEDATA_BAZ")));
+        maf.getRecords().forEach(r -> Assert.assertEquals(r.getAnnotationValue("FAKEDATA_BAZ"), "_%09_YES_%0A_"));
+    }
 }

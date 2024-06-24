@@ -3,7 +3,7 @@ package org.broadinstitute.hellbender.utils.codecs.sampileup;
 import htsjdk.samtools.SAMUtils;
 import htsjdk.samtools.util.StringUtil;
 import htsjdk.tribble.Feature;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.broadinstitute.hellbender.utils.Utils;
 
 import java.util.List;

@@ -1,7 +1,7 @@
 package org.broadinstitute.hellbender.utils.runtime;
 
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.hellbender.utils.Utils;
 
 import java.io.File;

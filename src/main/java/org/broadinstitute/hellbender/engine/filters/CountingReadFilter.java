@@ -76,7 +76,7 @@ public class CountingReadFilter extends ReadFilter {
         filteredCount = 0;
     }
 
-    public String getName() {return delegateFilter.getClass().getSimpleName();}
+    public String getName() {return delegateFilter.getName();}
 
     // Returns a summary line with filter counts organized by level
     public String getSummaryLine() {return getSummaryLineForLevel(0);}

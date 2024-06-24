@@ -47,13 +47,16 @@ public class GetSampleNameIntegrationTest extends CommandLineProgramTest {
         Assert.assertTrue(Files.readAllLines(outputFile.toPath()).stream().filter(n -> n.equals("Hi%2CMom%21")).count() == 1);
     }
 
-    @Test(expectedExceptions = UserException.class)
-    public void testMultiSampleBam() {
+    @Test
+    public void testMultiSampleBam() throws IOException {
         final File outputFile = createTempFile("get-sample-name-ms", ".txt");
         final String[] arguments = {
                 "-" + StandardArgumentDefinitions.INPUT_SHORT_NAME, BAD_MULTI_SAMPLE_BAM_FILE.getAbsolutePath(),
                 "-" + StandardArgumentDefinitions.OUTPUT_SHORT_NAME, outputFile.getAbsolutePath()
         };
         runCommandLine(arguments);
+        Assert.assertTrue(outputFile.exists());
+        Assert.assertTrue(outputFile.length() > 0);
+        Assert.assertTrue(Files.readAllLines(outputFile.toPath()).stream().count() == 3);
     }
 }

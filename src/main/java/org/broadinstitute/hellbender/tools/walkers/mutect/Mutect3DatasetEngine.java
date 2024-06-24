@@ -1,21 +1,22 @@
 package org.broadinstitute.hellbender.tools.walkers.mutect;
 
+import htsjdk.samtools.SAMFileHeader;
+import htsjdk.samtools.SAMReadGroupRecord;
+import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.VariantContext;
 import org.apache.commons.lang3.tuple.Triple;
-import org.apache.commons.math3.util.CombinatoricsUtils;
 import org.apache.commons.math3.util.FastMath;
-import org.broadinstitute.hellbender.engine.FeatureContext;
 import org.broadinstitute.hellbender.engine.ReferenceContext;
 import org.broadinstitute.hellbender.exceptions.UserException;
+import org.broadinstitute.hellbender.tools.walkers.ReferenceConfidenceVariantContextMerger;
 import org.broadinstitute.hellbender.tools.walkers.annotator.AssemblyComplexity;
-import org.broadinstitute.hellbender.tools.walkers.annotator.FeaturizedReadSets;
 import org.broadinstitute.hellbender.tools.walkers.annotator.ReferenceBases;
 import org.broadinstitute.hellbender.tools.walkers.mutect.filtering.Mutect2FilteringEngine;
 import org.broadinstitute.hellbender.utils.IndexRange;
 import org.broadinstitute.hellbender.utils.MathUtils;
-import org.broadinstitute.hellbender.utils.NaturalLogUtils;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.genotyper.AlleleLikelihoods;
 import org.broadinstitute.hellbender.utils.genotyper.LikelihoodMatrix;
@@ -46,8 +47,9 @@ public class Mutect3DatasetEngine implements AutoCloseable {
         ARTIFACT, VARIANT, UNLABELED, IGNORE
     }
 
-    // number of features for each vectorized read
-    private static final int FEATURES_PER_READ = FeaturizedReadSets.FEATURES_PER_READ;
+    private final SAMSequenceDictionary sequenceDictionary;
+
+    private final Map<String, Integer> readGroupIndices = new HashMap<>();
 
     // number of additional variant features for assembly complexity, reference context
     private static final int NUM_EXTRA_FEATURES = 9;
@@ -71,6 +73,8 @@ public class Mutect3DatasetEngine implements AutoCloseable {
     private static final int MIN_REF = 5;
 
     private final PrintWriter printWriter;
+    private final PrintWriter contigPrintWriter;
+    private final PrintWriter readGroupPrintWriter;
 
     // number of nonartifact data to keep for each artifact datum
     private final int nonArtifactPerArtifact;
@@ -85,9 +89,15 @@ public class Mutect3DatasetEngine implements AutoCloseable {
     private final EnumMap<VariantType, ArrayBlockingQueue<Integer>> unmatchedArtifactAltCounts;
 
 
-    public Mutect3DatasetEngine(final File datasetFile, final boolean trainingMode, final int maxRefCount, final int maxAltCount, final int nonArtifactPerArtifact, final Set<String> normalSamples) {
+    public Mutect3DatasetEngine(final File datasetFile, final boolean trainingMode, final int maxRefCount,
+                                final int maxAltCount, final int nonArtifactPerArtifact, final Set<String> normalSamples,
+                                final SAMFileHeader header, final SAMSequenceDictionary sequenceDictionary) {
         try {
             printWriter = new PrintWriter(new FileWriter(Utils.nonNull(datasetFile)));
+            final File contigTableFile = datasetFile.toPath().resolveSibling("contigs.table").toFile();
+            final File readGroupTableFile = datasetFile.toPath().resolveSibling("read-groups.table").toFile();
+            contigPrintWriter = new PrintWriter(new FileWriter(contigTableFile));
+            readGroupPrintWriter = new PrintWriter(new FileWriter(readGroupTableFile));
         } catch (IOException ex) {
             throw new UserException.BadInput("Could not create dataset file writer");
         }
@@ -97,6 +107,12 @@ public class Mutect3DatasetEngine implements AutoCloseable {
         this.nonArtifactPerArtifact = nonArtifactPerArtifact;
         this.maxRefCount = maxRefCount;
         this.maxAltCount = maxAltCount;
+
+        this.sequenceDictionary = sequenceDictionary;
+        final List<SAMReadGroupRecord> readGroups = header.getReadGroups();
+        for (int n = 0; n < readGroups.size(); n++) {
+            readGroupIndices.put(readGroups.get(n).getReadGroupId(), n);
+        }
 
         unmatchedArtifactAltCounts = new EnumMap<>(VariantType.class);
         for (final VariantType type : VariantType.values()) {
@@ -108,10 +124,11 @@ public class Mutect3DatasetEngine implements AutoCloseable {
     public void addData(final ReferenceContext ref, final VariantContext vc, Optional<List<VariantContext>> truthVCs,
                         final AlleleLikelihoods<GATKRead, Allele> likelihoods,
                         final AlleleLikelihoods<Fragment, Haplotype> logFragmentLikelihoods,
-                        final AlleleLikelihoods<Fragment, Allele> logFragmentAlleleLikelihoods) {
+                        final AlleleLikelihoods<Fragment, Allele> logFragmentAlleleLikelihoods,
+                        final M2ArgumentCollection.Mutect3DatasetMode mutect3DatasetMode) {
         final String refBases = ReferenceBases.annotate(ref, vc);
         final String refAllele = vc.getReference().getBaseString();
-        final String contig = vc.getContig();
+        final int contigIndex = sequenceDictionary.getSequenceIndex(vc.getContig());
         final int position = vc.getStart();
         final Set<String> tumorSamples = likelihoods.samples().stream().filter(sample -> !normalSamples.contains(sample)).collect(Collectors.toSet());
         final int numAlt = vc.getNAlleles() - 1;
@@ -132,6 +149,20 @@ public class Mutect3DatasetEngine implements AutoCloseable {
         final int normalDepth = (int) MathUtils.sum(normalADs);
         final boolean hasNormal = normalDepth > 0;
 
+        final List<Allele> allRefAlleles = new ArrayList<>();
+        allRefAlleles.add(vc.getReference());
+        truthVCs.ifPresent(vcs -> vcs.forEach(var -> allRefAlleles.add(var.getReference())));
+        final Allele longestRef = allRefAlleles.stream().sorted(Comparator.comparingInt(Allele::length).reversed()).findFirst().get();
+
+        // skip(1) excludes the reference allele
+        final List<Allele> remappedAltAlleles = ReferenceConfidenceVariantContextMerger.remapAlleles(vc, longestRef).stream()
+                .skip(1).toList();
+
+        final Set<Allele> truthAlleles = !truthVCs.isPresent() ? Collections.emptySet() : truthVCs.get().stream()
+                .filter(truthVC -> ! truthVC.isFiltered())
+                .flatMap(truthVC -> ReferenceConfidenceVariantContextMerger.remapAlleles(truthVC, longestRef).stream())
+                .collect(Collectors.toSet());
+
         final List<Label> labels = new ArrayList<>(numAlt);
         final Map<Allele, Integer> altDownsampleMap= new HashMap<>();
 
@@ -139,27 +170,22 @@ public class Mutect3DatasetEngine implements AutoCloseable {
             final double tumorAF = tumorADs[n+1] / ((double) tumorDepth);
             final double normalAF = hasNormal ? normalADs[n+1] / ((double) normalDepth) : 0.0;
             Allele altAllele = vc.getAlternateAllele(n);
+            final Allele remappedAltAlelle = remappedAltAlleles.get(n);
             final String altAlleleString = altAllele.getBaseString();
             final int diff = altAlleleString.length() - refAllele.length();
             final VariantType type = diff == 0 ? VariantType.SNV : ( diff > 0 ? VariantType.INSERTION : VariantType.DELETION);
 
-            // TODO: what about alternative representations?
-            final Set<Allele> truthAlleles = !truthVCs.isPresent() ? Collections.emptySet() : truthVCs.get().stream()
-                    .filter(var -> ! var.isFiltered())
-                    .flatMap(var -> var.getAlternateAlleles().stream())
-                    .collect(Collectors.toSet());
-
-            if (trainingMode) {
+            if (trainingMode) { // training mode -- collecting tensors to train the Permutect artifact model
                 final ArrayBlockingQueue<Integer> unmatchedQueue = unmatchedArtifactAltCounts.get(type);
                 final boolean likelySeqError = tumorLods[n] < TLOD_THRESHOLD;
 
                 // extremely strict criteria because there are so many germline variants we can afford to waste a lot
                 final boolean definiteGermline = !likelySeqError && popafs[n] < COMMON_POPAF_THRESHOLD &&
                         tumorAF > 0.35 && (!hasNormal || normalAF > 0.35);
-                final boolean trueVariant = truthVCs.isPresent() ? truthAlleles.contains(altAllele) : definiteGermline;
+                final boolean trueVariant = truthVCs.isPresent() ? truthAlleles.contains(remappedAltAlelle) : definiteGermline;
 
                 // low AF in tumor and normal, rare in population implies artifact
-                boolean probableArtifact = !likelySeqError && (truthVCs.isPresent() ? !truthAlleles.contains(altAllele) :
+                boolean probableArtifact = !likelySeqError && (truthVCs.isPresent() ? !truthAlleles.contains(remappedAltAlelle) :
                         (tumorAF < 0.2 && popafs[n] > RARE_POPAF_THRESHOLD));
 
                 if  (probableArtifact) {
@@ -178,8 +204,13 @@ public class Mutect3DatasetEngine implements AutoCloseable {
                 } else {
                     labels.add(Label.IGNORE);
                 }
-            } else {
-                labels.add(Label.UNLABELED);
+            } else {    // not training mode -- we are generating tensors in order to apply the Permutect artifact model to a callset
+                if (truthVCs.isPresent()) {
+                    // here, for the purposes of test data, both sequencing errors and technical artifacts get the "ARTIFACT" label
+                    labels.add(truthAlleles.contains(remappedAltAlelle) ? Label.VARIANT : Label.ARTIFACT);
+                } else {
+                    labels.add(Label.UNLABELED);
+                }
             }
         }
 
@@ -194,8 +225,10 @@ public class Mutect3DatasetEngine implements AutoCloseable {
 
         // TODO: for now we don't really need normal reads
         // note that the following use the VC's allele order, not necessarily the likelihoods' allele order
-        final List<List<List<Integer>>> normalReadVectorsByAllele =  FeaturizedReadSets.getReadVectors(vc, normalSamples, likelihoods, logFragmentLikelihoods, maxRefCount, maxAltCount);
-        final List<List<List<Integer>>> tumorReadVectorsByAllele =  FeaturizedReadSets.getReadVectors(vc, tumorSamples, likelihoods, logFragmentLikelihoods, maxRefCount, maxAltCount, altDownsampleMap);
+        final List<List<List<Integer>>> normalReadVectorsByAllele =  FeaturizedReadSets.getReadVectors(vc, normalSamples,
+                likelihoods, logFragmentLikelihoods, maxRefCount, maxAltCount, mutect3DatasetMode, readGroupIndices);
+        final List<List<List<Integer>>> tumorReadVectorsByAllele =  FeaturizedReadSets.getReadVectors(vc, tumorSamples,
+                likelihoods, logFragmentLikelihoods, maxRefCount, maxAltCount, altDownsampleMap, mutect3DatasetMode, readGroupIndices);
 
         // ref and alt reads have already been downsampled by the read featurizer
         final List<List<Integer>> tumorRefReads = tumorReadVectorsByAllele.get(0);
@@ -216,7 +249,7 @@ public class Mutect3DatasetEngine implements AutoCloseable {
             final List<List<Integer>> normalAltReads = normalReadVectorsByAllele.get(n+1);
 
             printWriter.println(labels.get(n).toString());
-            printWriter.printf("%s:%d,%s->%s%n", contig, position, refAllele, altAllele);
+            printWriter.printf("%d:%d,%s->%s%n", contigIndex, position, refAllele, altAllele);
             printWriter.println(refBases);
             printWriter.println(numberString(variantFeatureVector, "%.2f", " "));
             //printWriter.printf("%d %d %d %d%n", tumorRefReads.size(), tumorAltReads.size(), normalRefReads.size(), normalAltReads.size());
@@ -227,13 +260,18 @@ public class Mutect3DatasetEngine implements AutoCloseable {
             tumorAltReads.forEach(r -> printWriter.println(integerString(r)));
             //normalRefReads.forEach(r -> printWriter.print(numberString(r)));
             //normalAltReads.forEach(r -> printWriter.print(numberString(r)));
-            printWriter.printf("%d %d %d %d%n", tumorDepth, tumorADs[n+1], normalDepth, normalADs[n+1]);  // pre-downsampling counts for normal artifact model
+            printWriter.printf("%d %d %d %d%n", tumorDepth, tumorADs[n+1], normalDepth, normalADs[n+1]);  // pre-downsampling counts
             // this is approximately the likelihood that these particular reads are alt given sequencing error, excluding
             // the depth C N_alt combinatorial factor that is common to all likelihoods in M3
-            // basicaly, it's the TLOD with a correction for the marginalized flat prior from M2
+            // basically, it's the TLOD with a correction for the marginalized flat prior from M2
             final double tlod = vc.getAttributeAsDoubleList("TLOD", 0).get(n);
             final double seqErrorLogLikelihood = -MathUtils.log10ToLog(tlod) - Math.log(tumorDepth + 1);
-            printWriter.printf("%.3f%n", seqErrorLogLikelihood);  // pre-downsampling counts for normal artifact model
+            printWriter.printf("%.3f%n", seqErrorLogLikelihood);
+
+            // and do the same for the normal
+            final double nalod = normalSamples.isEmpty() ? 0 : vc.getAttributeAsDoubleList("NALOD", 0).get(n);
+            final double normalSeqErrorLogLikelihood = -MathUtils.log10ToLog(nalod) - Math.log(normalDepth + 1);
+            printWriter.printf("%.3f%n", normalSeqErrorLogLikelihood);
         }
     }
 
@@ -311,5 +349,16 @@ public class Mutect3DatasetEngine implements AutoCloseable {
     @Override
     public void close() {
         printWriter.close();
+
+        for (final SAMSequenceRecord contigRecord : sequenceDictionary.getSequences()) {
+            contigPrintWriter.println(String.format("%s\t%d", contigRecord.getContig(), contigRecord.getSequenceIndex()));
+        }
+
+        for (final Map.Entry<String, Integer> entry : readGroupIndices.entrySet()) {
+            readGroupPrintWriter.println(String.format("%s\t%d", entry.getKey(), entry.getValue()));
+        }
+
+        contigPrintWriter.close();
+        readGroupPrintWriter.close();
     }
 }

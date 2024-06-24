@@ -1,6 +1,6 @@
 package org.broadinstitute.hellbender.tools.walkers.vqsr.scalable.modeling;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.io.File;
 import java.io.Serializable;

@@ -8,10 +8,10 @@ outFileBaseName="gencode_xhgnc"
 outExt=".tsv"
 
 hg19db="homo_sapiens_core_75_37"
-hg38db="homo_sapiens_core_90_38"
+hg38db="homo_sapiens_core_110_38"
 
 hg19FileName=${outFileBaseName}_v75_37.hg19${outExt}
-hg38FileName=${outFileBaseName}_v90_38.hg38${outExt}
+hg38FileName=${outFileBaseName}_v110_38.hg38${outExt}
 
 ################################################################################
 

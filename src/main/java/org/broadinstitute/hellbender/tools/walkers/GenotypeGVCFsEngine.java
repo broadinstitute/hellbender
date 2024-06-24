@@ -150,8 +150,9 @@ public class GenotypeGVCFsEngine
 
         final VariantContext result;
 
+        // only re-genotype polymorphic sites
         if ( originalVC.isVariant()  && originalVC.getAttributeAsInt(VCFConstants.DEPTH_KEY,0) > 0 ) {
-            // only re-genotype polymorphic sites
+            // note that the calculateGenotypes method also calculates the QUAL score
             final VariantContext regenotypedVC = calculateGenotypes(originalVC, includeNonVariants);
             if (regenotypedVC == null) {
                 return null;
@@ -186,7 +187,7 @@ public class GenotypeGVCFsEngine
             //don't count sites with no depth and no confidence towards things like AN and InbreedingCoeff
             vcBuilder.genotypes(assignNoCallsAnnotationExcludedGenotypes(result.getGenotypes()));
             VariantContext annotated = annotationEngine.annotateContext(vcBuilder.make(), features, ref, null, a -> true);
-            return new VariantContextBuilder(annotated).genotypes(cleanupGenotypeAnnotations(result, false, keepSB)).make();
+            return new VariantContextBuilder(annotated).genotypes(cleanupGenotypeAnnotations(annotated, false, keepSB)).make();
         } else if (includeNonVariants) {
             // For monomorphic sites we need to make sure e.g. the hom ref genotypes are created and only then are passed to the annotation engine.
             VariantContext preannotated = new VariantContextBuilder(result).genotypes(cleanupGenotypeAnnotations(result, true, false)).make();
@@ -461,24 +462,29 @@ public class GenotypeGVCFsEngine
                 attrs.put(GATKVCFConstants.HAPLOTYPE_CALLER_PHASING_GT_KEY, GenotypeGVCFs.PHASED_HOM_VAR_STRING);
             }
 
-            // create AD if it's not there
-            if ( !oldGT.hasAD() && vc.isVariant() ) {
+            // create AD if it's not there, but only if there's data
+            if ( !oldGT.hasAD() && vc.isVariant() && depth > 0) {
                 final int[] AD = new int[vc.getNAlleles()];
                 AD[0] = depth;
                 builder.AD(AD);
             }
 
             if ( createRefGTs ) {
-                // move the GQ to RGQ
-                if (oldGT.hasGQ()) {
+                 //keep 0 depth samples and 0 GQ samples as no-call
+                if (depth > 0 && oldGT.hasGQ()) {
+                    if (oldGT.getGQ() > 0) {
+                        final List<Allele> refAlleles = Collections.nCopies(oldGT.getPloidy(), vc.getReference());
+                        builder.alleles(refAlleles);
+                    } else {
+                        builder.alleles(Collections.nCopies(oldGT.getPloidy(),Allele.NO_CALL));
+                    }
+
+                    // move the GQ to RGQ
                     builder.noGQ();
                     attrs.put(GATKVCFConstants.REFERENCE_GENOTYPE_QUALITY, oldGT.getGQ());
-                }
-
-                //keep 0 depth samples and 0 GQ samples as no-call
-                if (depth > 0 && oldGT.hasGQ() && oldGT.getGQ() > 0) {
-                    final List<Allele> refAlleles = Collections.nCopies(oldGT.getPloidy(), vc.getReference());
-                    builder.alleles(refAlleles);
+                } else {
+                    builder.alleles(Collections.nCopies(oldGT.getPloidy(),Allele.NO_CALL));
+                    builder.noGQ().noDP();
                 }
 
                 // also, the PLs are technically no longer usable
@@ -494,8 +500,8 @@ public class GenotypeGVCFsEngine
      *  Does this genotype look like it has no reads and should be excluded from annotations?
      */
     static boolean excludeFromAnnotations(Genotype oldGT) {
-        return oldGT.isHomRef() && !oldGT.hasPL()
-                && ((oldGT.hasDP() && oldGT.getDP() == 0) || !oldGT.hasDP())
+        return (oldGT.isHomRef() || oldGT.isNoCall())
+                && (!oldGT.hasDP() || oldGT.getDP() == 0)
                 && oldGT.hasGQ() && oldGT.getGQ() == 0;
     }
 

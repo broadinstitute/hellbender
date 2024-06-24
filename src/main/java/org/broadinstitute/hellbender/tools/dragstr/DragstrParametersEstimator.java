@@ -1,6 +1,6 @@
 package org.broadinstitute.hellbender.tools.dragstr;
 
-import org.apache.commons.lang.math.IntRange;
+import org.apache.commons.lang3.Range;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.MathUtils;
 import org.broadinstitute.hellbender.utils.dragstr.DragstrParams;
@@ -143,38 +143,38 @@ final class DragstrParametersEstimator {
             }
         }
 
-        final ArrayDeque<IntRange> pending = new ArrayDeque<>(hyperParameters.maxRepeatLength);
+        final ArrayDeque<Range<Integer>> pending = new ArrayDeque<>(hyperParameters.maxRepeatLength);
 
         if (rightFlank >= leftFlank) {
             // We fill 'pending' with the repeat-length groups that will be analyze:
             // [1 .. leftFlank], leftFlank + 1, leftFlank + 2, ... , [rightFlank .. maxRepeats+]
-            pending.add(new IntRange(1, leftFlank));
+            pending.add(Range.of(1, leftFlank));
             for (leftFlank++; leftFlank <= rightFlank; leftFlank++) {
-                pending.add(new IntRange(leftFlank));
+                pending.add(Range.is(leftFlank));
             }
-            pending.add(new IntRange(++rightFlank, hyperParameters.maxRepeatLength));
+            pending.add(Range.of(++rightFlank, hyperParameters.maxRepeatLength));
         } else { // no enough data we simply put all repeat lengths is one single group:
-            pending.add(new IntRange(1, hyperParameters.maxRepeatLength));
+            pending.add(Range.of(1, hyperParameters.maxRepeatLength));
         }
 
-        IntRange last = null;
+        Range<Integer> last = null;
 
         // Done will contain the ranges already processed.
-        final ArrayDeque<IntRange> done = new ArrayDeque<>(hyperParameters.maxRepeatLength);
+        final ArrayDeque<Range<Integer>> done = new ArrayDeque<>(hyperParameters.maxRepeatLength);
 
         do {
-            final IntRange next = pending.pop();
+            final Range<Integer> next = pending.pop();
             estimatePeriodRepeatInterval(period, next, destination, cases);
-            final double gp1 = destination.gp(period, next.getMinimumInteger());
-            final double api1 = destination.api(period, next.getMinimumInteger());
+            final double gp1 = destination.gp(period, next.getMinimum());
+            final double api1 = destination.api(period, next.getMinimum());
             // if GP and API are "decreasing" with respect those from smaller repeat length
             // then we accepted them:
-            if (last == null || (destination.gp(period, last.getMaximumInteger()) >= gp1 &&
-                                   destination.api(period, last.getMaximumInteger()) + hyperParameters.apiMonothresh >= api1)) {
+            if (last == null || (destination.gp(period, last.getMaximum()) >= gp1 &&
+                                   destination.api(period, last.getMaximum()) + hyperParameters.apiMonothresh >= api1)) {
                 done.addLast(last = next);
             // if not, the we group back this repeat-length group/range with last one and re-estimate (next-loop).
             } else {
-                pending.push(new IntRange(last.getMinimumNumber(), next.getMaximumNumber()));
+                pending.push(Range.of(last.getMinimum(), next.getMaximum()));
                 done.removeLast();
                 last = !done.isEmpty() ? done.getLast() : null;
             }
@@ -183,14 +183,14 @@ final class DragstrParametersEstimator {
 
     // Given a observed het/hom ratio the total number of reads, the variable ones and the length of the STR in bases.
     // calculate the optimal gp and api that maximizes the likelihood.
-    private void estimatePeriodRepeatInterval(final int period, final IntRange repeatRange,
+    private void estimatePeriodRepeatInterval(final int period, final Range<Integer> repeatRange,
                                               final DragstrParamsBuilder builder,
                                               final StratifiedDragstrLocusCases cases) {
         int maxApiIdx = -1;
         int maxGpIdx = -1;
         double maxLog10Prob = Double.NEGATIVE_INFINITY;
-        final int minRepeat = repeatRange.getMinimumInteger();
-        final int maxRepeat = repeatRange.getMaximumInteger();
+        final int minRepeat = repeatRange.getMinimum();
+        final int maxRepeat = repeatRange.getMaximum();
         final int periodIdx = period - 1;
         final double maxLog10PHet = log10HetOverHomVar - Math.log10(1 + hyperParameters.hetToHomRatio);
         for (int i = 0; i < log10ApiValues.length; i++) {

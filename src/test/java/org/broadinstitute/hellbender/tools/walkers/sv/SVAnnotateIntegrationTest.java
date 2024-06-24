@@ -28,7 +28,8 @@ public class SVAnnotateIntegrationTest extends CommandLineProgramTest {
             GATKSVVCFConstants.INV_SPAN, GATKSVVCFConstants.PROMOTER, GATKSVVCFConstants.COPY_GAIN,
             GATKSVVCFConstants.INTERGENIC, GATKSVVCFConstants.NEAREST_TSS, GATKSVVCFConstants.INT_EXON_DUP,
             GATKSVVCFConstants.PARTIAL_EXON_DUP, GATKSVVCFConstants.MSV_EXON_OVERLAP, GATKSVVCFConstants.UTR,
-            GATKSVVCFConstants.INTRONIC, GATKSVVCFConstants.TSS_DUP, GATKSVVCFConstants.BREAKEND_EXON);
+            GATKSVVCFConstants.INTRONIC, GATKSVVCFConstants.TSS_DUP, GATKSVVCFConstants.BREAKEND_EXON,
+            GATKSVVCFConstants.PARTIAL_DISPERSED_DUP);
 
     private void assertVariantAnnotatedAsExpected(final List<VariantContext> vcf, final String variantID,
                                                   Map<String, Object> expectedAnnotations) {

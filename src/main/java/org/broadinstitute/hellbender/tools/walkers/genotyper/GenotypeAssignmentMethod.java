@@ -56,6 +56,7 @@ public enum GenotypeAssignmentMethod {
 
     /**
      * Use PLs unless they are unavailable, in which case use best match to original
+     * GQ0 hom-refs will be converted to no-calls
      */
     PREFER_PLS
 }

@@ -24,6 +24,15 @@ public final class ArgumentsBuilder {
 
     public ArgumentsBuilder(){}
 
+    /**
+     * static factory to allow fluent style creation
+     * create().add()...
+     * @return new ArgumentsBuilder
+     */
+    public static ArgumentsBuilder create(){
+        return new ArgumentsBuilder();
+    }
+
     public ArgumentsBuilder(Object[] args){
         for (Object arg: args){
             if (arg instanceof String){
@@ -32,6 +41,22 @@ public final class ArgumentsBuilder {
                 addRaw(arg);
             }
         }
+    }
+
+    /**
+     * Concatenate the arguments from other onto the end of this builder
+     * @return this builder combined with other
+     */
+    public ArgumentsBuilder concat(ArgumentsBuilder other){
+        this.args.addAll(other.args);
+        return this;
+    }
+
+    /**
+     * @return a copy of this builder
+     */
+    public ArgumentsBuilder copy(){
+        return ArgumentsBuilder.create().concat(this);
     }
 
     /**

@@ -114,6 +114,7 @@ public final class VariantFiltration extends VariantWalker {
     public static final String CLUSTER_WINDOW_SIZE_LONG_NAME = "cluster-window-size";
     public static final String MASK_EXTENSION_LONG_NAME = "mask-extension";
     public static final String MASK_NAME_LONG_NAME = "mask-name";
+    public static final String MASK_DESCRIPTION_LONG_NAME = "mask-description";
     public static final String FILTER_NOT_IN_MASK_LONG_NAME = "filter-not-in-mask";
     public static final String MISSING_VAL_LONG_NAME = "missing-values-evaluate-as-failing";
     public static final String INVERT_LONG_NAME = "invert-filter-expression";
@@ -238,6 +239,14 @@ public final class VariantFiltration extends VariantWalker {
     @Argument(fullName=ALLELE_SPECIFIC_LONG_NAME, optional=true, doc="Set mask at the allele level. This option is not compatible with clustering.")
     public boolean applyForAllele = false;
 
+    /**
+     * If a mask interval list is provided, then set the description of the filter in the VCF header to this String.
+     * Note that if spaces are needed, then the entire description should be enclosed in quotes. Also note that if
+     * --filter-not-in-mask is used, the description should be adapted to reflect the reverse logic.
+     */
+    @Argument(fullName=MASK_DESCRIPTION_LONG_NAME, optional=true, doc="Description to add to the FILTER field in VCF header for the mask filter.")
+    public String maskDescription;
+
     // JEXL expressions for the filters
     private List<JexlVCMatchExp> filterExps;
     private List<JexlVCMatchExp> genotypeFilterExps;
@@ -305,7 +314,9 @@ public final class VariantFiltration extends VariantWalker {
             }
 
             if ( mask != null ) {
-                if (filterRecordsNotInMask) {
+                if (maskDescription != null) {
+                    hInfo.add(new VCFFilterHeaderLine(maskName, maskDescription));
+                } else if (filterRecordsNotInMask) {
                     hInfo.add(new VCFFilterHeaderLine(maskName, "Doesn't overlap a user-input mask"));
                 } else {
                     hInfo.add(new VCFFilterHeaderLine(maskName, "Overlaps a user-input mask"));
@@ -330,6 +341,9 @@ public final class VariantFiltration extends VariantWalker {
 
         if (filterRecordsNotInMask && mask == null) {
             throw new CommandLineException.BadArgumentValue(FILTER_NOT_IN_MASK_LONG_NAME, "argument not allowed if mask argument is not provided");
+        }
+        if (maskDescription != null && mask == null) {
+            throw new CommandLineException.BadArgumentValue(MASK_DESCRIPTION_LONG_NAME, "argument not allowed if mask argument is not provided");
         }
         filterExps = VariantContextUtils.initializeMatchExps(filterNames, filterExpressions);
         genotypeFilterExps = VariantContextUtils.initializeMatchExps(genotypeFilterNames, genotypeFilterExpressions);

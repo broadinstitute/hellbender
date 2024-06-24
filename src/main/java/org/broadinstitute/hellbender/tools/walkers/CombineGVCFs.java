@@ -461,7 +461,7 @@ public final class CombineGVCFs extends MultiVariantWalkerGroupedOnStart {
                 final GenotypeBuilder gBuilder = new GenotypeBuilder(g);
                 GATKVariantContextUtils.makeGenotypeCall(g.getPloidy(),
                             gBuilder, assignmentMethod,
-                            g.hasLikelihoods() ? g.getLikelihoods().getAsVector() : null, allelesToUse, g.getAlleles(), null);
+                            g.hasLikelihoods() ? g.getLikelihoods().getAsVector() : null, allelesToUse, g, null);
                 genotypes.add(gBuilder.make());
             }
         }

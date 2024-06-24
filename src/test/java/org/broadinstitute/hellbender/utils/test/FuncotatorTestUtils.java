@@ -461,9 +461,10 @@ public class FuncotatorTestUtils {
      *
      * @param dummyTranscriptName An aritrary string.  Never {@code null}
      * @param dummyVariantContext An aritrary {@link VariantContext}.  Never {@code null}
+     * @param gencodeVersion Should be a valid gencode version.  Never {@code null}
      * @return Never {@code null}
      */
-    public static Funcotation createDummyGencodeFuncotation(final String dummyTranscriptName, final VariantContext dummyVariantContext) {
+    public static Funcotation createDummyGencodeFuncotation(final String dummyTranscriptName, final VariantContext dummyVariantContext, final String gencodeVersion) {
         Utils.nonNull(dummyTranscriptName);
         Utils.nonNull(dummyVariantContext);
         return createGencodeFuncotation("GENE","b37", dummyVariantContext.getContig(), dummyVariantContext.getStart(),dummyVariantContext.getEnd(),
@@ -474,7 +475,10 @@ public class FuncotatorTestUtils {
         1, 1500, 1500,
         " ", " ",
         "p.L300P", 0.5,
-        "ACTGATCGATCGA",Collections.singletonList("FAKE00002.5"), "27");
+        "ACTGATCGATCGA",Collections.singletonList("FAKE00002.5"), gencodeVersion);
+    }
+    public static Funcotation createDummyGencodeFuncotation(final String dummyTranscriptName, final VariantContext dummyVariantContext) {
+        return createDummyGencodeFuncotation(dummyTranscriptName, dummyVariantContext, "27");
     }
 
     /**

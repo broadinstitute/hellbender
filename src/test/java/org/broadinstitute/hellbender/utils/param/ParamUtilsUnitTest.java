@@ -1,7 +1,6 @@
 package org.broadinstitute.hellbender.utils.param;
 
-import org.apache.commons.lang.math.DoubleRange;
-import org.apache.commons.lang.math.IntRange;
+import org.apache.commons.lang3.Range;
 import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -17,23 +16,23 @@ public class ParamUtilsUnitTest {
     public void testInRangeSuccess(){
         Assert.assertTrue(4 == ParamUtils.inRange(4L, 3, 6, "Range calculation did not work properly"), "Did not return proper value");
         Assert.assertTrue(4 == ParamUtils.inRange(4, 3, 6, "Range calculation did not work properly"), "Did not return proper value");
-        Assert.assertTrue(4 == ParamUtils.inRange(new IntRange(3, 6), 4, "error"));
+        Assert.assertTrue(4 == ParamUtils.inRange(Range.<Integer>of(3, 6), 4, "error"));
         Assert.assertTrue(4.1 == ParamUtils.inRange(4.1, 3, 6, "Range calculation did not work properly"), "Did not return proper value");
         Assert.assertTrue(4.1 == ParamUtils.inRange(4.1, -3, 6, "Range calculation did not work properly"), "Did not return proper value");
-        Assert.assertTrue(4.1 == ParamUtils.inRange(new DoubleRange(-3, 6), 4.1, "error"));
+        Assert.assertTrue(4.1 == ParamUtils.inRange(Range.<Double>of(-3.0, 6.0), 4.1, "error"));
         Assert.assertTrue(0 == ParamUtils.inRange(0L, -3, 6, "Range calculation did not work properly"), "Did not return proper value");
         Assert.assertTrue(0 == ParamUtils.inRange(0, -3, 6, "Range calculation did not work properly"), "Did not return proper value");
-        Assert.assertTrue(0 == ParamUtils.inRange(new IntRange(-3, 6), 0, "error"));
+        Assert.assertTrue(0 == ParamUtils.inRange(Range.<Integer>of(-3, 6), 0, "error"));
         Assert.assertTrue(0.0 == ParamUtils.inRange(0.0, -3, 6, "Range calculation did not work properly"), "Did not return proper value");
-        Assert.assertTrue(0.0 == ParamUtils.inRange(new DoubleRange(-3, 6), 0.0, "error"));
+        Assert.assertTrue(0.0 == ParamUtils.inRange(Range.<Double>of(-3.0, 6.0), 0.0, "error"));
         Assert.assertTrue(0 == ParamUtils.inRange(0L, -3, 6, "Range calculation did not work properly"), "Did not return proper value");
         Assert.assertTrue(0 == ParamUtils.inRange(0, -3, 6, "Range calculation did not work properly"), "Did not return proper value");
-        Assert.assertTrue(0 == ParamUtils.inRange(new IntRange(-3, 6), 0, "error"));
+        Assert.assertTrue(0 == ParamUtils.inRange(Range.<Integer>of(-3, 6), 0, "error"));
         Assert.assertTrue(-1 == ParamUtils.inRange(-1L, -3, 6, "Range calculation did not work properly"), "Did not return proper value");
         Assert.assertTrue(-1 == ParamUtils.inRange(-1, -3, 6, "Range calculation did not work properly"), "Did not return proper value");
-        Assert.assertTrue(-1 == ParamUtils.inRange(new IntRange(-3, 6), -1, "error"));
+        Assert.assertTrue(-1 == ParamUtils.inRange(Range.<Integer>of(-3, 6), -1, "error"));
         Assert.assertTrue(-1.5 == ParamUtils.inRange(-1.5, -3, 6, "Range calculation did not work properly"), "Did not return proper value");
-        Assert.assertTrue(-1.5 == ParamUtils.inRange(new DoubleRange(-3, 6), -1.5, "error"));
+        Assert.assertTrue(-1.5 == ParamUtils.inRange(Range.<Double>of(-3.0, 6.0), -1.5, "error"));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -48,12 +47,12 @@ public class ParamUtilsUnitTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInRangeFailureAllPositiveIntRange(){
-        ParamUtils.inRange(new IntRange(7, 10), 4, "Range calculation did not work properly");
+        ParamUtils.inRange(Range.<Integer>of(7, 10), 4, "Range calculation did not work properly");
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInRangeFailureAllPositiveDoubleRange(){
-        ParamUtils.inRange(new DoubleRange(7, 10), 4, "Range calculation did not work properly");
+        ParamUtils.inRange(Range.<Double>of(7.0, 10.0), 4, "Range calculation did not work properly");
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -68,7 +67,7 @@ public class ParamUtilsUnitTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInRangeFailureNaNDoubleRange(){
-        ParamUtils.inRange(new DoubleRange(7, 10), Double.NaN, "Range calculation did not work properly");
+        ParamUtils.inRange(Range.<Double>of(7.0, 10.0), Double.NaN, "Range calculation did not work properly");
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)

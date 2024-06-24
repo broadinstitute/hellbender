@@ -11,7 +11,10 @@ import org.broadinstitute.hellbender.utils.genotyper.IndexedAlleleList;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Filtering haplotypes that contribute weak alleles to the genotyping. This is a version that determines if allele is weak using
@@ -57,14 +60,16 @@ public class AlleleFilteringHC extends AlleleFiltering {
 
         final GenotypingLikelihoods<Allele> genotypingLikelihoods = genotypesModel.calculateLikelihoods(alleleList,
                 genotypingData, null, 0, null);
-        AFCalculationResult af = afCalc.fastCalculateDiploidBasedOnGLs(genotypingLikelihoods, genotypingEngine.getPloidyModel().totalPloidy());
-        final double log10Confidence = af.log10ProbOnlyRefAlleleExists();
-        final double phredScaledConfidence = (10.0 * log10Confidence) + 0.0;
 
-        final int[] asPL = genotypingLikelihoods.sampleLikelihoods(0).getAsPLs();
-
-        logger.debug(() -> String.format("GAL:: %s: %d %d %d", allele.toString(), asPL[0], asPL[1], asPL[2]));
-        return Math.min(asPL[1]-asPL[0], asPL[2]-asPL[0]);
+        List<Integer> perSamplePLs = new ArrayList<>();
+        for (int i = 0; i < genotypingLikelihoods.numberOfSamples(); i++) {
+            final int[] pls = genotypingLikelihoods.sampleLikelihoods(i).getAsPLs();
+            perSamplePLs.add(Math.min(pls[1] - pls[0], pls[2] - pls[0]));
+            final int finalI = i;
+            logger.debug(() -> String.format("GAL (%s):: %s: %d %d %d",
+                    genotypingLikelihoods.getSample(finalI), allele.toString(), pls[0], pls[1], pls[2]));
+        }
+        return Collections.min(perSamplePLs);
     }
 
 }

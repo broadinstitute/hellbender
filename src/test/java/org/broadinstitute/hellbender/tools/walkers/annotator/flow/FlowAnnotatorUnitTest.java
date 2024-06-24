@@ -69,7 +69,28 @@ public class FlowAnnotatorUnitTest extends GATKBaseTest {
                         // ins hmer indel
                         "TATCT C ATTGACCAA", "CA",
                         "ins", "1", "2", "A", "ATCTC", "TTGAC", "0.3", "NA", "h-indel"
+                },
+                //The following tests test the edge case of variant so close to the edge of the chromosome
+                //that some of the annotations can't be calculated
+                {
+                        // Close to 5' edge of the chromosome, expect not to crash on finding the left motif
+                        "ATCT C ATTGACCAA", "CA",
+                        "ins", "1", "2", "A", null, "TTGAC", "0.3", "NA", "h-indel"
+                },
+                {
+                        // close to 3' edge of the chromosome, should not find left motif or GC content
+                        "TATCT C ATT", "CA",
+                        "ins", "1", "2", "A", "ATCTC", null, null, "NA", "h-indel"
+                },
+                {
+                        // very close to 3' edge of the chromosome, should not find left motif, GC content or if it is
+                        // an hmer indel
+                        "TATCT C ", "CA",
+                        "ins", "1", null, null, "ATCTC", null, null, "NA", "non-h-indel"
                 }
+
+
+
         };
 
         return testData;

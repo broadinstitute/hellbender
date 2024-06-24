@@ -19,6 +19,7 @@ releases of the toolkit.
 * [Requirements](#requirements)
 * [Quick Start Guide](#quickstart)
 * [Downloading GATK4](#downloading)
+  * [Tools Included in Docker Image](#dockerSoftware)
 * [Building GATK4](#building)
 * [Running GATK4](#running)
     * [Passing JVM options to gatk](#jvmoptions)
@@ -114,6 +115,34 @@ You can download and run pre-built versions of GATK4 from the following places:
 
 * You can download a GATK4 docker image from [our dockerhub repository](https://hub.docker.com/r/broadinstitute/gatk/). We also host unstable nightly development builds on [this dockerhub repository](https://hub.docker.com/r/broadinstitute/gatk-nightly/).
     * Within the docker image, run gatk commands as usual from the default startup directory (/gatk).
+
+### <a name="dockerSoftware">Tools Included in Docker Image</a>
+
+Our docker image contains the following bioinformatics tools, which can be run by invoking the tool name from the command line:
+* bedtools (v2.30.0)
+* samtools (1.13)
+* bcftools (1.13)
+* tabix (1.13+ds)
+
+We also include an installation of Python3 (3.6.10) with the following popular packages included:
+* numpy
+* scipy
+* tensorflow
+* pymc3
+* keras
+* scikit-learn
+* matplotlib
+* pandas
+* biopython
+* pyvcf
+* pysam
+
+We also include an installation of R (3.6.2) with the following popular packages included:
+* data.table
+* dplyr
+* ggplot2
+
+For more details on system packages, see the GATK [Base Dockerfile](scripts/docker/gatkbase/Dockerfile) and for more details on the Python3/R packages, see the [Conda environment setup file](scripts/gatkcondaenv.yml.template). Versions for the Python3/R packages can be found there.
 
 ## <a name="building">Building GATK4</a>
 

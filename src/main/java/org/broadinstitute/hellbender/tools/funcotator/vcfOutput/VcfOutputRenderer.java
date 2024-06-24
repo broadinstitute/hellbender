@@ -197,7 +197,8 @@ public class VcfOutputRenderer extends OutputRenderer {
         variantContextOutputBuilder.genotypes( variant.getGenotypes() );
 
         // Render and add our VCF line:
-        vcfWriter.add( variantContextOutputBuilder.make() );
+        VariantContext out = variantContextOutputBuilder.make();
+        vcfWriter.add( out );
     }
 
     private Funcotation createManualAnnotationFuncotation(final Allele altAllele) {

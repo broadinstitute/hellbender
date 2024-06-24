@@ -2,7 +2,7 @@ package org.broadinstitute.hellbender.tools.walkers.haplotypecaller.graphs;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.broadinstitute.hellbender.tools.walkers.mutect.Mutect2Engine;

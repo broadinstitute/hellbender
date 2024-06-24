@@ -127,6 +127,21 @@ import java.util.Optional;
  * argument. Note however that very high ploidies (such as are encountered in large pooled experiments) may cause
  * performance challenges including excessive slowness. We are working on resolving these limitations.</p>
  *
+ * <p>For having variable ploidy in different regions, like making haploid calls outside the PAR on chrX or chrY,
+ * see the --ploidy-regions flag. The -ploidy flag sets the default ploidy to use everywhere, and --ploidy-regions
+ * should be a .bed or .interval_list with "name" column containing the desired ploidy to use in that region
+ * when genotyping. Note that variants near the boundary may not have the matching ploidy since the ploidy used will
+ * be determined using the following precedence: </p>
+ * <ol>
+ *     <li>ploidy given in --ploidy-regions for all intervals overlapping the active region when calling your variant
+ *     (with ties broken by using largest ploidy); note ploidy interval may only overlap the active region and determine
+ *     the ploidy of your variant even if the end coordinate written for your variant lies outside the given region;</li>
+ *     <li>ploidy given via global -ploidy flag;</li>
+ *     <li>ploidy determined by the default global built-in constant for humans (2).</li>
+ * </ol>
+ *
+ * <p>Coordinates for the PAR for CRCh38 can be found <a href='http://useast.ensembl.org/info/genome/genebuild/human_PARS.html'>here</a>.</p>
+ *
  * <h3>Additional Notes</h3>
  * <ul>
  *     <li>When working with PCR-free data, be sure to set `-pcr_indel_model NONE` (see argument below).</li>

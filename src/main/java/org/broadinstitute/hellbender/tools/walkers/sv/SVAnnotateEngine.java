@@ -12,11 +12,13 @@ import org.broadinstitute.hellbender.tools.spark.sv.utils.SVUtils;
 import org.broadinstitute.hellbender.utils.SVInterval;
 import org.broadinstitute.hellbender.utils.SVIntervalTree;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
+import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.codecs.gtf.GencodeGtfFeature;
 import org.broadinstitute.hellbender.utils.codecs.gtf.GencodeGtfTranscriptFeature;
 import org.broadinstitute.hellbender.utils.variant.GATKSVVariantContextUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SVAnnotateEngine {
     private final int maxBreakendLen;
@@ -24,12 +26,36 @@ public class SVAnnotateEngine {
     private final SVIntervalTree<String> nonCodingIntervalTree;
     private final SAMSequenceDictionary sequenceDictionary;
 
-    private final Set<String> MSV_EXON_OVERLAP_CLASSIFICATIONS = Sets.newHashSet(GATKSVVCFConstants.LOF,
+    @VisibleForTesting
+    protected static final Set<String> MSV_EXON_OVERLAP_CLASSIFICATIONS = Sets.newHashSet(GATKSVVCFConstants.LOF,
             GATKSVVCFConstants.INT_EXON_DUP,
             GATKSVVCFConstants.DUP_PARTIAL,
             GATKSVVCFConstants.PARTIAL_EXON_DUP,
             GATKSVVCFConstants.COPY_GAIN,
             GATKSVVCFConstants.TSS_DUP);
+
+    @VisibleForTesting
+    protected static final Set<String> PROTEIN_CODING_CONSEQUENCES = Sets.newHashSet(GATKSVVCFConstants.LOF,
+            GATKSVVCFConstants.INT_EXON_DUP,
+            GATKSVVCFConstants.DUP_PARTIAL,
+            GATKSVVCFConstants.PARTIAL_EXON_DUP,
+            GATKSVVCFConstants.COPY_GAIN,
+            GATKSVVCFConstants.TSS_DUP,
+            GATKSVVCFConstants.INV_SPAN,
+            GATKSVVCFConstants.MSV_EXON_OVERLAP,
+            GATKSVVCFConstants.UTR,
+            GATKSVVCFConstants.INTRONIC,
+            GATKSVVCFConstants.BREAKEND_EXON);
+
+    @VisibleForTesting
+    protected static final Set<GATKSVVCFConstants.ComplexVariantSubtype> COMPLEX_SUBTYPES_WITH_DISPERSED_DUP =
+            Sets.newHashSet(GATKSVVCFConstants.ComplexVariantSubtype.dDUP,
+                    GATKSVVCFConstants.ComplexVariantSubtype.dupINV,
+                    GATKSVVCFConstants.ComplexVariantSubtype.INVdup,
+                    GATKSVVCFConstants.ComplexVariantSubtype.dupINVdup,
+                    GATKSVVCFConstants.ComplexVariantSubtype.dupINVdel,
+                    GATKSVVCFConstants.ComplexVariantSubtype.delINVdup,
+                    GATKSVVCFConstants.ComplexVariantSubtype.dDUP_iDEL);
 
     // Mini class to package SV type and interval into one object
     @VisibleForTesting
@@ -211,14 +237,21 @@ public class SVAnnotateEngine {
      * Get consequence of duplication variant on transcript
      * @param variantInterval - SimpleInterval representing structural variant
      * @param gtfTranscript - protein-coding GTF transcript
+     * @param isDispersedDuplication - boolean: true if duplication segment is dispersed, false otherwise
      * @return - consequence of duplication variant on transcript
      */
     @VisibleForTesting
     protected static String annotateDuplication(final SimpleInterval variantInterval,
-                                                final GencodeGtfTranscriptFeature gtfTranscript) {
+                                                final GencodeGtfTranscriptFeature gtfTranscript,
+                                                boolean isDispersedDuplication) {
         final SimpleInterval transcriptInterval = new SimpleInterval(gtfTranscript);
         if (variantSpansFeature(variantInterval, transcriptInterval)) {
+            // return COPY_GAIN immediately because same regardless of tandem or dispersed (isDispersedDuplication)
             return GATKSVVCFConstants.COPY_GAIN;
+        } else if (isDispersedDuplication) {
+            // all DUP segments in CPX events are currently dispersed duplications, not tandem. So
+            // if not COPY_GAIN, then partial gene overlap --> if complex, immediate PARTIAL_DISPERSED_DUP
+            return GATKSVVCFConstants.PARTIAL_DISPERSED_DUP;
         } else if (variantOverlapsTranscriptionStartSite(variantInterval, gtfTranscript)) {
             return GATKSVVCFConstants.TSS_DUP;
         } else if (!transcriptInterval.contains(variantInterval)) {
@@ -276,7 +309,7 @@ public class SVAnnotateEngine {
     protected static String annotateCopyNumberVariant(final SimpleInterval variantInterval,
                                                       final GencodeGtfTranscriptFeature gtfTranscript,
                                                       final Set<String> MSVExonOverlapClassifications) {
-        final String consequence = annotateDuplication(variantInterval, gtfTranscript);
+        final String consequence = annotateDuplication(variantInterval, gtfTranscript, false);
         if (MSVExonOverlapClassifications.contains(consequence)) {
             return GATKSVVCFConstants.MSV_EXON_OVERLAP;
         } else {
@@ -338,12 +371,14 @@ public class SVAnnotateEngine {
      * Add consequence of structural variant on an overlapping transcript to consequence dictionary for variant
      * @param variantInterval - SimpleInterval representing structural variant
      * @param svType - SV type
+     * @param includesDispersedDuplication - boolean: true if SV type contains dispersed duplication(s), false if not
      * @param transcript - protein-coding GTF transcript
      * @param variantConsequenceDict - running map of consequence -> feature name for variant to update
      */
     @VisibleForTesting
     protected void annotateTranscript(final SimpleInterval variantInterval,
                                              final GATKSVVCFConstants.StructuralVariantAnnotationType svType,
+                                             final boolean includesDispersedDuplication,
                                              final GencodeGtfTranscriptFeature transcript,
                                              final Map<String, Set<String>> variantConsequenceDict) {
         final String consequence;
@@ -355,7 +390,9 @@ public class SVAnnotateEngine {
                 consequence = annotateInsertion(variantInterval, transcript);
                 break;
             case DUP:
-                consequence = annotateDuplication(variantInterval, transcript);
+                // if SV includesDispersedDuplication, every DUP segment in the SV is treated as dispersed
+                // this assumption holds for the complex subtypes currently resolved by GATK-SV
+                consequence = annotateDuplication(variantInterval, transcript, includesDispersedDuplication);
                 break;
             case CNV:
                 consequence = annotateCopyNumberVariant(variantInterval,transcript, MSV_EXON_OVERLAP_CLASSIFICATIONS);
@@ -395,6 +432,7 @@ public class SVAnnotateEngine {
         for (final Iterator<SVIntervalTree.Entry<String>> it = promotersForVariant; it.hasNext(); ) {
             final SVIntervalTree.Entry<String> promoterEntry = it.next();
             final String promoterName = promoterEntry.getValue();
+            // only annotate promoter overlap if there is no coding annotation for the gene
             if (!codingAnnotationGenes.contains(promoterName)) {
                 updateVariantConsequenceDict(variantConsequenceDict, GATKSVVCFConstants.PROMOTER, promoterName);
             }
@@ -477,11 +515,13 @@ public class SVAnnotateEngine {
      * Add protein-coding annotations for any transcripts overlapping the variant to the variant consequence dictionary
      * @param variantInterval - SimpleInterval representing structural variant
      * @param svType - SV type
+     * @param includesDispersedDuplication - boolean: true if SV type contains dispersed duplication(s), false otherwise
      * @param variantConsequenceDict - running map of consequence -> feature name for variant to update
      */
     @VisibleForTesting
     protected void annotateGeneOverlaps(final SimpleInterval variantInterval,
                                                final GATKSVVCFConstants.StructuralVariantAnnotationType svType,
+                                               final boolean includesDispersedDuplication,
                                                final Map<String, Set<String>> variantConsequenceDict) {
         final Iterator<SVIntervalTree.Entry<GencodeGtfTranscriptFeature>> gtfTranscriptsForVariant =
                 gtfIntervalTrees.getTranscriptIntervalTree().overlappers(
@@ -489,23 +529,100 @@ public class SVAnnotateEngine {
                 );
         for (Iterator<SVIntervalTree.Entry<GencodeGtfTranscriptFeature>> it = gtfTranscriptsForVariant; it.hasNext(); ) {
             SVIntervalTree.Entry<GencodeGtfTranscriptFeature> transcriptEntry = it.next();
-            annotateTranscript(variantInterval, svType, transcriptEntry.getValue(), variantConsequenceDict);
+            annotateTranscript(variantInterval, svType, includesDispersedDuplication, transcriptEntry.getValue(),
+                    variantConsequenceDict);
         }
     }
 
+
     /**
-     * Parse one interval string from CPX_INTERVALS INFO field into an SVSegment representing the SV type and
-     * interval of one of the components of the complex event
-     * @param cpxInterval - one element from CPX_INTERVALS list, a string representing one component of complex SV
-     * @return - SVSegment representing one component of the complex SV (type and interval)
+     * Parse CPX_INTERVALS field into a list of SV segments.
+     * Format of each item in CPX_INTERVALS is "SVTYPE_CHROM:POS-END"
+     * @param cpxIntervals - list of String elements from CPX_INTERVALS field, each describing one segment of a complex SV
+     * @return - List of SVSegments representing components of the complex SV represented in CPX_INTERVALS
      */
     @VisibleForTesting
-    protected static SVSegment parseCPXIntervalString(final String cpxInterval) {
-        final String[] parsed = cpxInterval.split("_");
-        final GATKSVVCFConstants.StructuralVariantAnnotationType svTypeForInterval = GATKSVVCFConstants.StructuralVariantAnnotationType.valueOf(parsed[0]);
-        final SimpleInterval interval = new SimpleInterval(parsed[1]);
-        return new SVSegment(svTypeForInterval, interval);
+    protected static List<SVSegment> parseComplexIntervals(final List<String> cpxIntervals) {
+        final List<SVSegment> segments = new ArrayList<>(cpxIntervals.size() + 1);
+        for (final String cpxInterval : cpxIntervals) {
+            final String[] parsed = cpxInterval.split("_");
+            final GATKSVVCFConstants.StructuralVariantAnnotationType svTypeForInterval = GATKSVVCFConstants.StructuralVariantAnnotationType.valueOf(parsed[0]);
+            final SimpleInterval interval = new SimpleInterval(parsed[1]);
+            segments.add(new SVSegment(svTypeForInterval, interval));
+        }
+        return segments;
     }
+
+
+    /**
+     * Return modified complex SV intervals list ready for protein-coding annotation.
+     * Start from SV segments from CPX_INTERVALS and ignore or adjust intervals as needed:
+     * (1) Ignore INV segments in dDUP, dDUP_iDEL, and INS_iDEL events because they describe an inversion in the inserted
+     * sequence that has no impact on the source sequence.
+     * (2) Adjust INV segments in dupINV, INVdup, dupINVdup, dupINVdel, and delINVdup events by subtracting the portion
+     * of the interval overlapped by a DUP segment, because that describes an inversion in the duplicated copy that has no
+     * impact on the source sequence.
+     * (3) Ignore INS segment in INS_iDEL if present because it represents the source sequence and the impact on the
+     * source (DUP or DEL) is unknown and cannot be annotated.
+     * @param cpxIntervals - list of SVSegments representing complex SV intervals from CPX_INTERVALS field
+     * @param complexType - Complex SV event type category, from CPX_TYPE field
+     * @return - List of SVSegments representing component of the complex SV (type and interval) to annotate for
+     *      protein-coding consequences
+     */
+    @VisibleForTesting
+    protected static ArrayList<SVSegment> getComplexAnnotationIntervals(final List<SVSegment> cpxIntervals,
+                                                                   final GATKSVVCFConstants.ComplexVariantSubtype complexType) {
+        final ArrayList<SVSegment> segments = new ArrayList<>(cpxIntervals.size());
+        final List<SimpleInterval> dupIntervals = new ArrayList<>(cpxIntervals.size());
+        SimpleInterval inversionIntervalToAdjust = null;
+        boolean keepSegment;
+        for (final SVSegment originalSegment : cpxIntervals) {
+            keepSegment = true;
+            if (originalSegment.getIntervalSVType() == GATKSVVCFConstants.StructuralVariantAnnotationType.INV) {
+                // ignore INV segment for dDUP or dDUP_iDEL or INS_iDEL
+                // because it is an inversion of the inserted sequence relative to the origin
+                // but has no impact on the origin site
+                if (complexType == GATKSVVCFConstants.ComplexVariantSubtype.dDUP ||
+                        complexType == GATKSVVCFConstants.ComplexVariantSubtype.dDUP_iDEL ||
+                        complexType == GATKSVVCFConstants.ComplexVariantSubtype.INS_iDEL) {
+                    keepSegment = false;
+                }
+                // save INV interval to adjust later for dupINV / INVdup / dupINVdup / dupINVdel / delINVdup
+                // because INV interval includes duplicated sequence that is inverted relative to origin when re-inserted
+                // but there is no inversion at the origin site for this sequence
+                else if (complexType == GATKSVVCFConstants.ComplexVariantSubtype.dupINV ||
+                        complexType == GATKSVVCFConstants.ComplexVariantSubtype.INVdup ||
+                        complexType == GATKSVVCFConstants.ComplexVariantSubtype.dupINVdup ||
+                        complexType == GATKSVVCFConstants.ComplexVariantSubtype.delINVdup ||
+                        complexType == GATKSVVCFConstants.ComplexVariantSubtype.dupINVdel) {
+                    inversionIntervalToAdjust = originalSegment.getInterval();
+                    keepSegment = false;
+                }
+            } else if (originalSegment.getIntervalSVType() == GATKSVVCFConstants.StructuralVariantAnnotationType.DUP) {
+                dupIntervals.add(originalSegment.getInterval());
+            } else if (originalSegment.getIntervalSVType() == GATKSVVCFConstants.StructuralVariantAnnotationType.INS &&
+                    complexType == GATKSVVCFConstants.ComplexVariantSubtype.INS_iDEL) {
+                // if there is an INS interval in CPX_INTERVALS for INS_iDEL, ignore it
+                // because it represents the origin of the inserted sequence and the status (DUP or DEL) is unknown
+                keepSegment = false;
+            }
+            if (keepSegment) {
+                segments.add(originalSegment);
+            }
+        }
+        // adjust INV interval for dupINV / INVdup / dupINVdup / dupINVdel / delINVdup
+        // to remove portion that overlaps duplicated sequence (not inverted at sequence origin so no impact)
+        // and keep portion that represents sink site breakpoints
+        if (inversionIntervalToAdjust != null) {
+            for (final SimpleInterval dupInterval : dupIntervals) {
+                inversionIntervalToAdjust = inversionIntervalToAdjust.subtract(dupInterval);
+            }
+            segments.add(new SVSegment(GATKSVVCFConstants.StructuralVariantAnnotationType.INV, inversionIntervalToAdjust));
+        }
+
+        return segments;
+    }
+
 
     /**
      * Get SV type to use for annotation for a breakend VCF record
@@ -519,11 +636,12 @@ public class SVAnnotateEngine {
      * @return - SV type to use for annotation of breakend record
      */
     private static GATKSVVCFConstants.StructuralVariantAnnotationType getAnnotationTypeForBreakend(final VariantContext variant,
-                                                                                                   final String complexType,
+                                                                                                   final GATKSVVCFConstants.ComplexVariantSubtype complexType,
                                                                                                    final int maxBreakendLen,
                                                                                                    final int svLen,
                                                                                                    final String chrom, final String chr2) {
-        if (complexType != null && complexType.contains("CTX")) {
+        if (complexType != null && (complexType == GATKSVVCFConstants.ComplexVariantSubtype.CTX_PP_QQ ||
+                complexType == GATKSVVCFConstants.ComplexVariantSubtype.CTX_PQ_QP)) {
             return GATKSVVCFConstants.StructuralVariantAnnotationType.CTX;
         } else if (maxBreakendLen > 0 && chr2 != null && chrom.equals(chr2) && svLen <= maxBreakendLen) {
             // if maxBreakendLenForOverlapAnnotation argument provided, annotate as DUP or DEL if applicable
@@ -554,38 +672,45 @@ public class SVAnnotateEngine {
     @VisibleForTesting
     protected static List<SVSegment> getSVSegments(final VariantContext variant,
                                                    final GATKSVVCFConstants.StructuralVariantAnnotationType overallSVType,
-                                                   final int maxBreakendLen) {
+                                                   final int maxBreakendLen,
+                                                   final GATKSVVCFConstants.ComplexVariantSubtype complexType) {
         final List<SVSegment> intervals;
-        final String complexType = variant.getAttributeAsString(GATKSVVCFConstants.CPX_TYPE, null);
         final String chrom = variant.getContig();
         final int pos = variant.getStart();
         final String chr2 = variant.getAttributeAsString(GATKSVVCFConstants.CONTIG2_ATTRIBUTE, null);
         final int end2 = variant.getAttributeAsInt(GATKSVVCFConstants.END2_ATTRIBUTE, pos);
+        final List<String> cpxIntervals = variant.getAttributeAsStringList(GATKSVVCFConstants.CPX_INTERVALS, null);
         if (overallSVType.equals(GATKSVVCFConstants.StructuralVariantAnnotationType.CPX)) {
-            final List<String> cpxIntervalsString = variant.getAttributeAsStringList(GATKSVVCFConstants.CPX_INTERVALS, null);
-            if (cpxIntervalsString == null) {
+            if (cpxIntervals.isEmpty()) {
                 throw new UserException("Complex (CPX) variant must contain CPX_INTERVALS INFO field");
             }
             if (complexType == null) {
                 throw new UserException("Complex (CPX) variant must contain CPX_TYPE INFO field");
             }
-            intervals = new ArrayList<>(cpxIntervalsString.size() + 1);
-            for (final String cpxInterval : cpxIntervalsString) {
-                intervals.add(parseCPXIntervalString(cpxInterval));
-            }
-            if (complexType.contains("dDUP")) {
+            intervals = getComplexAnnotationIntervals(parseComplexIntervals(cpxIntervals), complexType);
+            // add sink site as INS for dDUP (encoded in CHROM and POS instead of INFO/CPX_INTERVALS)
+            // no need to add sink site INS for INS_iDEL or dDUP_iDEL because DEL coordinates contain sink site
+            if (complexType == GATKSVVCFConstants.ComplexVariantSubtype.dDUP) {
                 intervals.add(new SVSegment(GATKSVVCFConstants.StructuralVariantAnnotationType.INS,
                         new SimpleInterval(chrom, pos, pos + 1)));
             }
         } else if (overallSVType.equals(GATKSVVCFConstants.StructuralVariantAnnotationType.CTX)) {
-            intervals = new ArrayList<>(2);
-            intervals.add(new SVSegment(overallSVType, new SimpleInterval(variant)));  // CHROM:POS-POS+1
-            // annotate both breakpoints of translocation - CHR2:END2-END2+1
+            // if SVTYPE is CTX and CPX_TYPE is CTX_INV, add INV from CTX_INTERVALS
+            if (complexType == GATKSVVCFConstants.ComplexVariantSubtype.CTX_INV && !cpxIntervals.isEmpty()) {
+                intervals = getComplexAnnotationIntervals(parseComplexIntervals(cpxIntervals), complexType);
+            } else {
+                intervals = new ArrayList<>(2);
+            }
+            // annotate POS and END separately in case END != POS+1, such as in the case of CTX_INV
+            intervals.add(new SVSegment(overallSVType, new SimpleInterval(chrom, pos, pos)));
+            intervals.add(new SVSegment(overallSVType, new SimpleInterval(chrom, variant.getEnd(), variant.getEnd())));
+            // annotate breakpoints of translocation on CHR2 - END2 and END2+1
+            // TODO: update if POS2 is added to accommodate complex translocations
             if (chr2 == null) {
                 throw new UserException("Translocation (CTX) variant represented as a single record must contain CHR2 INFO field");
             }
-            intervals.add(new SVSegment(overallSVType,
-                    new SimpleInterval(chr2, end2, end2 + 1)));
+            intervals.add(new SVSegment(overallSVType, new SimpleInterval(chr2, end2, end2)));
+            intervals.add(new SVSegment(overallSVType, new SimpleInterval(chr2, end2 + 1, end2 + 1)));
         } else if (overallSVType.equals(GATKSVVCFConstants.StructuralVariantAnnotationType.BND)){
             intervals = new ArrayList<>(2);
             final int svLen = variant.getAttributeAsInt(GATKSVVCFConstants.SVLEN, 0);
@@ -620,7 +745,62 @@ public class SVAnnotateEngine {
         return intervals;
     }
 
+    /**
+     * Returns a list of SVSegments to use for promoter & noncoding annotations
+     * For simple (non-complex) SVs, returns original list of segments
+     * For complex SVs, returns a new subsetted list of SVSegments without DUP segments, which are always dispersed
+     * (never tandem) in current set of defined CPX subtypes, and so are not considered for noncoding annotations.
+     * @param svSegments - List of SVSegments used for gene overlap annotations
+     * @return - Subsetted list of SVSegments to use for promoter & noncoding annotations for CPX SVs
+     */
+    @VisibleForTesting
+    protected static List<SVSegment> getSegmentsForNonCodingAnnotations(final List<SVSegment> svSegments,
+                                                                        final boolean isComplex) {
+        if (isComplex) {
+            return svSegments.stream()
+                    .filter(seg -> seg.getIntervalSVType() != GATKSVVCFConstants.StructuralVariantAnnotationType.DUP)
+                    .collect(Collectors.toList());
+        }
+        else {
+            return svSegments;
+        }
+    }
 
+    /**
+     * Returns a list of SVSegments to use for nearest TSS annotations.
+     * Must apply on the output of getSegmentsForNonCodingAnnotations.
+     * For simple (non-complex) SVs, returns original list of segments.
+     * For complex SVs, merges remaining intervals (DEL, INV) into a single interval for deletion-containing CPX events.
+     * DUP segments are already removed from complex SVs.
+     * @param svSegments - List of SVSegments used for gene overlap annotations
+     * @return - List of SVSegments to use for nearest TSS annotations for CPX SVs
+     */
+    @VisibleForTesting
+    protected static List<SVSegment> getSegmentForNearestTSS(final List<SVSegment> svSegments,
+                                                             final GATKSVVCFConstants.ComplexVariantSubtype complexType) {
+        // for dDUP_iDEL, INS_iDEL, delINV, INVdel, dupINVdel, delINVdup, delINVdel --> merge all remaining SV segments
+        // which will be INS, DEL, INV types (DUPs already removed)
+        // so that there is only one nearest TSS based on outer breakpoints of CPX event
+        if (complexType != null &&
+                (complexType == GATKSVVCFConstants.ComplexVariantSubtype.INS_iDEL ||
+                complexType == GATKSVVCFConstants.ComplexVariantSubtype.dDUP_iDEL ||
+                complexType == GATKSVVCFConstants.ComplexVariantSubtype.delINV ||
+                complexType == GATKSVVCFConstants.ComplexVariantSubtype.INVdel ||
+                complexType == GATKSVVCFConstants.ComplexVariantSubtype.dupINVdel ||
+                complexType == GATKSVVCFConstants.ComplexVariantSubtype.delINVdup ||
+                complexType == GATKSVVCFConstants.ComplexVariantSubtype.delINVdel)) {
+            SimpleInterval spanningSegment = svSegments.get(0).getInterval();
+            for (int i = 1; i < svSegments.size(); i++) {
+                spanningSegment = spanningSegment.mergeWithContiguous(svSegments.get(i).getInterval());
+            }
+            return Collections.singletonList(new SVSegment(GATKSVVCFConstants.StructuralVariantAnnotationType.DEL,
+                    spanningSegment));
+        } else {
+            // if not complex return original list of segments
+            // if complex & dDUP, dupINV, INVdup, dupINVdup --> no further modifications (already adjusted INV, removed DUPs)
+            return svSegments;
+        }
+    }
 
     /**
      * Create a copy of the variant consequence dictionary in which the feature names for each consequence are sorted
@@ -640,6 +820,39 @@ public class SVAnnotateEngine {
     }
 
     /**
+     * Checks if a variant is intergenic (no protein-coding consequences, excluding PARTIAL_DISPERSED_DUP).
+     * Only valid after annotating all protein-coding consequences for an SV.
+     * @param variantConsequenceDict - contains variant consequences and feature names
+     * @param proteinCodingConsequences - set of protein-coding consequences to check for
+     * @return - boolean: true if intergenic (no protein-coding consequences),
+     *      false if not intergenic (has protein-coding consequences)
+     */
+    @VisibleForTesting
+    protected static boolean isIntergenic(final Map<String,Set<String>> variantConsequenceDict,
+                                          final Set<String> proteinCodingConsequences) {
+        for (final String consequence : variantConsequenceDict.keySet()) {
+            if (proteinCodingConsequences.contains(consequence)) {
+                // if the SV has protein-coding consequences other than PARTIAL_DISPERSED_DUP then it is not INTERGENIC
+                return false;
+            }
+        }
+        // if the SV has no protein-coding consequences then it is intergenic
+        return true;
+    }
+
+    /**
+     * Checks if a variant includes one or more dispersed duplications
+     * @param complexType - the complex subtype of the SV
+     * @param complexSubtypesWithDispersedDup - the set of complex subtypes containing one or more dispersed duplications
+     * @return - boolean: true if the SV's complexType is in the set of complexSubtypesWithDispersedDup, false otherwise
+     */
+    @VisibleForTesting
+    protected static boolean includesDispersedDuplication(final GATKSVVCFConstants.ComplexVariantSubtype complexType,
+                                                          final Set<GATKSVVCFConstants.ComplexVariantSubtype> complexSubtypesWithDispersedDup) {
+        return complexType != null && complexSubtypesWithDispersedDup.contains(complexType);
+    }
+
+    /**
      * Create a consequence -> feature name map and add all annotations for protein-coding, promoter, nearest TSS,
      * and noncoding consequences for a variant
      * @param variant - VCF record
@@ -649,40 +862,58 @@ public class SVAnnotateEngine {
     protected Map<String, Object> annotateStructuralVariant(final VariantContext variant) {
         final Map<String, Set<String>> variantConsequenceDict = new HashMap<>();
         final GATKSVVCFConstants.StructuralVariantAnnotationType overallSVType = getSVType(variant);
-        final List<SVSegment> svSegments = getSVSegments(variant, overallSVType, maxBreakendLen);
+        final String complexTypeString = variant.getAttributeAsString(GATKSVVCFConstants.CPX_TYPE, null);
+        GATKSVVCFConstants.ComplexVariantSubtype complexType = null;
+        if (complexTypeString != null) {
+            // replace / in CTX_PP/QQ and CTX_PQ/QP with _ to match ComplexVariantSubtype constants which cannot contain slashes
+            complexType = GATKSVVCFConstants.ComplexVariantSubtype.valueOf(complexTypeString.replace("/", "_"));
+        }
+        final boolean includesDispersedDuplication = includesDispersedDuplication(complexType, COMPLEX_SUBTYPES_WITH_DISPERSED_DUP);
+        final List<SVSegment> svSegmentsForGeneOverlaps = getSVSegments(variant, overallSVType, maxBreakendLen, complexType);
+
+        // annotate gene overlaps
         if (gtfIntervalTrees != null && gtfIntervalTrees.getTranscriptIntervalTree() != null) {
-            for (SVSegment svSegment : svSegments) {
-                annotateGeneOverlaps(svSegment.getInterval(), svSegment.getIntervalSVType(), variantConsequenceDict);
+            for (SVSegment svSegment : svSegmentsForGeneOverlaps) {
+                annotateGeneOverlaps(svSegment.getInterval(), svSegment.getIntervalSVType(),
+                        includesDispersedDuplication, variantConsequenceDict);
             }
         }
 
-        // if variant consequence dictionary is empty (no protein-coding annotations), apply INTERGENIC flag
-        final boolean noCodingAnnotations = variantConsequenceDict.isEmpty();
+        // if variant consequence dictionary contains no protein-coding consequences, apply INTERGENIC flag
+        final boolean isIntergenic = isIntergenic(variantConsequenceDict, PROTEIN_CODING_CONSEQUENCES);
+
+        // get SV segments to annotate promoter & noncoding consequences
+        final List<SVSegment> svSegmentsForNonCodingAnnotations =
+                getSegmentsForNonCodingAnnotations(svSegmentsForGeneOverlaps, includesDispersedDuplication);
 
         // then annotate promoter overlaps and non-coding feature overlaps
         if (gtfIntervalTrees != null && gtfIntervalTrees.getPromoterIntervalTree() != null) {
-            for (final SVSegment svSegment : svSegments) {
+            for (final SVSegment svSegment : svSegmentsForNonCodingAnnotations) {
                 annotatePromoterOverlaps(svSegment.getInterval(), variantConsequenceDict);
             }
         }
 
         if (nonCodingIntervalTree != null) {
-            for (SVSegment svSegment : svSegments) {
+            for (SVSegment svSegment : svSegmentsForNonCodingAnnotations) {
                 annotateNonCodingOverlaps(svSegment.getInterval(), variantConsequenceDict);
             }
         }
 
+        // get list of SV segments to annotate nearest TSS
+        List<SVSegment> svSegmentsForNearestTSS =
+                getSegmentForNearestTSS(svSegmentsForNonCodingAnnotations, complexType);
+
         // annotate nearest TSS for intergenic variants with no promoter overlaps
         if (gtfIntervalTrees != null && gtfIntervalTrees.getTranscriptionStartSiteTree() != null &&
-                !variantConsequenceDict.containsKey(GATKSVVCFConstants.PROMOTER) && noCodingAnnotations) {
-            for (SVSegment svSegment : svSegments) {
+                !variantConsequenceDict.containsKey(GATKSVVCFConstants.PROMOTER) && isIntergenic) {
+            for (SVSegment svSegment : svSegmentsForNearestTSS) {
                 annotateNearestTranscriptionStartSite(svSegment.getInterval(), variantConsequenceDict);
             }
         }
 
         final Map<String, Object> attributes = sortVariantConsequenceDict(variantConsequenceDict);
         if (gtfIntervalTrees != null && gtfIntervalTrees.getTranscriptIntervalTree() != null) {
-            attributes.put(GATKSVVCFConstants.INTERGENIC, noCodingAnnotations);
+            attributes.put(GATKSVVCFConstants.INTERGENIC, isIntergenic);
         }
         return attributes;
     }

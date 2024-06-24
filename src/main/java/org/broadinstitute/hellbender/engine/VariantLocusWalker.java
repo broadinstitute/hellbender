@@ -132,11 +132,17 @@ public abstract class VariantLocusWalker extends VariantWalkerBase {
                     .forEachOrdered(variant -> {
 
                         final SimpleInterval variantInterval = new SimpleInterval(variant);
-                        apply(variant,
-                                Collections.singletonList(variant),
-                                new ReadsContext(reads, variantInterval, readFilter),
-                                new ReferenceContext(reference, variantInterval),
-                                new FeatureContext(features, variantInterval));
+
+                        try{
+                            apply(variant,
+                                    Collections.singletonList(variant),
+                                    new ReadsContext(reads, variantInterval, readFilter),
+                                    new ReferenceContext(reference, variantInterval),
+                                    new FeatureContext(features, variantInterval));
+                        } catch (final IllegalStateException e) {
+                            throw new GATKException("Exception thrown at " + variant.getContig() + ":" + variant.getStart()
+                                    + " " + variant.toString(), e);
+                        }
 
                         progressMeter.update(variantInterval);
                     });
@@ -158,11 +164,16 @@ public abstract class VariantLocusWalker extends VariantWalkerBase {
                                                     postTransformer)
                                                     .collect(Collectors.toList());
                                             if (!filteredVariants.isEmpty()) {
-                                                apply(locus,
-                                                        filteredVariants,
-                                                        new ReadsContext(reads, locus, readFilter),
-                                                        new ReferenceContext(reference, locus),
-                                                        new FeatureContext(features, locus));
+                                                try {
+                                                    apply(locus,
+                                                            filteredVariants,
+                                                            new ReadsContext(reads, locus, readFilter),
+                                                            new ReferenceContext(reference, locus),
+                                                            new FeatureContext(features, locus));
+                                                } catch (final IllegalStateException e) {
+                                                    throw new GATKException("Exception thrown at first variant start " + filteredVariants.get(0).getContig() + ":" + filteredVariants.get(0).getStart()
+                                                            + " " + filteredVariants.get(0).toString(), e);
+                                                }
 
                                                 progressMeter.update(locus);
                                             }

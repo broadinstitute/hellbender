@@ -1,7 +1,7 @@
 package org.broadinstitute.hellbender.utils.recalibration.covariates;
 
 import htsjdk.samtools.SAMFileHeader;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.broadinstitute.hellbender.utils.BaseUtils;
 import org.broadinstitute.hellbender.utils.Utils;

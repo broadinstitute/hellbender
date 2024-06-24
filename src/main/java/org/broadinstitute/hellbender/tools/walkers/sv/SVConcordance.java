@@ -2,6 +2,8 @@ package org.broadinstitute.hellbender.tools.walkers.sv;
 
 import com.google.common.collect.Sets;
 import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.variant.variantcontext.Genotype;
+import htsjdk.variant.variantcontext.GenotypeBuilder;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.VariantContextBuilder;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
@@ -30,8 +32,8 @@ import org.broadinstitute.hellbender.tools.walkers.validation.Concordance;
 import org.broadinstitute.hellbender.utils.SequenceDictionaryUtils;
 import picard.vcf.GenotypeConcordance;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * <p>This tool calculates SV genotype concordance between an "evaluation" VCF and a "truth" VCF. For each evaluation
@@ -49,6 +51,8 @@ import java.util.Set;
  * and allele frequency use all records and samples available. See output header for descriptions
  * of the specific fields. For multi-allelic CNVs, only a copy state concordance metric is
  * annotated. Allele frequencies will be recalculated automatically if unavailable in the provided VCFs.
+ *
+ * For large inputs, users may enable the --do-not-sort flag to reduce memory usage.
  *
  * <h3>Inputs</h3>
  *
@@ -90,7 +94,7 @@ import java.util.Set;
 @DocumentedFeature
 public final class SVConcordance extends AbstractConcordanceWalker {
 
-    public static final String USE_TRUTH_AF_LONG_NAME = "use-truth-af";
+    public static final String UNSORTED_OUTPUT_LONG_NAME = "do-not-sort";
 
     @Argument(
             doc = "Output VCF",
@@ -98,6 +102,12 @@ public final class SVConcordance extends AbstractConcordanceWalker {
             shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME
     )
     private GATKPath outputFile;
+
+    @Argument(
+            doc = "Skip output sorting. This can substantially reduce memory usage.",
+            fullName = UNSORTED_OUTPUT_LONG_NAME
+    )
+    private boolean doNotSort;
 
     @ArgumentCollection
     private final SVClusterEngineArgumentsCollection clusterParameterArgs = new SVClusterEngineArgumentsCollection();
@@ -136,8 +146,11 @@ public final class SVConcordance extends AbstractConcordanceWalker {
                 new HashSet<>(getEvalHeader().getGenotypeSamples()),
                 new HashSet<>(getTruthHeader().getGenotypeSamples()));
         final SVConcordanceAnnotator collapser = new SVConcordanceAnnotator(commonSamples);
-        engine = new ClosestSVFinder(linkage, collapser::annotate, dictionary);
+        engine = new ClosestSVFinder(linkage, collapser::annotate, !doNotSort, dictionary);
 
+        if (doNotSort) {
+            createOutputVariantIndex = false;
+        }
         writer = createVCFWriter(outputFile);
         writer.writeHeader(createHeader(getEvalHeader()));
     }
@@ -172,8 +185,30 @@ public final class SVConcordance extends AbstractConcordanceWalker {
             flushClusters(true);
             currentContig = record.getContigA();
         }
+        if (isTruth) {
+            record = minimizeTruthFootprint(record);
+        }
         engine.add(record, isTruth);
         flushClusters(false);
+    }
+
+    /**
+     * Strips unneeded attributes from a truth variant to save memory.
+     */
+    protected SVCallRecord minimizeTruthFootprint(final SVCallRecord item) {
+        final List<Genotype> genotypes = item.getGenotypes().stream().map(SVConcordance::stripTruthGenotype).collect(Collectors.toList());
+        return new SVCallRecord(item.getId(), item.getContigA(), item.getPositionA(),
+                item.getStrandA(), item.getContigB(), item.getPositionB(), item.getStrandB(), item.getType(),
+                item.getCpxSubtype(), item.getLength(), item.getAlgorithms(), item.getAlleles(), genotypes,
+                item.getAttributes(), item.getFilters(), item.getLog10PError(), dictionary);
+    }
+
+    private static Genotype stripTruthGenotype(final Genotype genotype) {
+        final GenotypeBuilder builder = new GenotypeBuilder(genotype.getSampleName()).alleles(genotype.getAlleles());
+        if (genotype.hasExtendedAttribute(GATKSVVCFConstants.COPY_NUMBER_FORMAT)) {
+            builder.attribute(GATKSVVCFConstants.COPY_NUMBER_FORMAT, genotype.getExtendedAttribute(GATKSVVCFConstants.COPY_NUMBER_FORMAT));
+        }
+        return builder.make();
     }
 
     @Override

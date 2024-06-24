@@ -1,6 +1,6 @@
 package org.broadinstitute.hellbender.tools.walkers.vqsr.scalable.modeling;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.Logger;
 import org.broadinstitute.hdf5.HDF5File;
 import org.broadinstitute.hdf5.HDF5LibException;

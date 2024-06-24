@@ -116,7 +116,7 @@ jobs:
 
       - name: 'Set up Cloud SDK'
         if: needs.check-secrets.outputs.google-credentials == 'true'
-        uses: google-github-actions/setup-gcloud@v0
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: pull lfs files
         run: git lfs pull
@@ -188,7 +188,7 @@ jobs:
 
       - name: 'Set up Cloud SDK'
         if: needs.check-secrets.outputs.google-credentials == 'true'
-        uses: google-github-actions/setup-gcloud@v0
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: build test jars
         run: ./gradlew clean shadowTestClassJar shadowTestJar
@@ -230,10 +230,6 @@ jobs:
             bash --init-file /gatk/gatkenv.rc /root/run_unit_tests.sh;
           TEST_EXIT_VALUE=$?;
           $( exit ${TEST_EXIT_VALUE} );
-          sudo chmod -R a+w build/reports/;
-          mkdir build/reports/tests/test \
-           && cp -rp build/reports/tests/testOnPackagedReleaseJar/* build/reports/tests/test \
-           && rm -r build/reports/tests/testOnPackagedReleaseJar;
 
       - uses: ./.github/actions/upload-gatk-test-results
         if: always()

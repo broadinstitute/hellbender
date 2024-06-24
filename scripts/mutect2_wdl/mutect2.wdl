@@ -95,6 +95,7 @@ workflow Mutect2 {
         # additional modes and outputs
         File? realignment_index_bundle
         String? realignment_extra_args
+        File? dragstr_model
         Boolean run_orientation_bias_mixture_model_filter = false
         Boolean make_bamout = false
         Boolean compress_vcfs = false
@@ -178,6 +179,7 @@ workflow Mutect2 {
                 getpileupsummaries_extra_args = getpileupsummaries_extra_args,
                 variants_for_contamination = variants_for_contamination,
                 variants_for_contamination_idx = variants_for_contamination_idx,
+                dragstr_model = dragstr_model,
                 make_bamout = make_bamout,
                 run_ob_filter = run_orientation_bias_mixture_model_filter,
                 compress_vcfs = compress_vcfs,
@@ -312,6 +314,8 @@ workflow Mutect2 {
         File? maf_segments = CalculateContamination.maf_segments
         File? read_orientation_model_params = LearnReadOrientationModel.artifact_prior_table
         File? m3_dataset = Concatenate.concatenated
+        File permutect_contigs_table = select_first(M2.permutect_contigs_table)
+        File permutect_read_groups_table = select_first(M2.permutect_read_groups_table)
     }
 }
 
@@ -380,6 +384,7 @@ task M2 {
         File? gga_vcf_idx
         File? variants_for_contamination
         File? variants_for_contamination_idx
+        File? dragstr_model
 
         File? gatk_override
 
@@ -439,26 +444,27 @@ task M2 {
         touch bamout.bam
         touch f1r2.tar.gz
         touch dataset.txt
-        echo "" > normal_name.txt
-
-        gatk --java-options "-Xmx~{command_mem}m" GetSampleName -R ~{ref_fasta} -I ~{tumor_reads} -O tumor_name.txt -encode \
-        ~{"--gcs-project-for-requester-pays " + gcs_project_for_requester_pays}
-        tumor_command_line="-I ~{tumor_reads} -tumor `cat tumor_name.txt`"
+        touch contigs.table
+        touch read-groups.table
 
         if [[ ! -z "~{normal_reads}" ]]; then
-            gatk --java-options "-Xmx~{command_mem}m" GetSampleName -R ~{ref_fasta} -I ~{normal_reads} -O normal_name.txt -encode \
+            gatk --java-options "-Xmx~{command_mem}m" GetSampleName -R ~{ref_fasta} -I ~{normal_reads} -O normal_names.txt -encode \
             ~{"--gcs-project-for-requester-pays " + gcs_project_for_requester_pays}
-            normal_command_line="-I ~{normal_reads} -normal `cat normal_name.txt`"
+            # add "-normal " to the start of each line and " " to the end, then remove newlines
+            # to get -normal sample1 -normal sample2 etc
+            normal_sample_line=`awk '{ print "-normal", $0 }' normal_names.txt | tr '\n' ' '`
         fi
 
         gatk --java-options "-Xmx~{command_mem}m" Mutect2 \
             -R ~{ref_fasta} \
-            $tumor_command_line \
-            $normal_command_line \
+            -I ~{tumor_reads} \
+            ~{"-I " + normal_reads} \
+            $normal_sample_line \
             ~{"--germline-resource " + gnomad} \
             ~{"-pon " + pon} \
             ~{"-L " + intervals} \
             ~{"--alleles " + gga_vcf} \
+            ~{"--dragstr-params-path " + dragstr_model} \
             -O "~{output_vcf}" \
             ~{true='--bam-output bamout.bam' false='' make_bamout} \
             ~{true='--f1r2-tar-gz f1r2.tar.gz' false='' run_ob_filter} \
@@ -474,7 +480,7 @@ task M2 {
 
         # If the variants for contamination and the intervals for this scatter don't intersect, GetPileupSummaries
         # throws an error.  However, there is nothing wrong with an empty intersection for our purposes; it simply doesn't
-        # contribute to the merged pileup summaries that we create downstream.  We implement this by with array outputs.
+        # contribute to the merged pileup summaries that we create downstream.  We implement this via array outputs.
         # If the tool errors, no table is created and the glob yields an empty array.
         set +e
 
@@ -509,13 +515,13 @@ task M2 {
         File unfiltered_vcf = "~{output_vcf}"
         File unfiltered_vcf_idx = "~{output_vcf_idx}"
         File output_bamOut = "bamout.bam"
-        String tumor_sample = read_string("tumor_name.txt")
-        String normal_sample = read_string("normal_name.txt")
         File stats = "~{output_stats}"
         File f1r2_counts = "f1r2.tar.gz"
         Array[File] tumor_pileups = glob("*tumor-pileups.table")
         Array[File] normal_pileups = glob("*normal-pileups.table")
         File m3_dataset = "dataset.txt"
+        File permutect_contigs_table = "contigs.table"
+        File permutect_read_groups_table = "read-groups.table"
     }
 }
 

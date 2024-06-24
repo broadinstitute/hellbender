@@ -44,3 +44,4 @@ funcotator_tmp
 
 #Test generated dot files
 test*.dot
+.vscode/

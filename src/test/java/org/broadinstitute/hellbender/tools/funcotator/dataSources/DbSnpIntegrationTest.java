@@ -22,20 +22,20 @@ import java.util.List;
 public class DbSnpIntegrationTest extends CommandLineProgramTest {
 
     private final Path DB_SNP_HG19_FILE_PATH       = IOUtils.getPath(
-            FuncotatorDataSourceDownloader.SOMATIC_GCLOUD_DATASOURCES_BASEURL + "/"
+            FuncotatorDataSourceDownloader.HG19_SOMATIC_GCLOUD_DATASOURCES_BASEURL + "/"
                     + "dbsnp/hg19/" + "hg19_All_20180423.vcf.gz"
     );
     private final Path DB_SNP_HG19_INDEX_FILE_PATH = IOUtils.getPath(
-            FuncotatorDataSourceDownloader.SOMATIC_GCLOUD_DATASOURCES_BASEURL + "/"
+            FuncotatorDataSourceDownloader.HG19_SOMATIC_GCLOUD_DATASOURCES_BASEURL + "/"
                     + "dbsnp/hg19/" + "hg19_All_20180423.vcf.gz.tbi"
     );
 
     private final Path DB_SNP_HG38_FILE_PATH       = IOUtils.getPath(
-            FuncotatorDataSourceDownloader.SOMATIC_GCLOUD_DATASOURCES_BASEURL + "/"
+            FuncotatorDataSourceDownloader.HG38_SOMATIC_GCLOUD_DATASOURCES_BASEURL + "/"
                     + "dbsnp/hg38/" + "hg38_All_20180418.vcf.gz"
     );
     private final Path DB_SNP_HG38_INDEX_FILE_PATH = IOUtils.getPath(
-            FuncotatorDataSourceDownloader.SOMATIC_GCLOUD_DATASOURCES_BASEURL + "/"
+            FuncotatorDataSourceDownloader.HG38_SOMATIC_GCLOUD_DATASOURCES_BASEURL + "/"
                     + "dbsnp/hg38/" + "hg38_All_20180418.vcf.gz.tbi"
     );
 

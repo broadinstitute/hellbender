@@ -36,14 +36,14 @@
 ##contig=<ID=21,length=48129895,assembly=b37>
 ##reference=file:///Users/cnorman/projects/gatk/src/test/resources/large/human_g1k_v37.20.21.fasta
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	GTEX-OXRP-0003	GTEX-QXCU-0004	GTEX-RVPV-0003
-20	10012730	.	G	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.:0:0	0/0:2:6
-20	10012731	.	C	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.:0:0	0/0:2:6
-20	10012732	.	A	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.:0:0	0/0:2:6
-20	10012733	.	G	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.:0:0	0/0:2:6
-20	10012734	.	G	.	0.02	LowQual	DP=4;ExcessHet=3.01;MLEAC=.;MLEAF=.;MQ=NaN;RAW_MQ=7200.00	GT:DP:RGQ	0/0:2:6	0/0:0:0	0/0:2:6
-20	10012735	.	C	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.:0:0	0/0:2:6
-20	10012736	.	A	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.:0:0	0/0:2:6
-20	10012737	.	G	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.:0:0	0/0:2:6
-20	10012738	.	C	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.:0:0	0/0:2:6
-20	10012739	.	T	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.:0:0	0/0:2:6
-20	10012740	.	C	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.:0:0	0/0:2:6
+20	10012730	.	G	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.	0/0:2:6
+20	10012731	.	C	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.	0/0:2:6
+20	10012732	.	A	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.	0/0:2:6
+20	10012733	.	G	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.	0/0:2:6
+20	10012734	.	G	.	0.02	LowQual	DP=4;ExcessHet=3.01;MLEAC=.;MLEAF=.;MQ=NaN;RAW_MQ=7200.00	GT:DP:RGQ	0/0:2:6	./.	0/0:2:6
+20	10012735	.	C	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.	0/0:2:6
+20	10012736	.	A	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.	0/0:2:6
+20	10012737	.	G	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.	0/0:2:6
+20	10012738	.	C	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.	0/0:2:6
+20	10012739	.	T	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.	0/0:2:6
+20	10012740	.	C	.	.	.	DP=4	GT:DP:RGQ	0/0:2:6	./.	0/0:2:6

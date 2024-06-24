@@ -3,7 +3,7 @@ package org.broadinstitute.hellbender.tools.gvs.extract;
 import htsjdk.samtools.util.Locatable;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.util.Utf8;
-import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.broadinstitute.hellbender.tools.gvs.common.SchemaUtils;
 
 public class ReferenceRecord implements Locatable, Comparable<ReferenceRecord> {

@@ -2,7 +2,7 @@ package org.broadinstitute.hellbender.utils.pairhmm;
 
 import htsjdk.samtools.SAMUtils;
 import htsjdk.samtools.util.BufferedLineReader;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.broadinstitute.gatk.nativebindings.pairhmm.PairHMMNativeArguments;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.testng.Assert;

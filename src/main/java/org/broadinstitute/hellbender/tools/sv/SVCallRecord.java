@@ -132,8 +132,12 @@ public class SVCallRecord implements SVLocatable {
         Utils.nonNull(dictionary);
         validatePosition(contigA, positionA, dictionary);
         validatePosition(contigB, positionB, dictionary);
-        Utils.validateArg(IntervalUtils.compareLocatables(getPositionAInterval(), getPositionBInterval(), dictionary) <= 0,
-                "End coordinate cannot precede start");
+        // CPX types may have position B precede A, such as dispersed duplications where A is the insertion point and
+        // B references the source sequence.
+        if (type != GATKSVVCFConstants.StructuralVariantAnnotationType.CPX) {
+            Utils.validateArg(IntervalUtils.compareLocatables(getPositionAInterval(), getPositionBInterval(), dictionary) <= 0,
+                    "End coordinate cannot precede start");
+        }
     }
 
     private static void validatePosition(final String contig, final int position, final SAMSequenceDictionary dictionary) {

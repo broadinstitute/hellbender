@@ -47,6 +47,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
+    //GenotypeGVCFs test coverage should include:
+    // * HaplotypeCaller GVCFs
+    // * HaplotypeCaller GVCFs post-processed with ReblockGVCF
+    // * DRAGEN GVCFs (versions 3.4 and 3.7.8)
+    // * DRAGEN GVCFs (3.4 & 3.7.8) post-processed with ReblockGVCF
+    //Note that tests may need to create a temp GenomicsDB to take multiple input GVCFs
 
     // If true, update the expected outputs in tests that assert an exact match vs. prior output,
     // instead of actually running the tests. Can be used with "./gradlew test --tests org.broadinstitute.hellbender.tools.walkers.GenotypeGVCFsIntegrationTest"
@@ -71,32 +77,19 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
 
     private static final String ALLELE_SPECIFIC_DIRECTORY = toolsTestDir + "walkers/annotator/allelespecific";
 
-    private static <T> void assertForEachElementInLists(final List<T> actual, final List<T> expected, final BiConsumer<T, T> assertion) {
-        Assert.assertEquals(actual.size(), expected.size(), "different number of elements in lists:\n"
-                + actual.stream().map(Object::toString).collect(Collectors.joining("\n","actual:\n","\n"))
-            +  expected.stream().map(Object::toString).collect(Collectors.joining("\n","expected:\n","\n")));
-        for (int i = 0; i < actual.size(); i++) {
-            assertion.accept(actual.get(i), expected.get(i));
-        }
-    }
-
-    private static <T> void assertCountForEachElementInList(final List<T> actual, Integer count, BiConsumer<T, Integer> assertion) {
-        for (int i = 0; i < actual.size(); i++) {
-            assertion.accept(actual.get(i), count);
-        }
-    }
-
     @DataProvider(name = "gvcfsToGenotype")
     public Object[][] gvcfsToGenotype() {
         return new Object[][]{
                 //combine not supported yet, see https://github.com/broadinstitute/gatk/issues/2429 and https://github.com/broadinstitute/gatk/issues/2584
                 //{"combine.single.sample.pipeline.1.vcf", null, Arrays.asList("-V", getTestFile("combine.single.sample.pipeline.2.vcf").toString() , "-V", getTestFile("combine.single.sample.pipeline.3.vcf").toString()), b37_reference_20_21},
+
                 {getTestFile("leadingDeletion.g.vcf"), getTestFile("leadingDeletionRestrictToStartExpected.vcf"), Arrays.asList("-L", "20:69512-69513", "--"+GenotypeGVCFs.ONLY_OUTPUT_CALLS_STARTING_IN_INTERVALS_FULL_NAME), b37_reference_20_21},
                 {getTestFile("leadingDeletion.g.vcf"), getTestFile("leadingDeletionExpected.vcf"), Arrays.asList("-L", "20:69512-69513"), b37_reference_20_21},
                 {getTestFile(BASE_PAIR_GVCF), getTestFile( BASE_PAIR_EXPECTED), NO_EXTRA_ARGS, b37_reference_20_21}, //base pair level gvcf
                 {getTestFile("testUpdatePGT.gvcf"), getTestFile( "testUpdatePGT.gatk3.7_30_ga4f720357.output.vcf"), NO_EXTRA_ARGS, b37_reference_20_21},   //testUpdatePGT
                 {getTestFile("gvcfExample1.vcf"), getTestFile( "gvcfExample1.gatk3.7_30_ga4f720357.expected.vcf"), NO_EXTRA_ARGS, b37_reference_20_21}, //single sample vcf
                 {getTestFile("gvcfExample1.vcf"), getTestFile( "gvcfExample1.gatk3.7_30_ga4f720357.expected.vcf"), Arrays.asList("-L", "20"), b37_reference_20_21}, //single sample vcf with -L
+
                 {getTestFile("combined_genotype_gvcf_exception.original.vcf"), getTestFile( "combined_genotype_gvcf_exception.gatk3.7_30_ga4f720357.output.vcf"), NO_EXTRA_ARGS, b37_reference_20_21}, //test that an input vcf with 0/0 already in GT field is overwritten
                 {getTestFile("combined_genotype_gvcf_exception.nocall.vcf"), getTestFile( "combined_genotype_gvcf_exception.gatk3.7_30_ga4f720357.output.vcf"), NO_EXTRA_ARGS, b37_reference_20_21},  //same test as above but with ./.
                 {getTestFile(BASE_PAIR_GVCF), getTestFile("ndaTest.gatk3.7_30_ga4f720357.expected.vcf"), Collections.singletonList("--annotate-with-num-discovered-alleles"), b37_reference_20_21},  //annotating with the number of alleles discovered option
@@ -110,6 +103,7 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
                 {getTestFile("CEUTrio.20.21.missingIndel.g.vcf"), getTestFile( "CEUTrio.20.21.missingIndel.gatk3.7_30_ga4f720357.expected.vcf"), Arrays.asList("--dbsnp", "src/test/resources/large/dbsnp_138.b37.20.21.vcf"), b37_reference_20_21},
                 {new File(largeFileTestDir + "gvcfs/gatk3.7_30_ga4f720357.24_sample.21.g.vcf"), new File( largeFileTestDir + "gvcfs/gatk3.7_30_ga4f720357.24_sample.21.expected.vcf"), NO_EXTRA_ARGS, b38_reference_20_21},
                 {getTestFile("chr21.bad.pl.g.vcf"), getTestFile( "chr21.bad.pl.gatk3.7_30_ga4f720357.expected.vcf"), Arrays.asList("-L", "chr21:28341770-28341790"), b38_reference_20_21},
+
                 {new File(largeFileTestDir + "gvcfs/combined.gatk3.7_30_ga4f720357.g.vcf.gz"),  new File(largeFileTestDir + "gvcfs/combined.gatk3.7_30_ga4f720357.expected.vcf"), NO_EXTRA_ARGS, b38_reference_20_21},
 
                 //Tests for Allele-Specific Annotations
@@ -117,7 +111,8 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
                 {new File(ALLELE_SPECIFIC_DIRECTORY, "NA12878.AS.chr20snippet.g.vcf"), getTestFile( "AS_Annotations.keepRawCombined.expected.vcf"), Arrays.asList( "-A", "ClippingRankSumTest", "-G", "AS_StandardAnnotation", "-G", "StandardAnnotation", "-keep-combined"), b37_reference_20_21},
                 //input GVCF doesn't have AS annotations, just new RAW_MQandDP format; expected output annotations include AS_QD because that can be calculated from genotypes; definitely should have MQ and retain F1R2:F2R1 for OxoG in FORMAT
                 {getTestFile( "withOxoGReadCounts.g.vcf"), getTestFile( "withOxoGReadCounts.vcf"), Arrays.asList("-G", "AS_StandardAnnotation", "-G", "StandardAnnotation"), b37_reference_20_21},
-                {getTestFile( "multiSamples.g.vcf"), getTestFile( "multiSamples.GATK3expected.g.vcf"), Arrays.asList( "-A", "ClippingRankSumTest", "-G", "AS_StandardAnnotation", "-G", "StandardAnnotation"), b37_reference_20_21},
+
+                {getTestFile( "multiSamples.g.vcf"), getTestFile( "multiSamples.expected.g.vcf"), Arrays.asList( "-A", "ClippingRankSumTest", "-G", "AS_StandardAnnotation", "-G", "StandardAnnotation"), b37_reference_20_21},
                 {getTestFile( "testAlleleSpecificAnnotations.CombineGVCF.output.g.vcf"), getTestFile( "testAlleleSpecificAnnotations.CombineGVCF.expected.g.vcf"), Arrays.asList( "-A", "ClippingRankSumTest", "-G", "AS_StandardAnnotation", "-G", "StandardAnnotation"), b37_reference_20_21},
 
                 // all sites/--include-non-variant-sites tests
@@ -158,6 +153,7 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
 
                 //23 highly multi-allelic sites across 54 1000G exomes to test allele subsetting and QUAL calculation
                 //plus one 10-allele WGS variant that's all hom-ref with one GT that has unnormalized PLs from some sort of GenomicsDB corner case
+                //this VCF still has the haploid-looking GDB no-calls as in sample NA21137 at position chr1:3836468 -- allegedly GATK 4.2.5.0 from February 7, 2022, possibly due to --call-genotypes
                 {getTestFile("multiallelicQualRegression.vcf "),
                         getTestFile("multiallelicQualRegression.expected.vcf"),
                         NO_EXTRA_ARGS, hg38Reference}
@@ -350,7 +346,7 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
         // 1) is missing PLs because it had more than the allowed number of alts for GDB
         // 2) has enough GQ0 samples to achieve a QUAL high enough to pass the initial threshold
         final String input = toolsTestDir + "/walkers/GenotypeGVCFs/test.tooManyAltsNoPLs.g.vcf";
-        final List<String> args = new ArrayList<String>();
+       final List<String> args = new ArrayList<String>();
         args.add("-G");
         args.add("StandardAnnotation");
         args.add("-G");
@@ -358,7 +354,59 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
         final File output = runGenotypeGVCFS(input, null, args, hg38Reference);
         final Pair<VCFHeader, List<VariantContext>> outputData = VariantContextTestUtils.readEntireVCFIntoMemory(output.getAbsolutePath());
         //only variant is a big variant that shouldn't get output because it is missing PLs, but we should skip it gracefully
-        Assert.assertEquals(outputData.getRight().size(), 0);
+        Assert.assertEquals(outputData.getRight().size(),0);
+    }
+
+    @Test
+    public void testGQ0Heterozygote() {
+        //this variant has a GQ0 het and lots of ALT alleles
+        final String input2 = toolsTestDir + "/walkers/GenotypeGVCFs/badHet.g.vcf";
+        final List<String> args2 = new ArrayList<String>();
+        args2.add("-G");
+        args2.add("StandardAnnotation");
+        args2.add("-G");
+        args2.add("AS_StandardAnnotation");
+        final File output2 = runGenotypeGVCFS(input2, null, args2, hg38Reference);
+        final Pair<VCFHeader, List<VariantContext>> outputData2 = VariantContextTestUtils.readEntireVCFIntoMemory(output2.getAbsolutePath());
+        Assert.assertEquals(outputData2.getRight().size(), 1);
+        final VariantContext vc = outputData2.getRight().get(0);
+        Assert.assertEquals(vc.getAlleles().size(), 4);
+        //GQ0 het still gets called
+        final Genotype g = vc.getGenotype("NA20845");
+        Assert.assertTrue(g.isHet());
+        Assert.assertTrue(g.hasGQ());
+        Assert.assertEquals(g.getGQ(), 0);
+        Assert.assertTrue(g.hasPL());
+        Assert.assertTrue(g.getPL()[0] > 0);
+        //GQ0s with DP>0 still have data
+        final Genotype g2 = vc.getGenotype("NA20846");
+        Assert.assertTrue(g2.isNoCall());
+        Assert.assertTrue(g2.hasDP());
+        Assert.assertEquals(g2.getDP(), 9);
+        //this was a compressed reblocked GVCF so we don't expect PLs
+        Assert.assertFalse(g2.hasPL());
+    }
+
+    @Test
+    public void testNonRefHomVar() {
+        //this variant includes a <NON_REF>/<NON_REF> hom-var
+        final String input2 = toolsTestDir + "/walkers/GenotypeGVCFs/anotherError.g.vcf";
+        final List<String> args2 = new ArrayList<String>();
+        args2.add("-G");
+        args2.add("StandardAnnotation");
+        args2.add("-G");
+        args2.add("AS_StandardAnnotation");
+        final File output2 = runGenotypeGVCFS(input2, null, args2, hg38Reference);
+        final Pair<VCFHeader, List<VariantContext>> outputData2 = VariantContextTestUtils.readEntireVCFIntoMemory(output2.getAbsolutePath());
+        Assert.assertEquals(outputData2.getRight().size(), 1);
+        final VariantContext vc = outputData2.getRight().get(0);
+        //input <NON_REF>/<NON_REF> should go to ./. with no attributes
+        final Genotype g = vc.getGenotype("NA20869");
+        Assert.assertTrue(g.isNoCall());
+        Assert.assertFalse(g.hasAD());
+        Assert.assertFalse(g.hasDP());
+        Assert.assertFalse(g.hasGQ());
+        Assert.assertFalse(g.hasPL());
     }
 
     private void runAndCheckGenomicsDBOutput(final ArgumentsBuilder args, final File expected, final File output) {
@@ -369,7 +417,7 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
         // runs in 0.06 minutes with no input intervals specified
         final List<VariantContext> expectedVC = VariantContextTestUtils.getVariantContexts(expected);
         final List<VariantContext> actualVC = VariantContextTestUtils.getVariantContexts(output);
-        assertForEachElementInLists(actualVC, expectedVC, VariantContextTestUtils::assertVariantContextsHaveSameGenotypes);
+        VariantContextTestUtils.assertForEachElementInLists(actualVC, expectedVC, VariantContextTestUtils::assertVariantContextsHaveSameGenotypes);
     }
 
     @Test(dataProvider = "getGVCFsForGenomicsDBOverMultipleIntervals")
@@ -484,7 +532,7 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
             final List<VariantContext> expectedVC = VariantContextTestUtils.getVariantContexts(expected);
             final List<VariantContext> actualVC = VariantContextTestUtils.getVariantContexts(output);
             try {
-                assertForEachElementInLists(actualVC, expectedVC, assertion);
+                VariantContextTestUtils.assertForEachElementInLists(actualVC, expectedVC, assertion);
             } catch (final AssertionError error) {
                 throw error;
             }
@@ -498,7 +546,7 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
 
         final List<VariantContext> actualVC = VariantContextTestUtils.getVariantContexts(output);
         Assert.assertTrue(actualVC.size() > 0);
-        assertCountForEachElementInList(actualVC, count, conditionOnCount);
+        VariantContextTestUtils.assertCountForEachElementInList(actualVC, count, conditionOnCount);
     }
 
     @Test
@@ -597,7 +645,7 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
         final File expectedFile = getTestFile("threeSamples.MT.vcf");
         final List<VariantContext> expected = VariantContextTestUtils.getVariantContexts(expectedFile);
         final VCFHeader header = VCFHeaderReader.readHeaderFrom(new SeekablePathStream(IOUtils.getPath(expectedFile.getAbsolutePath())));
-        assertForEachElementInLists(results, expected,
+        VariantContextTestUtils.assertForEachElementInLists(results, expected,
                 (a, e) -> VariantContextTestUtils.assertVariantContextsAreEqualAlleleOrderIndependent(a, e, ATTRIBUTES_TO_IGNORE, ATTRIBUTES_WITH_JITTER, header));
 
     }
@@ -804,6 +852,9 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
         final List<VariantContext> actualVC = VariantContextTestUtils.getVariantContexts(output);
         Assert.assertFalse(actualVC.stream().anyMatch(vc -> vc.getGenotype(1).isHomRef() && vc.getGenotype(1).hasPL()));  //second sample has a bunch of 0/0s -- shouldn't have PLs
 
+        //this comes from a callset of NYGC 1000G samples plus syndip
+        //it seems likely that there's a variant that wasn't discovered in the graph because a bunch of samples are hom-ref with PL=[0,0,X]
+        //this is a pretty variant dense region with 4 in 20 bases for NA12872
         final File bigCombinedReblockedGVCF = new File("src/test/resources/org/broadinstitute/hellbender/tools/walkers/GenotypeGVCFs/combineReblocked.g.vcf");
         final File cohortOutput = createTempFile("biggerCohort.rb", ".vcf");
 
@@ -822,14 +873,16 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
         Assert.assertEquals(vc0.getAlternateAllele(0).getBaseString(), "G");
         Assert.assertTrue(vc0.getGenotypes().stream().allMatch(g -> g.isCalled() && g.hasGQ() && g.hasDP()));
 
+        //reblocked GVCFs with no PLs have genotypes that will be assigned as no-calls because of GQ0, so AN and ExcessHet differ here
         final VariantContext vc1 = outputVCs.get(1);
-        Assert.assertTrue(vc1.getAttributeAsDouble(GATKVCFConstants.EXCESS_HET_KEY, 1000.0) < 10.0); //will be ~72 if homRefs aren't counted
+        Assert.assertTrue(vc1.getAttributeAsDouble(GATKVCFConstants.EXCESS_HET_KEY, 0.0) > 50.0); //will be ~72 if homRefs aren't counted
         Assert.assertTrue(vc1.hasAttribute(GATKVCFConstants.INBREEDING_COEFFICIENT_KEY));
-        Assert.assertEquals(vc1.getAttributeAsInt(VCFConstants.ALLELE_NUMBER_KEY, 0), 362);
+        Assert.assertEquals(vc1.getAttributeAsInt(VCFConstants.ALLELE_NUMBER_KEY, 0), 300);
         Assert.assertEquals(vc1.getAlternateAlleles().size(), 3);
         Assert.assertTrue(vc1.isIndel());
         Assert.assertTrue(vc0.getGenotypes().stream().allMatch(g -> g.isCalled() && g.hasGQ() && g.hasDP()));
 
+        //subset of 1000G cohort (from WARP exome JG test?) chr1:13273 is the classic GVCF output and chr1:13776 is reblocked
         final File withAndWithoutPLs = new File("src/test/resources/org/broadinstitute/hellbender/tools/walkers/GenotypeGVCFs/compareWithoutPLs.g.vcf");
         final File compareICvalues = createTempFile("compareICvalues", ".vcf");
         final ArgumentsBuilder args3 = new ArgumentsBuilder();
@@ -838,7 +891,7 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
                 .addOutput(compareICvalues);
         runCommandLine(args3);
 
-        //requires InbreedingCoeff to use isCalledAndDiploidWithLikelihoodsOrWithGQ for sampleNum
+        //highlight differences with and without PLs
         final List<VariantContext> compareICvariants = VariantContextTestUtils.getVariantContexts(compareICvalues);
         final VariantContext vcWithPLs = compareICvariants.get(0);
         final VariantContext vcWithoutPLs = compareICvariants.get(1);
@@ -848,8 +901,10 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
         final double ic2 = vcWithoutPLs.getAttributeAsDouble(GATKVCFConstants.INBREEDING_COEFFICIENT_KEY, 0);
         Assert.assertTrue(ic1 > 0);  //make sure lookup worked, otherwise 0 == 0
         Assert.assertTrue(ic2 > 0); //if GQ0s with no data are output as hom-ref, then ic2 is ~0.7
-        Assert.assertEquals(ic1, ic2, 0.1); //there will be some difference because the old version zeros out low depth hom-refs and makes them no-calls
-        Assert.assertEquals(vcWithoutPLs.getAttributeAsInt(VCFConstants.ALLELE_NUMBER_KEY, 0), 114);  //don't count no-calls that are PL=[0,0,0] in classic VCF
+        Assert.assertTrue(ic1 - ic2 > .25); //there will be a significant difference because with reblocking, GQ<20s become no-calls
+        final int numLowQualHomRefs = (int)vcWithPLs.getGenotypes().stream().filter(g -> g.isHomRef() && g.hasGQ() && g.getGQ() < 20).count();
+        Assert.assertEquals(vcWithPLs.getAttributeAsInt(VCFConstants.ALLELE_NUMBER_KEY, 0) -
+                vcWithoutPLs.getAttributeAsInt(VCFConstants.ALLELE_NUMBER_KEY, 0), numLowQualHomRefs * 2);  //don't count no-calls that are PL=[0,0,0] in classic VCF
     }
 
     @Test
@@ -958,5 +1013,87 @@ public class GenotypeGVCFsIntegrationTest extends CommandLineProgramTest {
                 .add(GenotypeGVCFsAnnotationArgumentCollection.KEEP_SPECIFIED_RAW_COMBINED_ANNOTATION_LONG_NAME, "RawGtCount");
         // This is expected to fail because RawGtCount was not provided as a tool level annotation (-A).
         runCommandLine(args);
+    }
+
+    // test case adapted from non-minimally represented site in dbsnp_138 at chr10:46544983
+    @Test
+    public void dbSNPError() {
+        final String input = getTestDataDir() + "/walkers/GnarlyGenotyper/emptyASAnnotations.g.vcf";
+        final String dbSnpInput = getToolTestDataDir() + "bad_dbsnp_site.vcf";
+        final File output = createTempFile("test", ".vcf");
+
+        final ArgumentsBuilder args = new ArgumentsBuilder();
+        args.addReference(hg38Reference)
+                .addVCF(input)
+                .addOutput(output)
+                .add("D", dbSnpInput);
+
+        //make sure it doesn't throw an error
+        runCommandLine(args);
+    }
+
+    @Test
+    public void testNoReadsOutputAsNoCall() {
+        //The input data for this test comes from a GVCF produced from an empty region of one of the NA12878 test bams
+        // and a GVCF that was edited to have a variant so we can force that position to be output.
+        //note these are b37 data
+        File no_reads = new File(toolsTestDir, "/walkers/GenotypeGVCFs/combine.single.sample.pipeline.1.vcf");
+        File fake_variant = getTestFile("fake_sample2.vcf");
+        final SimpleInterval interval =  new SimpleInterval("20", 10000000, 10000000);
+        File tempGdb = GenomicsDBTestUtils.createTempGenomicsDB(Arrays.asList(no_reads, fake_variant), interval);
+        final String genomicsDBUri = GenomicsDBTestUtils.makeGenomicsDBUri(tempGdb);
+
+        final File output = createTempFile("checkNoCall", ".vcf");
+
+        final ArgumentsBuilder args = new ArgumentsBuilder();
+        args.addReference(b37_reference_20_21)
+                .addFlag("allow-old-rms-mapping-quality-annotation-data") //old GVCFs have old annotations
+                .addVCF(genomicsDBUri)
+                .addInterval(interval)
+                .addOutput(output);
+        runCommandLine(args);
+
+        final Pair<VCFHeader, List<VariantContext>> outputData = VariantContextTestUtils.readEntireVCFIntoMemory(output.getAbsolutePath());
+        Assert.assertEquals(outputData.getRight().size(), 1);
+        final VariantContext vc = outputData.getRight().get(0);
+        Assert.assertEquals(vc.getGenotypes().size(), 2);
+        final Genotype g = vc.getGenotype("GTEX-RVPV-0003");
+        Assert.assertTrue(g.isNoCall()); //most importantly!
+        Assert.assertFalse(g.hasGQ());
+        Assert.assertFalse(g.hasDP());
+        Assert.assertFalse(g.hasAD());
+        Assert.assertFalse(g.hasPL());
+    }
+
+    @Test
+    public void testNoReadsReblockedOutputAsNoCall() {
+        //There's a very similar test for Gnarly, but we expect the outputs to be a bit different here
+        //note these are b37 data
+        File no_reads = new File(toolsTestDir, "/walkers/GnarlyGenotyper/testNoReads.rb.g.vcf");
+        //this is an artisanal, hand-crafted VCF with a QUAL approx that's been artificially enhanced
+        File fake_variant = new File(toolsTestDir, "/walkers/GnarlyGenotyper/fake_sample2.rb.g.vcf");
+        final SimpleInterval interval =  new SimpleInterval("20", 10000000, 10000000);
+        File tempGdb = GenomicsDBTestUtils.createTempGenomicsDB(Arrays.asList(no_reads, fake_variant), interval);
+        final String genomicsDBUri = GenomicsDBTestUtils.makeGenomicsDBUri(tempGdb);
+
+        final File output = createTempFile("checkNoCall", ".vcf");
+
+        final ArgumentsBuilder args = new ArgumentsBuilder();
+        args.addReference(b37_reference_20_21)
+                .addVCF(genomicsDBUri)
+                .addInterval(interval)
+                .addOutput(output);
+        runCommandLine(args);
+
+        final Pair<VCFHeader, List<VariantContext>> outputData = VariantContextTestUtils.readEntireVCFIntoMemory(output.getAbsolutePath());
+        Assert.assertEquals(outputData.getRight().size(), 1);
+        final VariantContext vc = outputData.getRight().get(0);
+        Assert.assertEquals(vc.getGenotypes().size(), 2);
+        final Genotype g = vc.getGenotype("GTEX-RVPV-0003");
+        Assert.assertTrue(g.isNoCall()); //most importantly!
+        Assert.assertFalse(g.hasGQ());
+        Assert.assertFalse(g.hasDP());
+        Assert.assertFalse(g.hasAD());
+        Assert.assertFalse(g.hasPL());
     }
 }

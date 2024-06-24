@@ -7,6 +7,7 @@ import org.apache.commons.collections.ListUtils;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.tools.walkers.ReferenceConfidenceVariantContextMerger;
 import org.broadinstitute.hellbender.tools.walkers.genotyper.GenotypeAssignmentMethod;
+import org.broadinstitute.hellbender.tools.walkers.genotyper.GenotypesCache;
 import org.broadinstitute.hellbender.utils.MathUtils;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
@@ -134,9 +135,16 @@ public final class PosteriorProbabilitiesUtils {
             builder.phased(vc1.getGenotype(genoIdx).isPhased());
             if ( posteriors.get(genoIdx) != null ) {
                 GATKVariantContextUtils.makeGenotypeCall(vc1.getMaxPloidy(HomoSapiensConstants.DEFAULT_PLOIDY), builder,
-                        GenotypeAssignmentMethod.USE_PLS_TO_ASSIGN, posteriors.get(genoIdx), vc1.getAlleles(), null);
+                        GenotypeAssignmentMethod.USE_PLS_TO_ASSIGN, posteriors.get(genoIdx), vc1.getAlleles(), vc1.getGenotype(genoIdx), null);
+
                 builder.attribute(GATKVCFConstants.PHRED_SCALED_POSTERIORS_KEY,
-                        Utils.listFromPrimitives(GenotypeLikelihoods.fromLog10Likelihoods(posteriors.get(genoIdx)).getAsPLs()));
+                            Utils.listFromPrimitives(GenotypeLikelihoods.fromLog10Likelihoods(posteriors.get(genoIdx)).getAsPLs()));
+                //TODO: refactor me -- this is to make up for the GGVCFs changes fixing GQ0 hom-refs
+                if (!builder.makeWithShallowCopy().hasPL()) {
+                    final int maxPosteriorIndex = MathUtils.maxElementIndex(posteriors.get(genoIdx));
+                    builder.log10PError(GenotypeLikelihoods.getGQLog10FromLikelihoods(maxPosteriorIndex, posteriors.get(genoIdx)));
+                    builder.alleles(GenotypesCache.get(vc1.getGenotype(genoIdx).getPloidy(), maxPosteriorIndex).asAlleleList(vc1.getAlleles()));
+                }
             }
             newContext.add(builder.make());
         }

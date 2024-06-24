@@ -13,6 +13,7 @@ import org.broadinstitute.hellbender.utils.variant.VariantContextGetters;
 import java.util.*;
 
 public class FilteredHaplotypeFilter extends Mutect2VariantFilter {
+    private static final double GERMLINE_PROBABILITY_TO_IGNORE_NORMAL_ARTIFACT = 0.25;
     private final double maxIntraHaplotypeDistance;
 
     // for each pgt + pid phasing string, a list of loci-error probability pairs
@@ -54,10 +55,21 @@ public class FilteredHaplotypeFilter extends Mutect2VariantFilter {
 
     @Override
     protected void accumulateDataForLearning(final VariantContext vc, final ErrorProbabilities errorProbabilities, final Mutect2FilteringEngine filteringEngine) {
-        // we record the maximum non-sequencing artifact that is not this filter itself
-        final double artifactProbability = errorProbabilities.getProbabilitiesByFilter().entrySet().stream()
-                .filter(e -> e.getKey().errorType() != ErrorType.SEQUENCING)
-                .filter(e -> !e.getKey().filterName().equals(filterName()))
+        // we record the maximum non-sequencing, non-germline, artifact probability that is not from this filter itself
+        final Map<Mutect2Filter, List<Double>> probabilitiesByFilter = errorProbabilities.getProbabilitiesByFilter();
+
+        final double germlineProbability = probabilitiesByFilter.entrySet().stream()
+                .filter(e -> e.getKey().filterName() == GATKVCFConstants.GERMLINE_RISK_FILTER_NAME)
+                .flatMap(e -> e.getValue().stream())  // the value is a list of double, we need the max of all the lists
+                .max(Double::compareTo).orElse(0.0);
+
+        // the normal artifact filter often lights up when there's a non-artifactual germline event, which we don't want here
+        final boolean ignoreNormalArtifact = germlineProbability > GERMLINE_PROBABILITY_TO_IGNORE_NORMAL_ARTIFACT;
+
+        final double artifactProbability = probabilitiesByFilter.entrySet().stream()
+                .filter(e -> e.getKey().errorType() != ErrorType.NON_SOMATIC)
+                .filter(e -> !(ignoreNormalArtifact && e.getKey().filterName() == GATKVCFConstants.ARTIFACT_IN_NORMAL_FILTER_NAME))
+                .filter(e -> !e.getKey().filterName().equals(filterName())) // exclude the haplotype filter itself, which would be circular
                 .flatMap(e -> e.getValue().stream())  // the value is a list of double, we need the max of all the lists
                 .max(Double::compareTo).orElse(0.0);
 

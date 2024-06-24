@@ -2,7 +2,7 @@ package org.broadinstitute.hellbender.tools.gvs.extract;
 
 import htsjdk.samtools.util.Locatable;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.broadinstitute.hellbender.tools.gvs.common.SchemaUtils;
 
 import java.util.Objects;

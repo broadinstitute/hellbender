@@ -1,6 +1,7 @@
  package org.broadinstitute.hellbender.utils;
 
 
+import com.google.common.annotations.VisibleForTesting;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.util.Locatable;
@@ -276,6 +277,25 @@ public final class SimpleInterval implements Locatable, Serializable {
      }
 
      /**
+      * Get section of starting interval (this) that is not overlapped by the other interval (that)
+      * @param that - interval to subtract from starting interval. Must overlap (but not fully contain) starting interval
+      * @return - SimpleInterval representing the portion of starting interval (this) not overlapped by other interval (that)
+      */
+     @VisibleForTesting
+     public SimpleInterval subtract(final Locatable that) {
+         Utils.validateArg(this.overlaps(that), () ->
+                 "SimpleIntervaL::subtract(): The two intervals need to overlap: " + this + ", " + that);
+         Utils.validateArg(!that.contains(this), () ->
+                 "SimpleIntervaL::subtract(): Interval to subtract " + that + " cannot contain starting interval " + this);
+         if (this.getStart() < that.getStart()) {
+             return new SimpleInterval(this.getContig(), this.getStart(), that.getStart());
+         }
+         else {
+             return new SimpleInterval(this.getContig(), that.getEnd(), this.getEnd());
+         }
+     }
+
+     /**
       * Returns a new SimpleInterval that represents the entire span of this and that.  Requires that
       * this and that SimpleInterval are contiguous.
       */
@@ -304,7 +324,13 @@ public final class SimpleInterval implements Locatable, Serializable {
          return new SimpleInterval(contig, Math.min(start, other.getStart()), Math.max(end, other.getEnd()));
      }
 
-     private boolean contiguous(final Locatable that) {
+     /**
+      * Determines whether this interval is contiguous with (ie., overlaps or is directly adjacent to) the provided interval
+      *
+      * @param that interval to compare with
+      * @return true if this is contiguous with that, otherwise false
+      */
+     public boolean contiguous(final Locatable that) {
          Utils.nonNull(that);
          return this.getContig().equals(that.getContig()) && this.getStart() <= that.getEnd() + 1 && that.getStart() <= this.getEnd() + 1;
      }

@@ -10,7 +10,6 @@ public class FlowBasedArgumentCollection implements Serializable {
     private static final long serialVersionUID = 0;
 
     public static final String FLOW_USE_T0_TAG = "flow-use-t0-tag";
-    public static final String PROBABILITY_RATIO_THRESHOLD_LONG_NAME = "flow-probability-threshold";
     public static final String REMOVE_LONGER_THAN_ONE_INDELS_LONG_NAME = "flow-remove-non-single-base-pair-indels";
     public static final String REMOVE_ONE_TO_ZERO_PROBS_LONG_NAME = "flow-remove-one-zero-probs";
     public static final String NUMBER_OF_POSSIBLE_PROBS_LONG_NAME = "flow-quantization-bins";
@@ -27,8 +26,7 @@ public class FlowBasedArgumentCollection implements Serializable {
 
 
 
-    private static final double DEFAULT_RATIO_THRESHOLD = 0.003;
-    private static final double DEFAULT_FILLING_VALUE = 0.001;
+    public static final double DEFAULT_FILLING_VALUE = 0.001;
     private static final boolean DEFAULT_REMOVE_LONGER_INDELS = false;
     private static final boolean DEFAULT_REMOVE_ONE_TO_ZERO = false;
     private static final boolean DEFAULT_SYMMETRIC_INDELS = false;
@@ -44,10 +42,6 @@ public class FlowBasedArgumentCollection implements Serializable {
     @Advanced
     @Argument(fullName = FLOW_USE_T0_TAG, doc = "Use t0 tag if exists in the read to create flow matrix", optional = true)
     public boolean useT0Tag = DEFAULT_FLOW_USE_T0_TAG;
-
-    @Advanced
-    @Argument(fullName = PROBABILITY_RATIO_THRESHOLD_LONG_NAME, doc = "Lowest probability ratio to be used as an option", optional = true)
-    public double probabilityRatioThreshold = DEFAULT_RATIO_THRESHOLD;
 
     @Advanced
     @Argument(fullName = REMOVE_LONGER_THAN_ONE_INDELS_LONG_NAME, doc = "Should the probabilities of more then 1 indel be used", optional = true)

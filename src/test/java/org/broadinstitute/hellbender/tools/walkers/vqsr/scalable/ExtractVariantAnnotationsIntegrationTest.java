@@ -158,17 +158,18 @@ public final class ExtractVariantAnnotationsIntegrationTest extends CommandLineP
     private static void assertOutputs(final String tag,
                                       final String outputPrefix) {
         // vcf.idx files are not reproducible
-        SystemCommandUtilsTest.runSystemCommand(String.format("h5diff %s/%s %s",
-                EXPECTED_TEST_FILES_DIR,
-                tag + LabeledVariantAnnotationsWalker.ANNOTATIONS_HDF5_SUFFIX,
-                outputPrefix + LabeledVariantAnnotationsWalker.ANNOTATIONS_HDF5_SUFFIX));
-        SystemCommandUtilsTest.runSystemCommand(String.format("diff %s/%s.vcf %s.vcf",
-                EXPECTED_TEST_FILES_DIR, tag, outputPrefix));
+        SystemCommandUtilsTest.runH5Diff(
+                String.format("%s/%s", EXPECTED_TEST_FILES_DIR, tag + LabeledVariantAnnotationsWalker.ANNOTATIONS_HDF5_SUFFIX),
+                String.format("%s", outputPrefix + LabeledVariantAnnotationsWalker.ANNOTATIONS_HDF5_SUFFIX));
+
+        SystemCommandUtilsTest.runDiff(
+                String.format("%s/%s.vcf", EXPECTED_TEST_FILES_DIR, tag),
+                String.format("%s.vcf", outputPrefix));
+
         if (tag.contains("posUn")) {
-            SystemCommandUtilsTest.runSystemCommand(String.format("h5diff %s/%s %s",
-                    EXPECTED_TEST_FILES_DIR,
-                    tag + ExtractVariantAnnotations.UNLABELED_TAG + ExtractVariantAnnotations.ANNOTATIONS_HDF5_SUFFIX,
-                    outputPrefix + ExtractVariantAnnotations.UNLABELED_TAG + ExtractVariantAnnotations.ANNOTATIONS_HDF5_SUFFIX));
+            SystemCommandUtilsTest.runH5Diff(
+                    String.format("%s/%s", EXPECTED_TEST_FILES_DIR, tag + ExtractVariantAnnotations.UNLABELED_TAG + ExtractVariantAnnotations.ANNOTATIONS_HDF5_SUFFIX),
+                    String.format("%s", outputPrefix + ExtractVariantAnnotations.UNLABELED_TAG + ExtractVariantAnnotations.ANNOTATIONS_HDF5_SUFFIX));
         } else {
             Assert.assertFalse(new File(outputPrefix + ExtractVariantAnnotations.UNLABELED_TAG + ExtractVariantAnnotations.ANNOTATIONS_HDF5_SUFFIX).exists());
         }

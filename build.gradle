@@ -16,6 +16,7 @@ plugins {
     id "com.github.johnrengelman.shadow" version "8.1.1"    //used to build the shadow and sparkJars
     id "com.github.ben-manes.versions" version "0.12.0" //used for identifying dependencies that need updating
     id 'com.palantir.git-version' version '0.5.1' //version helper
+    id 'org.sonatype.gradle.plugins.scan' version '2.6.1' // scans for security vulnerabilities in our dependencies
 }
 
 
@@ -56,20 +57,20 @@ repositories {
     mavenLocal()
 }
 
-final htsjdkVersion = System.getProperty('htsjdk.version','3.0.5')
-final picardVersion = System.getProperty('picard.version','3.1.0')
+final htsjdkVersion = System.getProperty('htsjdk.version','4.1.0')
+final picardVersion = System.getProperty('picard.version','3.1.1')
 final barclayVersion = System.getProperty('barclay.version','5.0.0')
-final sparkVersion = System.getProperty('spark.version', '3.3.1')
-final hadoopVersion = System.getProperty('hadoop.version', '3.3.1')
-final disqVersion = System.getProperty('disq.version','0.3.6')
-final genomicsdbVersion = System.getProperty('genomicsdb.version','1.5.0')
-final bigQueryVersion = System.getProperty('bigQuery.version', '2.31.0')
-final bigQueryStorageVersion = System.getProperty('bigQueryStorage.version', '2.41.0')
-final guavaVersion = System.getProperty('guava.version', '32.1.2-jre')
+final sparkVersion = System.getProperty('spark.version', '3.5.0')
+final hadoopVersion = System.getProperty('hadoop.version', '3.3.6')
+final disqVersion = System.getProperty('disq.version','0.3.8')
+final genomicsdbVersion = System.getProperty('genomicsdb.version','1.5.3')
+final bigQueryVersion = System.getProperty('bigQuery.version', '2.35.0')
+final bigQueryStorageVersion = System.getProperty('bigQueryStorage.version', '2.47.0')
+final guavaVersion = System.getProperty('guava.version', '32.1.3-jre')
 final log4j2Version = System.getProperty('log4j2Version', '2.17.1')
 final testNGVersion = '7.0.0'
 
-final googleCloudNioDependency = 'com.google.cloud:google-cloud-nio:0.127.0'
+final googleCloudNioDependency = 'com.google.cloud:google-cloud-nio:0.127.8'
 
 final baseJarName = 'gatk'
 final secondaryBaseJarName = 'hellbender'
@@ -267,12 +268,12 @@ dependencies {
     // are routed to log4j
     implementation 'org.apache.logging.log4j:log4j-jcl:' + log4j2Version
 
-    implementation 'org.apache.commons:commons-lang3:3.5'
-    implementation 'org.apache.commons:commons-math3:3.5'
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    implementation 'org.apache.commons:commons-math3:3.6.1'
     implementation 'org.hipparchus:hipparchus-stat:2.0'
-    implementation 'org.apache.commons:commons-collections4:4.1'
-    implementation 'org.apache.commons:commons-vfs2:2.0'
-    implementation 'org.apache.commons:commons-configuration2:2.4'
+    implementation 'org.apache.commons:commons-collections4:4.4'
+    implementation 'org.apache.commons:commons-vfs2:2.9.0'
+    implementation 'org.apache.commons:commons-configuration2:2.9.0'
     constraints {
         implementation('org.apache.commons:commons-text') {
             version {
@@ -287,7 +288,7 @@ dependencies {
     implementation 'commons-io:commons-io:2.5'
     implementation 'org.reflections:reflections:0.9.10'
 
-    implementation 'it.unimi.dsi:fastutil:7.0.6'
+    implementation 'it.unimi.dsi:fastutil:7.0.13'
 
     implementation 'org.broadinstitute:hdf5-java-bindings:1.1.0-hdf5_2.11.0'
     implementation 'org.broadinstitute:gatk-native-bindings:1.0.0'
@@ -297,23 +298,14 @@ dependencies {
         exclude group: 'org.apache.commons'
     }
 
-    //there is no mllib_2.12.15:3.3.0, so stay use 2.12:3.3.0
-    implementation ('org.apache.spark:spark-mllib_2.12:3.3.0') {
+    // TODO: migrate to mllib_2.12.15?
+    implementation ('org.apache.spark:spark-mllib_2.12:' + sparkVersion) {
         // JUL is used by Google Dataflow as the backend logger, so exclude jul-to-slf4j to avoid a loop
         exclude module: 'jul-to-slf4j'
         exclude module: 'javax.servlet'
         exclude module: 'servlet-api'
     }
     implementation 'com.thoughtworks.paranamer:paranamer:2.8'
-
-    implementation 'org.bdgenomics.bdg-formats:bdg-formats:0.5.0'
-    implementation('org.bdgenomics.adam:adam-core-spark2_2.12:0.28.0') {
-        exclude group: 'org.slf4j'
-        exclude group: 'org.apache.hadoop'
-        exclude group: 'org.scala-lang'
-        exclude module: 'kryo'
-        exclude module: 'hadoop-bam'
-    }
 
     implementation 'org.jgrapht:jgrapht-core:1.1.0'
     implementation 'org.jgrapht:jgrapht-io:1.1.0'
@@ -344,10 +336,10 @@ dependencies {
     implementation 'org.broadinstitute:gatk-bwamem-jni:1.0.4'
     implementation 'org.broadinstitute:gatk-fermilite-jni:1.2.0'
 
-    implementation 'org.broadinstitute:http-nio:0.1.0-rc1'
+    implementation 'org.broadinstitute:http-nio:1.1.0'
 
     // Required for COSMIC Funcotator data source:
-    implementation 'org.xerial:sqlite-jdbc:3.36.0.3'
+    implementation 'org.xerial:sqlite-jdbc:3.44.1.0'
 
     // natural sort
     implementation('net.grey-panther:natural-comparator:1.1')
@@ -986,6 +978,18 @@ task gatkValidateGeneratedWdl(dependsOn: [gatkWDLGen, shadowJar]) {
     }
 }
 
+// scan-gradle-plugin security vulnerability scan
+ossIndexAudit {
+    allConfigurations = false // if true includes the dependencies in all resolvable configurations. By default is false, meaning only 'compileClasspath', 'runtimeClasspath', 'releaseCompileClasspath' and 'releaseRuntimeClasspath' are considered
+    useCache = true // true by default
+    outputFormat = 'DEFAULT' // Optional, other values are: 'DEPENDENCY_GRAPH' prints dependency graph showing direct/transitive dependencies, 'JSON_CYCLONE_DX_1_4' prints a CycloneDX 1.4 SBOM in JSON format.
+    showAll = false // if true prints all dependencies. By default is false, meaning only dependencies with vulnerabilities will be printed.
+    printBanner = true // if true will print ASCII text banner. By default is true.
+
+    // ossIndexAudit can be configured to exclude vulnerabilities from matching
+    // excludeVulnerabilityIds = ['39d74cc8-457a-4e57-89ef-a258420138c5'] // list containing ids of vulnerabilities to be ignored
+    // excludeCoordinates = ['commons-fileupload:commons-fileupload:1.3'] // list containing coordinate of components which if vulnerable should be ignored
+}
 
 /**
  *This specifies what artifacts will be built and uploaded when performing a maven upload.

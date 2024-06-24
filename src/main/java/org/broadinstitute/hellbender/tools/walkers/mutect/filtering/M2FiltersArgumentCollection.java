@@ -55,6 +55,7 @@ public class M2FiltersArgumentCollection {
      * Hard filter thresholds
      */
     public static final String MAX_EVENTS_IN_REGION_LONG_NAME = "max-events-in-region";
+    public static final String MAX_EVENTS_IN_HAPLOTYPE_LONG_NAME = "max-events-in-haplotype";
     public static final String MAX_ALT_ALLELE_COUNT_LONG_NAME = "max-alt-allele-count";
     public static final String UNIQUE_ALT_READ_COUNT_LONG_NAME = "unique-alt-read-count";
     public static final String MIN_MEDIAN_MAPPING_QUALITY_LONG_NAME = "min-median-mapping-quality";
@@ -65,7 +66,8 @@ public class M2FiltersArgumentCollection {
     public static final String MIN_READS_ON_EACH_STRAND_LONG_NAME = "min-reads-per-strand";
     public static final String MIN_AF_LONG_NAME = "min-allele-fraction";
 
-    private static final int DEFAULT_MAX_EVENTS_IN_REGION = 2;
+    private static final int DEFAULT_MAX_EVENTS_IN_REGION = 3;
+    private static final int DEFAULT_MAX_EVENTS_IN_HAPLOTYPE = 2;
     private static final int DEFAULT_MAX_ALT_ALLELES = 1;
     private static final int DEFAULT_MIN_UNIQUE_ALT_READS = 0;
     private static final int DEFAULT_MIN_MEDIAN_MAPPING_QUALITY = 30;
@@ -77,8 +79,11 @@ public class M2FiltersArgumentCollection {
     private static final int DEFAULT_MIN_READS_ON_EACH_STRAND = 0;
     private static final double DEFAULT_MIN_AF = 0;
 
-    @Argument(fullName = MAX_EVENTS_IN_REGION_LONG_NAME, optional = true, doc = "Maximum events in a single assembly region.  Filter all variants if exceeded.")
+    @Argument(fullName = MAX_EVENTS_IN_REGION_LONG_NAME, optional = true, doc = "Maximum number of non-germline events in a single assembly region. Filter all variants if exceeded.")
     public int maxEventsInRegion = DEFAULT_MAX_EVENTS_IN_REGION;
+
+    @Argument(fullName = MAX_EVENTS_IN_HAPLOTYPE_LONG_NAME, optional = true, doc = "Maximum number of non-germline events in a variant allele's best haplotype.")
+    public int maxEventsInHaplotype = DEFAULT_MAX_EVENTS_IN_HAPLOTYPE;
 
     @Argument(fullName = MAX_ALT_ALLELE_COUNT_LONG_NAME, optional = true, doc = "Maximum alt alleles per site.")
     public int numAltAllelesThreshold = DEFAULT_MAX_ALT_ALLELES;

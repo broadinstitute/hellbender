@@ -45,7 +45,7 @@ public class NormalArtifactFilter extends Mutect2VariantFilter {
             return 0.0;
         }
 
-        final double[] normalArtifactNegativeLogOdds = MathUtils.applyToArrayInPlace(VariantContextGetters.getAttributeAsDoubleArray(vc, GATKVCFConstants.NORMAL_ARTIFACT_LOG_10_ODDS_KEY), MathUtils::log10ToLog);
+        final double[] normalArtifactNegativeLogOdds = MathUtils.applyToArrayInPlace(VariantContextGetters.getAttributeAsDoubleArray(vc, GATKVCFConstants.NORMAL_ARTIFACT_LOG_10_ODDS_KEY), x -> -MathUtils.log10ToLog(x));
         final double normalArtifactProbability = filteringEngine.posteriorProbabilityOfNormalArtifact(normalArtifactNegativeLogOdds[indexOfMaxTumorLod]);
 
         // the normal artifact log odds misses artifacts whose support in the normal consists entirely of low base quality reads

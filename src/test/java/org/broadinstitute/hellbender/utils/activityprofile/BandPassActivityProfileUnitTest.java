@@ -1,7 +1,7 @@
 package org.broadinstitute.hellbender.utils.activityprofile;
 
 import htsjdk.samtools.SAMFileHeader;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.broadinstitute.hellbender.utils.GenomeLoc;
 import org.broadinstitute.hellbender.utils.GenomeLocParser;

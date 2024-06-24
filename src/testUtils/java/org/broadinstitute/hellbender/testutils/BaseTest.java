@@ -55,6 +55,17 @@ public abstract class BaseTest {
 
     /**
      * run an external process and assert that it finishes with exit code 0
+     * if it exits with non-zero, include the process stdout/stderr in the exception message
+     *
+     * @param processController a ProcessController to use
+     * @param command command to run, the 0th element must be the executable name
+     */
+    public static void runProcessAndCaptureOutputInExceptionMessage(final ProcessController processController, final String[] command) {
+        runProcess(processController, command, null,"Process exited with non-zero value. Command: "+ Arrays.toString(command) + "\n", true);
+    }
+
+    /**
+     * run an external process and assert that it finishes with exit code 0
      * @param processController a ProcessController to use
      * @param command command to run, the 0th element must be the executable name
      * @param message error message to display on failure
@@ -71,12 +82,37 @@ public abstract class BaseTest {
      * @param message error message to display on failure
      */
     public static void runProcess(final ProcessController processController, final String[] command, final Map<String, String> environment, final String message) {
+        runProcess(processController, command, environment, message, false);
+    }
+
+    /**
+     * run an external process and assert that it finishes with exit code 0
+     * @param processController a ProcessController to use
+     * @param command command to run, the 0th element must be the executable name
+     * @param environment what to use as the process environment variables
+     * @param message error message to display on failure
+     * @param includeProcessOutputInExceptionMessage if true, include the process's stdout/stderr (if any) in the exception
+     *                                               message thrown upon exit with a non-zero value
+     */
+    public static void runProcess(final ProcessController processController, final String[] command, final Map<String, String> environment, final String message, final boolean includeProcessOutputInExceptionMessage) {
         final ProcessSettings prs = new ProcessSettings(command);
         prs.getStderrSettings().printStandard(true);
         prs.getStdoutSettings().printStandard(true);
+
+        // Capture stdout/stderr to a buffer if we need to include it in the exception message
+        if ( includeProcessOutputInExceptionMessage ) {
+            prs.getStderrSettings().setBufferSize(65536);
+            prs.getStdoutSettings().setBufferSize(65536);
+        }
+
         prs.setEnvironment(environment);
         final ProcessOutput output = processController.exec(prs);
-        Assert.assertEquals(output.getExitValue(), 0, message);
+
+        final String fullMessage = includeProcessOutputInExceptionMessage ?
+                message + "\n***Process stdout:***\n" + output.getStdout() + "\n***Process stderr:***\n" + output.getStderr() :
+                message;
+
+        Assert.assertEquals(output.getExitValue(), 0, fullMessage);
     }
 
     /**
@@ -88,6 +124,19 @@ public abstract class BaseTest {
      * @param arguments arguments to provide to the tool
      */
     public static void runToolInNewJVM(String toolName, ArgumentsBuilder arguments){
+        runToolInNewJVM(toolName, arguments, System.getenv());
+    }
+
+    /**
+     * Spawn a new jvm with the same classpath as this one and run a gatk CommandLineProgram
+     * This is useful for running tests that require changing static state that is not allowed to change during
+     * a tool run but which needs to be changed to test some condition.
+     *
+     * @param toolName CommandLineProgram to run
+     * @param arguments arguments to provide to the tool
+     * @param environment a map of key-value pairs which will be used as to set the System environment
+     */
+    public static void runToolInNewJVM(String toolName, ArgumentsBuilder arguments, Map<String, String> environment){
         final String javaHome = System.getProperty("java.home");
         final String javaBin = javaHome + File.separator + "bin" + File.separator + "java";
         final String classpath = System.getProperty("java.class.path");;
@@ -97,8 +146,8 @@ public abstract class BaseTest {
                 Main.class.getName(),
                 toolName));
         baseCommand.addAll(arguments.getArgsList());
-
-        runProcess(ProcessController.getThreadLocal(), baseCommand.toArray(new String[0]));
+        runProcess(ProcessController.getThreadLocal(), baseCommand.toArray(new String[0]), environment,
+                "Java exited with non-zero value. Command: "+ String.join(" ",baseCommand) + "\n");
     }
 
     @BeforeSuite
@@ -295,6 +344,13 @@ public abstract class BaseTest {
     }
 
     /**
+     * Create a temp file with an arbitrary name and extension
+     */
+    public static File createTempFile(){
+        return createTempFile("default", ".tmp");
+    }
+
+    /**
      * Creates a temp path that will be deleted on exit after tests are complete.
      *
      * This will also mark the corresponding Tribble/Tabix/BAM indices matching the temp file for deletion.
@@ -344,6 +400,15 @@ public abstract class BaseTest {
      */
     public static File createTempDir(final String prefix){
         return IOUtils.createTempDir(prefix);
+    }
+
+    /**
+     * Creates an empty temp directory which will be deleted on exit after tests are complete
+     *
+     * @return an empty directory will be deleted after the program exits
+     */
+    public static File createTempDir(){
+        return createTempDir("tmp");
     }
 
     /**

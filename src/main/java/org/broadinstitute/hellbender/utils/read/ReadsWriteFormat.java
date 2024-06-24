@@ -14,10 +14,5 @@ public enum ReadsWriteFormat {
     /**
      * Write reads to a sharded set of BAM files
      */
-    SHARDED,
-
-    /**
-     * Write reads to a sharded set of ADAM-formatted Parquet files
-     */
-    ADAM
+    SHARDED
 }

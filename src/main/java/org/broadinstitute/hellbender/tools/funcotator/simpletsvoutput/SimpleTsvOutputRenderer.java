@@ -18,7 +18,6 @@ import org.broadinstitute.hellbender.utils.io.Resource;
 import org.broadinstitute.hellbender.utils.tsv.TableColumnCollection;
 import org.broadinstitute.hellbender.utils.tsv.TableUtils;
 import org.broadinstitute.hellbender.utils.tsv.TableWriter;
-import org.codehaus.plexus.util.StringUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -356,7 +355,15 @@ public class SimpleTsvOutputRenderer extends OutputRenderer {
 
     @VisibleForTesting
     static String[] splitAndTrim(final String text, final String separator ) {
-        return Stream.of(StringUtils.split(text, separator)).map(String::trim).toArray(String[]::new);
+        final String[] tokens = Utils.split(text, separator).stream().map(String::trim).toArray(String[]::new);
+
+        // If we get a single empty token after trimming, return an empty array, as this is what
+        // the tests for this class expect:
+        if ( tokens.length == 1 && tokens[0].isEmpty() ) {
+            return new String[]{};
+        }
+
+        return tokens;
     }
 
     @VisibleForTesting

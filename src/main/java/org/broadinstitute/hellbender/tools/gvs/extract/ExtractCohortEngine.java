@@ -5,8 +5,8 @@ import htsjdk.variant.variantcontext.*;
 import htsjdk.variant.vcf.VCFConstants;
 import htsjdk.variant.vcf.VCFHeader;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.LongRange;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.LongRange;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.broadinstitute.hellbender.engine.FeatureContext;
@@ -39,10 +39,10 @@ public class ExtractCohortEngine {
     // a better, ref-dependent different manner if/when we get around to supporting other references
     // See: https://en.wikipedia.org/wiki/Pseudoautosomal_region
     private final List<LongRange> PARRegions = List.of(
-            new LongRange(23000000010001L, 23000002781479L),    // PAR1, X
-            new LongRange(24000000010001L, 24000002781479L),    // PAR1, Y
-            new LongRange(23000155701383L, 23000156030895L),    // PAR2, X
-            new LongRange(24000056887903L, 24000057217415L));   // PAR2, Y
+            LongRange.of(23000000010001L, 23000002781479L),    // PAR1, X
+            LongRange.of(24000000010001L, 24000002781479L),    // PAR1, Y
+            LongRange.of(23000155701383L, 23000156030895L),    // PAR2, X
+            LongRange.of(24000056887903L, 24000057217415L));   // PAR2, Y
 
     private final boolean printDebugInformation;
     private final int localSortMaxRecordsInRam;
@@ -679,7 +679,7 @@ public class ExtractCohortEngine {
 
     private boolean isInPAR(final long location) {
         for (LongRange region : PARRegions) {
-            if (region.containsLong(location)) {
+            if (region.contains(location)) {
                 return true;
             }
         }

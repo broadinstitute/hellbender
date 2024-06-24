@@ -687,7 +687,6 @@ public final class IOUtilsUnitTest extends GATKBaseTest {
                 {"fdfdf", null, null, false},
                 {"gendbdfdfdf://fdfdf", null, null, false},
                 {"gendb-dfdfdf://fdfdf", null, null, false},
-                {"gendb-dfdfdf://", null, null, false},
                 {"gendb", null, null, false},
                 {"gendbdfdf", null, null, false},
                 {"agendb://dfdfd", null, null, false},
@@ -696,7 +695,6 @@ public final class IOUtilsUnitTest extends GATKBaseTest {
 
                 {"gendb.dfdfdf://fdfdf", "dfdfdf://fdfdf", "gendb.dfdfdf://fdfdf", true},
                 {"gendb://fdfdf", "fdfdf", "gendb://" + new File("fdfdf").getAbsolutePath(), true},
-                {"gendb://", "", "gendb://" + new File("").getAbsolutePath(), true},
                 {"gendb:///fdfd", "/fdfd", "gendb:///fdfd", true},
                 {"gendb:///", "/", "gendb:///", true},
                 {"gendb.hdfs://this-node:9000/dir", "hdfs://this-node:9000/dir", "gendb.hdfs://this-node:9000/dir", true},

@@ -245,4 +245,61 @@ public class GnarlyGenotyperIntegrationTest extends CommandLineProgramTest {
         Assert.assertEquals(g.getPL().length, 2);
         Assert.assertEquals(g.getPL(), new int[]{83,0});
     }
+
+    @Test
+    public void testNoReadsOutputAsNoCall() {
+        //note these are b37 data
+        File no_reads = new File(toolsTestDir, "/walkers/GnarlyGenotyper/testNoReads.rb.g.vcf");
+        //this is an artisanal, hand-crafted VCF with a QUAL approx that's been artificially enhanced
+        File fake_variant = new File(toolsTestDir, "/walkers/GnarlyGenotyper/fake_sample2.rb.g.vcf");
+        final SimpleInterval interval =  new SimpleInterval("20", 10000000, 10000000);
+        File tempGdb = GenomicsDBTestUtils.createTempGenomicsDB(Arrays.asList(no_reads, fake_variant), interval);
+        final String genomicsDBUri = GenomicsDBTestUtils.makeGenomicsDBUri(tempGdb);
+
+        final File output = createTempFile("checkNoCall", ".vcf");
+
+        final ArgumentsBuilder args = new ArgumentsBuilder();
+        args.addReference(b37_reference_20_21)
+                .addVCF(genomicsDBUri)
+                .addInterval(interval)
+                .addOutput(output);
+        runCommandLine(args);
+
+        final Pair<VCFHeader, List<VariantContext>> outputData = VariantContextTestUtils.readEntireVCFIntoMemory(output.getAbsolutePath());
+        Assert.assertEquals(outputData.getRight().size(), 1);
+        final VariantContext vc = outputData.getRight().get(0);
+        Assert.assertEquals(vc.getGenotypes().size(), 2);
+        final Genotype g = vc.getGenotype("GTEX-RVPV-0003");
+        Assert.assertTrue(g.isNoCall()); //most importantly!
+        Assert.assertFalse(g.hasGQ());
+        Assert.assertFalse(g.hasDP());
+        Assert.assertFalse(g.hasAD());
+        Assert.assertFalse(g.hasPL());
+    }
+
+    @Test
+    public void gnarlyHomRefNullPLs() {
+        final File output = createTempFile("nullPLs", ".vcf");
+        final File inputNull = new File(toolsTestDir, "walkers/GnarlyGenotyper/NA20890.rb.g.vcf");
+        final File inputVariant = new File(toolsTestDir, "walkers/GnarlyGenotyper/NA20846.rb.g.vcf");
+        final SimpleInterval interval =  new SimpleInterval("chr1", 13273, 13273);
+
+        File tempGdb = GenomicsDBTestUtils.createTempGenomicsDB(Arrays.asList(inputNull, inputVariant), interval);
+        final String genomicsDBUri = GenomicsDBTestUtils.makeGenomicsDBUri(tempGdb);
+
+        final ArgumentsBuilder args = new ArgumentsBuilder();
+        args.addReference(hg38Reference)
+                .addVCF(genomicsDBUri)
+                .addInterval(interval)
+                .addOutput(output);
+        runCommandLine(args);
+
+        final Pair<VCFHeader, List<VariantContext>> outputData = VariantContextTestUtils.readEntireVCFIntoMemory(output.getAbsolutePath());
+        Assert.assertEquals(outputData.getRight().size(), 1);
+        final Genotype nullPlGenotype = outputData.getRight().get(0).getGenotype("NA20890");
+        Assert.assertEquals(nullPlGenotype.getPL(), null);
+        Assert.assertEquals(nullPlGenotype.getAlleles(), Arrays.asList(Allele.create("G", true), Allele.create("G", true)));
+        Assert.assertEquals(nullPlGenotype.getGQ(), 0);
+        Assert.assertEquals(nullPlGenotype.getDP(), 4);
+    }
 }

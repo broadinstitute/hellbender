@@ -2,7 +2,7 @@ package org.broadinstitute.hellbender.tools.walkers.validation;
 
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.*;
-import org.apache.commons.lang.mutable.MutableLong;
+import org.apache.commons.lang3.mutable.MutableLong;
 import org.broadinstitute.barclay.argparser.Argument;
 import org.broadinstitute.barclay.argparser.CommandLineProgramProperties;
 import org.broadinstitute.barclay.help.DocumentedFeature;

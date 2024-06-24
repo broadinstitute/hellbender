@@ -31,7 +31,9 @@ public class FlowFeatureMapperIntegrationTest extends CommandLineProgramTest {
                 "-R", largeFileTestDir + "/Homo_sapiens_assembly38.fasta.gz",
                 "-O", outputFile.getAbsolutePath(),
                 "-I", testDir + "/snv_feature_mapper_input.bam",
-                "--copy-attr", "tr",
+                "--copy-attr", "RG",
+                "--copy-attr", "AS,Integer,AS attribute, as copied",
+                "--copy-attr", "rq,Float",
                 "--limit-score", "100",
                 "--min-score", "0",
                 "--snv-identical-bases", "10",
@@ -102,6 +104,108 @@ public class FlowFeatureMapperIntegrationTest extends CommandLineProgramTest {
                 "--debug-read-name", "150451-BC94-0645901755",
                 "--surrounding-median-quality-size", "1000",
                 "--surrounding-mean-quality-size", "1000"
+        };
+
+        // run the tool
+        runCommandLine(args);  // no assert, just make sure we don't throw
+
+        // make sure we've generated the otuput file
+        Assert.assertTrue(outputFile.exists());
+
+        // walk the output and expected files, compare non-comment lines
+        if ( !UPDATE_EXACT_MATCH_EXPECTED_OUTPUTS ) {
+            IntegrationTestSpec.assertEqualTextFiles(outputFile, expectedFile, "#");
+        }
+    }
+
+    @Test
+    public void testQCFailed() throws IOException {
+
+        final File outputDir = createTempDir("testFlowFeatureMapperTest");
+        final File expectedFile = new File(testDir + "/snv_feature_mapper_qc_failed_output.vcf");
+        final File outputFile = UPDATE_EXACT_MATCH_EXPECTED_OUTPUTS ? expectedFile : new File(outputDir + "/snv_feature_mapper_qc_failed_output.vcf");
+
+        final String[] args = new String[] {
+                "-R", largeFileTestDir + "/Homo_sapiens_assembly38.fasta.gz",
+                "-O", outputFile.getAbsolutePath(),
+                "-I", testDir + "/snv_feature_mapper_input.bam",
+                "--copy-attr", "tr",
+                "--limit-score", "100",
+                "--min-score", "0",
+                "--snv-identical-bases", "10",
+                "--debug-negatives", "false",
+                "--debug-read-name", "150451-BC94-0645901755",
+                "--include-qc-failed-reads", "true"
+        };
+
+        // run the tool
+        runCommandLine(args);  // no assert, just make sure we don't throw
+
+        // make sure we've generated the otuput file
+        Assert.assertTrue(outputFile.exists());
+
+        // walk the output and expected files, compare non-comment lines
+        if ( !UPDATE_EXACT_MATCH_EXPECTED_OUTPUTS ) {
+            IntegrationTestSpec.assertEqualTextFiles(outputFile, expectedFile, "#");
+        }
+    }
+
+    @Test
+    public void testReportAllAlts() throws IOException {
+
+        final File outputDir = createTempDir("testFlowFeatureMapperTest");
+        final File expectedFile = new File(testDir + "/snv_feature_mapper_report_all_alts_output.vcf");
+        final File outputFile = UPDATE_EXACT_MATCH_EXPECTED_OUTPUTS ? expectedFile : new File(outputDir + "/snv_feature_mapper_report_all_alts_output.vcf");
+
+        final String[] args = new String[] {
+                "-R", largeFileTestDir + "/Homo_sapiens_assembly38.fasta.gz",
+                "-O", outputFile.getAbsolutePath(),
+                "-I", testDir + "/snv_feature_mapper_input.bam",
+                "--copy-attr", "RG",
+                "--copy-attr", "AS,Integer,AS attribute, as copied",
+                "--copy-attr", "rq,Float",
+                "--limit-score", "100",
+                "--min-score", "0",
+                "--snv-identical-bases", "10",
+                "--debug-negatives", "false",
+                "--debug-read-name", "150451-BC94-0645901755",
+                "--report-all-alts",
+                "-L", "chr20:1099787-1101000"
+        };
+
+        // run the tool
+        runCommandLine(args);  // no assert, just make sure we don't throw
+
+        // make sure we've generated the otuput file
+        Assert.assertTrue(outputFile.exists());
+
+        // walk the output and expected files, compare non-comment lines
+        if ( !UPDATE_EXACT_MATCH_EXPECTED_OUTPUTS ) {
+            IntegrationTestSpec.assertEqualTextFiles(outputFile, expectedFile, "#");
+        }
+    }
+
+    @Test
+    public void testTagBasesWithAdjacentRefDiff() throws IOException {
+
+        final File outputDir = createTempDir("testFlowFeatureMapperTest");
+        final File expectedFile = new File(testDir + "/snv_feature_mapper_tag_adjs_output.vcf");
+        final File outputFile = UPDATE_EXACT_MATCH_EXPECTED_OUTPUTS ? expectedFile : new File(outputDir + "/snv_feature_mapper_tag_adjs_output.vcf");
+
+        final String[] args = new String[] {
+                "-R", largeFileTestDir + "/Homo_sapiens_assembly38.fasta.gz",
+                "-O", outputFile.getAbsolutePath(),
+                "-I", testDir + "/snv_feature_mapper_input.bam",
+                "--copy-attr", "RG",
+                "--copy-attr", "AS,Integer,AS attribute, as copied",
+                "--copy-attr", "rq,Float",
+                "--limit-score", "100",
+                "--min-score", "0",
+                "--snv-identical-bases", "10",
+                "--debug-negatives", "false",
+                "--debug-read-name", "150451-BC94-0645901755",
+                "--tag-bases-with-adjacent-ref-diff",
+                "-L", "chr20:1099787-1101000"
         };
 
         // run the tool

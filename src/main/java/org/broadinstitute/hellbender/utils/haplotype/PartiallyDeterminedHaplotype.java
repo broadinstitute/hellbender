@@ -1,7 +1,6 @@
 package org.broadinstitute.hellbender.utils.haplotype;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.netflix.servo.util.Objects;
 import htsjdk.samtools.Cigar;
 import htsjdk.variant.variantcontext.Allele;
 import org.broadinstitute.hellbender.utils.SimpleInterval;

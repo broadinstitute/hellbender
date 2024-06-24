@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
  */
 public class ClosestSVFinder {
 
+    protected final boolean sortOutput;
     protected final Map<Long, SVCallRecord> truthIdToItemMap;
     protected final Map<Long, ActiveClosestPair> idToClusterMap;
     private final SVConcordanceLinkage linkage;
@@ -49,7 +50,9 @@ public class ClosestSVFinder {
      */
     public ClosestSVFinder(final SVConcordanceLinkage linkage,
                            final Function<ClosestPair, SVCallRecord> collapser,
+                           final boolean sortOutput,
                            final SAMSequenceDictionary dictionary) {
+        this.sortOutput = sortOutput;
         this.linkage = Utils.nonNull(linkage);
         this.collapser = Utils.nonNull(collapser);
         outputBuffer = new PriorityQueue<>(SVCallRecordUtils.getCallComparator(dictionary));
@@ -58,6 +61,15 @@ public class ClosestSVFinder {
         nextItemId = 0L;
         lastItemStart = null;
         lastItemContig = null;
+    }
+
+    /**
+     * Sorts output by default
+     */
+    public ClosestSVFinder(final SVConcordanceLinkage linkage,
+                           final Function<ClosestPair, SVCallRecord> collapser,
+                           final SAMSequenceDictionary dictionary) {
+        this(linkage, collapser, true, dictionary);
     }
 
     /**
@@ -70,8 +82,12 @@ public class ClosestSVFinder {
                 .map(c -> new ClosestPair(c.getItem(), c.getClosest()))
                 .map(collapser)
                 .collect(Collectors.toList());
-        outputBuffer.addAll(collapsedRecords);
-        return flushBuffer(force);
+        if (sortOutput) {
+            outputBuffer.addAll(collapsedRecords);
+            return flushBuffer(force);
+        } else {
+            return collapsedRecords;
+        }
     }
 
     /**

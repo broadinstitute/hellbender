@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class ContaminationSegmenter {
-    public static final Range<Double> ALT_FRACTIONS_FOR_SEGMENTATION = Range.between(0.1, 0.9);
+    public static final Range<Double> ALT_FRACTIONS_FOR_SEGMENTATION = Range.of(0.1, 0.9);
     public static final double KERNEL_SEGMENTER_LINEAR_COST = 1.0;
     public static final double KERNEL_SEGMENTER_LOG_LINEAR_COST = 1.0;
     public static final int KERNEL_SEGMENTER_DIMENSION = 100;

@@ -29,6 +29,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
  * Filtering haplotypes that contribute weak alleles to the genotyping.
  *
@@ -278,7 +280,8 @@ public abstract class AlleleFiltering {
      * @param sorThreshold only variants with SOR above threshold will be considered
      * @return list of alleles that can be removed
      */
-    private List<Event> identifyBadAlleles(final List<Integer> collectedRPLs, final List<Double> collectedSORs,
+    @VisibleForTesting
+    List<Event> identifyBadAlleles(final List<Integer> collectedRPLs, final List<Double> collectedSORs,
                                                       final List<Event> alleles,
                                                       final double qualThreshold,
                                                       final double sorThreshold) {
@@ -303,9 +306,11 @@ public abstract class AlleleFiltering {
         //we then add alleles with high SOR. Note that amongh all allleles with the SOR higher than the SOR_THRESHOLD
         //we will first filter the one with the lowest QUAL.
         logger.debug(() -> String.format("SHA:: Have %d candidates with low QUAL", rplCount));
-        for (int i = sorIndices.length-1 ; (i >= 0) && (collectedSORs.get(sorIndices[i])>SOR_THRESHOLD) ; i--) {
-            if (!result.contains(alleles.get(sorIndices[i]))) {
-                result.add(alleles.get(sorIndices[i]));
+        for (int i = sorIndices.length-1 ; (i >= 0) ; i--) {
+             if (collectedSORs.get(sorIndices[i])>SOR_THRESHOLD){
+                if (!result.contains(alleles.get(sorIndices[i]))) {
+                    result.add(alleles.get(sorIndices[i]));
+                }
             }
         }
         logger.debug(() -> String.format("SHA:: Have %d candidates with high SOR", result.size() - rplCount));
@@ -340,7 +345,7 @@ public abstract class AlleleFiltering {
                 .forEach(alleleHaplotypeMap.get(notAllele)::add);
 
         final AlleleLikelihoods<GATKRead, Allele> alleleLikelihoods = readLikelihoods.marginalize(alleleHaplotypeMap);
-        logger.debug(() -> String.format("GALM: %s %d %d", allele.toString(), alleleHaplotypeMap.get(allele).size(), alleleHaplotypeMap.get(notAllele).size()));
+        logger.debug(() -> String.format("GALM: %s %d %d", allele, alleleHaplotypeMap.get(allele.altAllele()).size(), alleleHaplotypeMap.get(notAllele).size()));
         return alleleLikelihoods;
     }
 

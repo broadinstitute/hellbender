@@ -408,16 +408,16 @@ public class ReblockGVCFUnitTest extends CommandLineProgramTest {
         result.setSequenceDictionary(dict);
         result.addMetaDataLine(new VCFFormatHeaderLine(VCFConstants.GENOTYPE_KEY, 1,
                 VCFHeaderLineType.String,  "genotype"));
-        result.addMetaDataLine(new VCFFormatHeaderLine(VCFConstants.GENOTYPE_ALLELE_DEPTHS, 1,
-                VCFHeaderLineType.String, "Allele depth"));
+        result.addMetaDataLine(new VCFFormatHeaderLine(VCFConstants.GENOTYPE_ALLELE_DEPTHS, VCFHeaderLineCount.R,
+                VCFHeaderLineType.Integer, "Allele depth"));
         result.addMetaDataLine(new VCFFormatHeaderLine(VCFConstants.DEPTH_KEY, 1,
-                VCFHeaderLineType.String, " depth"));
+                VCFHeaderLineType.Integer, " depth"));
         result.addMetaDataLine(new VCFInfoHeaderLine(VCFConstants.DEPTH_KEY, 1,
-                VCFHeaderLineType.String, " depth"));
+                VCFHeaderLineType.Integer, " depth"));
         result.addMetaDataLine(new VCFFormatHeaderLine(VCFConstants.GENOTYPE_QUALITY_KEY, 1,
-                VCFHeaderLineType.String, "Genotype quality"));
-        result.addMetaDataLine(new VCFFormatHeaderLine(VCFConstants.GENOTYPE_PL_KEY, 1,
-                VCFHeaderLineType.String, "Phred-scaled likelihoods"));
+                VCFHeaderLineType.Integer, "Genotype quality"));
+        result.addMetaDataLine(new VCFFormatHeaderLine(VCFConstants.GENOTYPE_PL_KEY, VCFHeaderLineCount.G,
+                VCFHeaderLineType.Integer, "Phred-scaled likelihoods"));
         gvcfWriter.writeHeader(result);
         return gvcfWriter;
     }

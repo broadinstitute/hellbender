@@ -4,7 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Ints;
 import htsjdk.variant.variantcontext.*;
 import htsjdk.variant.vcf.VCFConstants;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.tools.walkers.annotator.*;
@@ -349,6 +349,8 @@ public final class GnarlyGenotyperEngine {
                 //If GenomicsDB returns no-call genotypes like CombineGVCFs (depending on the GenomicsDBExportConfiguration),
                 // then we need to actually find the GT from PLs
                 makeGenotypeCall(g, genotypeBuilder, GenotypeLikelihoods.fromPLs(PLs).getAsVector(), targetAlleles);
+            } else if (g.hasGQ() && g.getGQ() == 0) {
+                makeGenotypeCall(g, genotypeBuilder, null, targetAlleles); //null likelihoods for reblocked hom-ref that we want to no-call
             }
             final Map<String, Object> attrs = new HashMap<>(g.getExtendedAttributes());
             attrs.remove(GATKVCFConstants.MIN_DP_FORMAT_KEY);
@@ -391,14 +393,8 @@ public final class GnarlyGenotyperEngine {
     protected void makeGenotypeCall(final Genotype g, final GenotypeBuilder gb,
                                         final double[] genotypeLikelihoods,
                                         final List<Allele> allelesToUse) {
-        if ( genotypeLikelihoods == null || !GATKVariantContextUtils.isInformative(genotypeLikelihoods) ) {
-            //gb.alleles(GATKVariantContextUtils.noCallAlleles(g.getAlleles().size())).noGQ();
-            GATKVariantContextUtils.makeGenotypeCall(g.getPloidy(), gb, GenotypeAssignmentMethod.SET_TO_NO_CALL,
-                    genotypeLikelihoods, allelesToUse, null);
-        } else {
-            GATKVariantContextUtils.makeGenotypeCall(g.getPloidy(), gb, GenotypeAssignmentMethod.USE_PLS_TO_ASSIGN,
-                    genotypeLikelihoods, allelesToUse, null);
-        }
+        GATKVariantContextUtils.makeGenotypeCall(g.getPloidy(), gb, GenotypeAssignmentMethod.USE_PLS_TO_ASSIGN,
+                    genotypeLikelihoods, allelesToUse, g, null);
     }
 
     /**

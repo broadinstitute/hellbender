@@ -11,7 +11,7 @@ SCRIPTNAME=$( echo $0 | sed 's#.*/##g' )
 
 ################################################################################
 
-version="v84"
+version="v98"
 
 EMAIL=""
 PASSWORD=""
@@ -135,15 +135,12 @@ mkdir -vp cosmic/hg19 cosmic/hg38 cosmic_fusion/hg19 cosmic_fusion/hg38 cosmic_t
 # Get the data files:
 
 echo "Getting files ... "
-lftp --norc -u "${EMAIL}","${PASSWORD}" sftp://sftp-cancer.sanger.ac.uk <<EOF
+AUTH_TOKEN=$(echo -n "$EMAIL:$PASSWORD" | base64)
 
-get cosmic/grch37/cosmic/${version}/CosmicCompleteTargetedScreensMutantExport.tsv.gz -o cosmic/hg19/CosmicCompleteTargetedScreensMutantExport.tsv.gz
-get cosmic/grch37/cosmic/${version}/CosmicFusionExport.tsv.gz -o cosmic_fusion/hg19/CosmicFusionExport.tsv.gz
-get cosmic/grch38/cosmic/${version}/CosmicCompleteTargetedScreensMutantExport.tsv.gz -o cosmic/hg38/CosmicCompleteTargetedScreensMutantExport.tsv.gz
-get cosmic/grch38/cosmic/${version}/CosmicFusionExport.tsv.gz -o cosmic_fusion/hg38/CosmicFusionExport.tsv.gz
-bye
-
-EOF
+curl -sS "$(curl -H "Authorization: Basic $AUTH_TOKEN"  https://cancer.sanger.ac.uk/cosmic/file_download/GRCh37/cosmic/${version}/CosmicCompleteTargetedScreensMutantExport.tsv.gz | jq -r '.url')" -o cosmic/hg19/CosmicCompleteTargetedScreensMutantExport.tsv.gz
+curl -sS "$(curl -H "Authorization: Basic $AUTH_TOKEN"  https://cancer.sanger.ac.uk/cosmic/file_download/GRCh37/cosmic/${version}/CosmicFusionExport.tsv.gz | jq -r '.url')" -o cosmic_fusion/hg19/CosmicFusionExport.tsv.gz
+curl -sS "$(curl -H "Authorization: Basic $AUTH_TOKEN"  https://cancer.sanger.ac.uk/cosmic/file_download/GRCh38/cosmic/${version}/CosmicCompleteTargetedScreensMutantExport.tsv.gz | jq -r '.url')" -o cosmic/hg38/CosmicCompleteTargetedScreensMutantExport.tsv.gz
+curl -sS "$(curl -H "Authorization: Basic $AUTH_TOKEN"  https://cancer.sanger.ac.uk/cosmic/file_download/GRCh38/cosmic/${version}/CosmicFusionExport.tsv.gz | jq -r '.url')" -o cosmic_fusion/hg38/CosmicFusionExport.tsv.gz
 
 echo "Retrieved COSMIC version ${version} on $(date) from sftp-cancer.sanger.ac.uk by: ${SCRIPTNAME}:" >  cosmic/metadata.txt
 echo "User: ${EMAIL}" >> cosmic/metadata.txt

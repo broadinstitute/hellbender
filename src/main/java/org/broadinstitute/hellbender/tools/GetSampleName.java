@@ -86,18 +86,16 @@ final public class GetSampleName extends GATKTool {
         }
 
         final List<String> sampleNames = getHeaderForReads().getReadGroups().stream().map(s -> s.getSample()).distinct().collect(Collectors.toList());
-        if (sampleNames.size() > 1) {
-            throw new UserException.BadInput("The given input bam has more than one unique sample name: " + StringUtils.join(sampleNames, ", "));
-        }
 
         if (sampleNames.size() == 0) {
             throw new UserException.BadInput("The given bam input has no sample names.");
         }
 
         try (final OutputStreamWriter fileWriter = new OutputStreamWriter(outputSampleNameFile.getOutputStream())) {
-            final String rawSample = sampleNames.get(0);
-            final String outputSample = urlEncode ? IOUtils.urlEncode(rawSample) : rawSample;
-            fileWriter.write(outputSample);
+            final String outputSamplesOnSeparateLines = sampleNames.stream()
+                    .map(rawSample -> urlEncode ? IOUtils.urlEncode(rawSample) : rawSample)
+                    .collect(Collectors.joining("\n"));
+            fileWriter.write(outputSamplesOnSeparateLines);
         } catch (final IOException ioe) {
             throw new UserException(String.format("Could not write to output file %s.", outputSampleNameFile), ioe);
         }

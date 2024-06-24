@@ -1,0 +1,66 @@
+n_ref=8
+Reference 0 has n_bin= 2
+  Ref 0 bin 4681 (bin=4681, level=5, first bin=4681, bin size=16,384 bin range=(0-16,384)) has n_chunk= 1
+     Chunk: 0:345-0:567 start: 159 end: 237
+  Ref 0 bin 37450 has n_chunk= 2
+     Chunk:  start: 159 end: 237
+     Chunk:  start: 1 end: 0
+Reference 0 has n_intv= 1
+  Ref 0 ioffset for 0 is 0:345
+Reference 1 has n_bin= 2
+  Ref 1 bin 4681 (bin=4681, level=5, first bin=4681, bin size=16,384 bin range=(0-16,384)) has n_chunk= 1
+     Chunk: 0:567-0:790 start: 237 end: 316
+  Ref 1 bin 37450 has n_chunk= 2
+     Chunk:  start: 237 end: 316
+     Chunk:  start: 1 end: 0
+Reference 1 has n_intv= 1
+  Ref 1 ioffset for 0 is 0:567
+Reference 2 has n_bin= 2
+  Ref 2 bin 4681 (bin=4681, level=5, first bin=4681, bin size=16,384 bin range=(0-16,384)) has n_chunk= 1
+     Chunk: 0:790-0:1009 start: 316 end: 3f1
+  Ref 2 bin 37450 has n_chunk= 2
+     Chunk:  start: 316 end: 3f1
+     Chunk:  start: 1 end: 0
+Reference 2 has n_intv= 1
+  Ref 2 ioffset for 0 is 0:790
+Reference 3 has n_bin= 2
+  Ref 3 bin 4681 (bin=4681, level=5, first bin=4681, bin size=16,384 bin range=(0-16,384)) has n_chunk= 1
+     Chunk: 0:1009-0:1228 start: 3f1 end: 4cc
+  Ref 3 bin 37450 has n_chunk= 2
+     Chunk:  start: 3f1 end: 4cc
+     Chunk:  start: 1 end: 0
+Reference 3 has n_intv= 1
+  Ref 3 ioffset for 0 is 0:1009
+Reference 4 has n_bin= 2
+  Ref 4 bin 4681 (bin=4681, level=5, first bin=4681, bin size=16,384 bin range=(0-16,384)) has n_chunk= 1
+     Chunk: 0:1228-0:1445 start: 4cc end: 5a5
+  Ref 4 bin 37450 has n_chunk= 2
+     Chunk:  start: 4cc end: 5a5
+     Chunk:  start: 1 end: 0
+Reference 4 has n_intv= 1
+  Ref 4 ioffset for 0 is 0:1228
+Reference 5 has n_bin= 2
+  Ref 5 bin 4681 (bin=4681, level=5, first bin=4681, bin size=16,384 bin range=(0-16,384)) has n_chunk= 1
+     Chunk: 0:1445-0:1663 start: 5a5 end: 67f
+  Ref 5 bin 37450 has n_chunk= 2
+     Chunk:  start: 5a5 end: 67f
+     Chunk:  start: 1 end: 0
+Reference 5 has n_intv= 1
+  Ref 5 ioffset for 0 is 0:1445
+Reference 6 has n_bin= 2
+  Ref 6 bin 4681 (bin=4681, level=5, first bin=4681, bin size=16,384 bin range=(0-16,384)) has n_chunk= 1
+     Chunk: 0:1663-0:2319 start: 67f end: 90f
+  Ref 6 bin 37450 has n_chunk= 2
+     Chunk:  start: 67f end: 90f
+     Chunk:  start: 3 end: 0
+Reference 6 has n_intv= 1
+  Ref 6 ioffset for 0 is 0:1663
+Reference 7 has n_bin= 2
+  Ref 7 bin 4681 (bin=4681, level=5, first bin=4681, bin size=16,384 bin range=(0-16,384)) has n_chunk= 1
+     Chunk: 0:2319-0:2755 start: 90f end: ac3
+  Ref 7 bin 37450 has n_chunk= 2
+     Chunk:  start: 90f end: ac3
+     Chunk:  start: 2 end: 0
+Reference 7 has n_intv= 1
+  Ref 7 ioffset for 0 is 0:2319
+No Coordinate Count=8

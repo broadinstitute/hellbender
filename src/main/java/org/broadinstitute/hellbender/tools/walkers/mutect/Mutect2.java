@@ -1,5 +1,6 @@
 package org.broadinstitute.hellbender.tools.walkers.mutect;
 
+import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
 import org.broadinstitute.barclay.argparser.Argument;
 import org.broadinstitute.barclay.argparser.ArgumentCollection;
@@ -262,7 +263,8 @@ public final class Mutect2 extends AssemblyRegionWalker {
     @Override
     public void onTraversalStart() {
         VariantAnnotatorEngine annotatorEngine = new VariantAnnotatorEngine(makeVariantAnnotations(), null, Collections.emptyList(), false, false);
-        m2Engine = new Mutect2Engine(MTAC, assemblyRegionArgs, createOutputBamIndex, createOutputBamMD5, getHeaderForReads(), referenceArguments.getReferenceSpecifier(), annotatorEngine);
+        m2Engine = new Mutect2Engine(MTAC, assemblyRegionArgs, createOutputBamIndex, createOutputBamMD5, getHeaderForReads(),
+                getBestAvailableSequenceDictionary(), referenceArguments.getReferenceSpecifier(), annotatorEngine);
         vcfWriter = createVCFWriter(outputVCF);
         if (m2Engine.emitReferenceConfidence()) {
             logger.warn("Note that the Mutect2 reference confidence mode is in BETA -- the likelihoods model and output format are subject to change in subsequent versions.");

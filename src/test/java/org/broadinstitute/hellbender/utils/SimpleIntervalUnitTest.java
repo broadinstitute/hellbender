@@ -260,6 +260,116 @@ public final class SimpleIntervalUnitTest extends GATKBaseTest {
                             "contains() returned incorrect result for intervals " + firstInterval + " and " + secondInterval);
     }
 
+    @DataProvider(name = "subtractIntervalData")
+    private Object[][] subtractIntervalData() {
+        return new Object[][] {
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 20, 40),
+                        new SimpleInterval("chr1", 10, 20) },
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 5, 15),
+                        new SimpleInterval("chr1", 15, 30) },
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 10, 20),
+                        new SimpleInterval("chr1", 20, 30) },
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 20, 30),
+                        new SimpleInterval("chr1", 10, 20) }
+        };
+    }
+
+    @Test(dataProvider = "subtractIntervalData")
+    public void testSubtractInterval( final SimpleInterval firstInterval,
+                                      final SimpleInterval secondInterval,
+                                      final SimpleInterval expectedResult ) {
+        Assert.assertEquals(firstInterval.subtract(secondInterval), expectedResult);
+    }
+
+    @DataProvider(name = "subtractIntervalDataExpectingException")
+    private Object[][] subtractIntervalDataExpectingException() {
+        return new Object[][] {
+                // different contigs
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr2", 20, 40) },
+                // non-overlapping intervals on same contig
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 50, 150) },
+                // second interval contains first
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 10, 40) }
+        };
+    }
+    @Test(dataProvider = "subtractIntervalDataExpectingException", expectedExceptions = IllegalArgumentException.class)
+    public void testSubtractIntervalExpectingException( final SimpleInterval firstInterval,
+                                                        final SimpleInterval secondInterval) {
+        firstInterval.subtract(secondInterval);
+    }
+
+    @DataProvider(name = "mergeWithContiguousData")
+    private Object[][] mergeWithContiguousData() {
+        return new Object[][] {
+                // first is upstream, overlapping
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 20, 40),
+                        new SimpleInterval("chr1", 10, 40) },
+                // first is downstream, overlapping
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 5, 15),
+                        new SimpleInterval("chr1", 5, 30) },
+                // first contains second
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 15, 20),
+                        new SimpleInterval("chr1", 10, 30) },
+                // second contains first
+                { new SimpleInterval("chr1", 20, 30),
+                        new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 10, 30) },
+                // first is upstream, overlapping by 1
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 30, 50),
+                        new SimpleInterval("chr1", 10, 50) },
+                // first is upstream, adjacent
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 31, 50),
+                        new SimpleInterval("chr1", 10, 50) },
+                // first is downstream, overlapping by 1
+                { new SimpleInterval("chr1", 40, 60),
+                        new SimpleInterval("chr1", 30, 40),
+                        new SimpleInterval("chr1", 30, 60) },
+                // first is downstream, adjacent
+                { new SimpleInterval("chr1", 40, 60),
+                        new SimpleInterval("chr1", 30, 39),
+                        new SimpleInterval("chr1", 30, 60) }
+        };
+    }
+
+    @Test(dataProvider = "mergeWithContiguousData")
+    public void testMergeWithContiguous( final SimpleInterval firstInterval,
+                                      final SimpleInterval secondInterval,
+                                      final SimpleInterval expectedResult ) {
+        Assert.assertEquals(firstInterval.mergeWithContiguous(secondInterval), expectedResult);
+    }
+
+    @DataProvider(name = "mergeWithContiguousDataExpectingException")
+    private Object[][] mergeWithContiguousDataExpectingException() {
+        return new Object[][] {
+                // different contigs
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr2", 20, 40) },
+                // non-contiguous intervals on same contig, first is upstream
+                { new SimpleInterval("chr1", 10, 30),
+                        new SimpleInterval("chr1", 50, 150) },
+                // non-contiguous intervals on same contig, first is downstream
+                { new SimpleInterval("chr1", 20, 30),
+                        new SimpleInterval("chr1", 5, 15) }
+        };
+    }
+    @Test(dataProvider = "mergeWithContiguousDataExpectingException", expectedExceptions = GATKException.class)
+    public void testMergeWithContiguousExpectingException( final SimpleInterval firstInterval,
+                                                        final SimpleInterval secondInterval) {
+        firstInterval.mergeWithContiguous(secondInterval);
+    }
+
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNoNullInConstruction() throws Exception {
         new SimpleInterval((String)null);

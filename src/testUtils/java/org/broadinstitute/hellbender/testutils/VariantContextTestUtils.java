@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -305,7 +306,7 @@ public final class VariantContextTestUtils {
 
     public static void assertGenotypesAreEqual(final Genotype actual, final Genotype expected, final List<String> extendedAttributesToIgnore) {
         Assert.assertEquals(actual.getSampleName(), expected.getSampleName(), "Genotype names");
-        Assert.assertTrue(CollectionUtils.isEqualCollection(actual.getAlleles(), expected.getAlleles()), "Genotype alleles");
+        Assert.assertTrue(CollectionUtils.isEqualCollection(actual.getAlleles(), expected.getAlleles()), "Genotype alleles: " + actual.getAlleles() + " != " + expected.getAlleles());
         Assert.assertEquals(actual.getGenotypeString(false), expected.getGenotypeString(false), "Genotype string");
         Assert.assertEquals(actual.getType(), expected.getType(), "Genotype type");
 
@@ -780,5 +781,31 @@ public final class VariantContextTestUtils {
         final int end = variant.hasAttribute(VCFConstants.END_KEY) ? Integer.parseInt(variant.getAttribute(VCFConstants.END_KEY).toString()) : variant.getEnd();
         return String.format("%s:%d-%d %s, %s", variant.getContig(), variant.getStart(), end, variant.getReference(),
                 variant.getAlternateAlleles().stream().map(Allele::getDisplayString).sorted().collect(Collectors.toList()));
+    }
+
+    public static <T> void assertForEachElementInLists(final List<T> actual, final List<T> expected, final BiConsumer<T, T> assertion) {
+        Assert.assertEquals(actual.size(), expected.size(), "different number of elements in lists:\n"
+                + actual.stream().map(Object::toString).collect(Collectors.joining("\n","actual:\n","\n"))
+            +  expected.stream().map(Object::toString).collect(Collectors.joining("\n","expected:\n","\n")));
+        for (int i = 0; i < actual.size(); i++) {
+            try {
+                assertion.accept(actual.get(i), expected.get(i));
+            } catch (Exception e) {
+                throw new AssertionError("Assertion failed for element " +
+                        i + ": actual is " + actual.get(i).toString() + " versus expected " +
+                        expected.get(i).toString(), e);
+            }
+        }
+    }
+
+    public static <T> void assertCountForEachElementInList(final List<T> actual, Integer count, BiConsumer<T, Integer> assertion) {
+        for (int i = 0; i < actual.size(); i++) {
+            try {
+                assertion.accept(actual.get(i), count);
+            } catch (Exception e) {
+                throw new AssertionError("Assertion failed for element " +
+                        i + ": " + actual.get(i).toString(), e);
+            }
+        }
     }
 }

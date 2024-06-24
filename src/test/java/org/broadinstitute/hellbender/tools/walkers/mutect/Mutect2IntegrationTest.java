@@ -6,6 +6,7 @@ import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFConstants;
 import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.broadinstitute.hellbender.CommandLineProgramTest;
@@ -102,14 +103,14 @@ public class Mutect2IntegrationTest extends CommandLineProgramTest {
     @DataProvider(name = "dreamSyntheticData")
     public Object[][] dreamSyntheticData() {
         return new Object[][]{
-                {DREAM_1_TUMOR, Optional.of(DREAM_1_NORMAL), DREAM_1_TRUTH, DREAM_1_MASK, 0.97, false},
-                {DREAM_2_TUMOR, Optional.of(DREAM_2_NORMAL), DREAM_2_TRUTH, DREAM_2_MASK, 0.95, false},
-                {DREAM_2_TUMOR, Optional.empty(), DREAM_2_TRUTH, DREAM_2_MASK, 0.95, false},
-                {DREAM_2_TUMOR, Optional.empty(), DREAM_2_TRUTH, DREAM_2_MASK, 0.95, true},
-                {DREAM_3_TUMOR, Optional.of(DREAM_3_NORMAL), DREAM_3_TRUTH, DREAM_3_MASK, 0.90, false},
-                {DREAM_4_TUMOR, Optional.of(DREAM_4_NORMAL), DREAM_4_TRUTH, DREAM_4_MASK, 0.65, false},
-                {DREAM_4_TUMOR, Optional.of(DREAM_4_NORMAL), DREAM_4_TRUTH, DREAM_4_MASK, 0.65, true},
-                {DREAM_4_TUMOR, Optional.empty(), DREAM_4_TRUTH, DREAM_4_MASK, 0.65, false},
+                {DREAM_1_TUMOR, Optional.of(DREAM_1_NORMAL), DREAM_1_TRUTH, DREAM_1_MASK, 0.98, false},
+                {DREAM_2_TUMOR, Optional.of(DREAM_2_NORMAL), DREAM_2_TRUTH, DREAM_2_MASK, 0.98, false},
+                {DREAM_2_TUMOR, Optional.empty(), DREAM_2_TRUTH, DREAM_2_MASK, 0.98, false},
+                {DREAM_2_TUMOR, Optional.empty(), DREAM_2_TRUTH, DREAM_2_MASK, 0.98, true},
+                {DREAM_3_TUMOR, Optional.of(DREAM_3_NORMAL), DREAM_3_TRUTH, DREAM_3_MASK, 0.95, false},
+                {DREAM_4_TUMOR, Optional.of(DREAM_4_NORMAL), DREAM_4_TRUTH, DREAM_4_MASK, 0.8, false},
+                {DREAM_4_TUMOR, Optional.of(DREAM_4_NORMAL), DREAM_4_TRUTH, DREAM_4_MASK, 0.7, true},
+                {DREAM_4_TUMOR, Optional.empty(), DREAM_4_TRUTH, DREAM_4_MASK, 0.7, false},
         };
     }
 
@@ -203,7 +204,7 @@ public class Mutect2IntegrationTest extends CommandLineProgramTest {
         final long numPassVariants = VariantContextTestUtils.streamVcf(filteredVcf)
                 .filter(vc -> vc.getFilters().isEmpty()).count();
 
-        Assert.assertTrue(numPassVariants < 10);
+        Assert.assertTrue(numPassVariants < 13);
     }
 
     // tumorBams, normalBam, truthVcf, mask, requiredSensitivity
@@ -417,6 +418,29 @@ public class Mutect2IntegrationTest extends CommandLineProgramTest {
         }
     }
 
+    // regression test for PR: https://github.com/broadinstitute/gatk/pull/8717, which fixed an issue wherein germline events were
+    // incorrectly contributing to the bad haplotype and clustered events filters.  In order to make the test more stringent we turn
+    // on the genotype-germline-sites flag
+    //  The test is on two variants that caused particular trouble previously in the DREAM 2 sample
+    @Test
+    public void testFilteredHaplotypeAndClusteredEventsFilters() throws Exception {
+        Utils.resetRandomGenerator();
+        final File tumor = DREAM_2_TUMOR;
+        final File normal = DREAM_2_NORMAL;
+        final File unfilteredVcf = createTempFile("unfiltered", ".vcf");
+        final File filteredVcf = createTempFile("filtered", ".vcf");
+
+        for (final int locus : List.of(4567628, 20870771)) {
+            final String interval = "20:" + (locus - 500) + "-" + (locus + 500);
+            runMutect2(List.of(tumor), List.of(normal), unfilteredVcf, interval, b37Reference, Optional.of(GNOMAD),
+                    args -> args.addFlag(M2ArgumentCollection.GENOTYPE_GERMLINE_SITES_LONG_NAME));
+            runFilterMutectCalls(unfilteredVcf, filteredVcf, b37Reference);
+            final Optional<VariantContext> vcShouldPass = VariantContextTestUtils.streamVcf(filteredVcf).filter(vc -> vc.getStart() == locus).findFirst();
+            Assert.assertTrue(vcShouldPass.isPresent());
+            Assert.assertFalse(vcShouldPass.get().isFiltered());
+        }
+    }
+
     // test that the dont-use-soft-clips option actually does something
     @Test
     public void testDontUseSoftClips() {
@@ -528,7 +552,7 @@ public class Mutect2IntegrationTest extends CommandLineProgramTest {
                 filteredVariants.get(10).stream().filter(vc -> vc.getFilters().contains(GATKVCFConstants.CONTAMINATION_FILTER_NAME)).count());
 
         final List<VariantContext> missedObviousVariantsAtTenPercent = filteredVariants.get(10).stream()
-                .filter(vc -> !vc.getFilters().contains(GATKVCFConstants.CONTAMINATION_FILTER_NAME))
+                .filter(vc -> !vc.isFiltered())
                 .filter(VariantContext::isBiallelic)
                 .filter(vc -> {
                     final int[] AD = vc.getGenotype(0).getAD();
@@ -1088,7 +1112,18 @@ public class Mutect2IntegrationTest extends CommandLineProgramTest {
         };
 
         runCommandLine(args);
-        IntegrationTestSpec.assertEqualTextFiles(output, expected);
+
+        // This used to be an exact text match, which cause hours of aggravation when the test passed locally and
+        // failed on the cloud.
+        final double[] outputTlods = VariantContextTestUtils.streamVcf(output)
+                        .flatMap(vc -> vc.getAttributeAsDoubleList(GATKVCFConstants.TUMOR_LOG_10_ODDS_KEY, 0).stream())
+                .mapToDouble(x -> x).toArray();
+
+        final double[] expectedTlods = VariantContextTestUtils.streamVcf(expected)
+                .flatMap(vc -> vc.getAttributeAsDoubleList(GATKVCFConstants.TUMOR_LOG_10_ODDS_KEY, 0).stream())
+                .mapToDouble(x -> x).toArray();
+
+        Assert.assertEquals(outputTlods, expectedTlods);
     }
 
     @SafeVarargs

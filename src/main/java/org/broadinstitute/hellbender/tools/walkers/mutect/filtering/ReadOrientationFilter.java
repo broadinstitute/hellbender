@@ -1,6 +1,6 @@
 package org.broadinstitute.hellbender.tools.walkers.mutect.filtering;
 
-import com.netflix.servo.util.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.VariantContext;

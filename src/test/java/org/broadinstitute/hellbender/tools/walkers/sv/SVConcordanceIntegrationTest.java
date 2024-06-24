@@ -38,7 +38,7 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
 
     @Test
     public void testRefPanel() {
-        final File output = createTempFile("concord", ".vcf");
+        final File output = createTempFile("concord", ".vcf.gz");
         final String evalVcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.vcf.gz";
         /**
          * Test file produced from raw standardized VCFs from manta, melt, wham, and cnv callers with SVCluster parameters:
@@ -171,7 +171,7 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
 
         // Run a vcf against itself and check that every variant matched itself
 
-        final File output = createTempFile("concord", ".vcf");
+        final File output = createTempFile("concord", ".vcf.gz");
         final String vcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.vcf.gz";
 
         final ArgumentsBuilder args = new ArgumentsBuilder()
@@ -260,7 +260,7 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
 
         // Run a vcf against itself but with extra samples and variants
 
-        final File output = createTempFile("concord", ".vcf");
+        final File output = createTempFile("concord", ".vcf.gz");
         final String evalVcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.sample_subset.vcf.gz";
         final String truthVcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.vcf.gz";
 
@@ -322,7 +322,7 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
 
     @Test
     public void testSitesOnly() {
-        final File output = createTempFile("concord_sites_only", ".vcf");
+        final File output = createTempFile("concord_sites_only", ".vcf.gz");
         final String evalVcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.sites_only.vcf.gz";
         final String truthVcfPath = getToolTestDataDir() + "ref_panel_1kg.raw_calls.chr22_chrY.sites_only.vcf.gz";
 
@@ -358,7 +358,7 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
 
     @Test(expectedExceptions = UserException.IncompatibleSequenceDictionaries.class)
     public void testHeaderContigsOutOfOrder() {
-        final File output = createTempFile("concord_sites_only", ".vcf");
+        final File output = createTempFile("concord_sites_only", ".vcf.gz");
         final String evalVcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.vcf.gz";
         final String truthVcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.contigs_out_of_order.vcf.gz";
 
@@ -369,5 +369,25 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
                 .add(AbstractConcordanceWalker.EVAL_VARIANTS_SHORT_NAME, evalVcfPath);
 
         runCommandLine(args, SVConcordance.class.getSimpleName());
+    }
+
+    @Test
+    public void testSelfUnsorted() {
+
+        // Run a vcf against itself but don't sort the output
+
+        final File output = createTempFile("concord", ".vcf");
+        final String evalVcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.vcf.gz";
+        final String truthVcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.vcf.gz";
+
+        final ArgumentsBuilder args = new ArgumentsBuilder()
+                .addOutput(output)
+                .add(StandardArgumentDefinitions.SEQUENCE_DICTIONARY_NAME, GATKBaseTest.FULL_HG38_DICT)
+                .add(AbstractConcordanceWalker.EVAL_VARIANTS_LONG_NAME, evalVcfPath)
+                .add(AbstractConcordanceWalker.TRUTH_VARIANTS_LONG_NAME, truthVcfPath)
+                .add(SVConcordance.UNSORTED_OUTPUT_LONG_NAME, true);
+
+        runCommandLine(args, SVConcordance.class.getSimpleName());
+        assertPerfectConcordance(output, evalVcfPath);
     }
 }

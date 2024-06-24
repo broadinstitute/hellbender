@@ -39,7 +39,7 @@ public class FlowBasedReadIntegrationTest extends GATKBaseTest {
         // create argument block
         FlowBasedArgumentCollection fbargs = new FlowBasedArgumentCollection();
         if ( simulate ) {
-            fbargs.probabilityRatioThreshold = 0.01;
+            fbargs.fillingValue = 0.01;
             //fbargs.remove_longer_than_one_indels = true;
             fbargs.lumpProbs = true;
             fbargs.onlyInsOrDel = true;

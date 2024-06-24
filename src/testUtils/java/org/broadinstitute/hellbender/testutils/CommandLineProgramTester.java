@@ -9,6 +9,7 @@ import org.broadinstitute.hellbender.utils.logging.BunnyLog;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Utility interface for CommandLine Program testing. API users that have their own Main implementation

@@ -145,6 +145,10 @@ public final class VariantAnnotatorEngine {
         return Collections.unmodifiableList(infoAnnotations);
     }
 
+    public List<JumboInfoAnnotation> getJumboInfoAnnotations() {
+        return Collections.unmodifiableList(jumboInfoAnnotations);
+    }
+
     /**
      *
      * @param infoAnnotationClassName   the name of the Java class, NOT the annotation VCF key

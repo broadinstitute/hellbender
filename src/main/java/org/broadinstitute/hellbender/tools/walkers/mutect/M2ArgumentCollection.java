@@ -81,10 +81,11 @@ public class M2ArgumentCollection extends AssemblyBasedCallerArgumentCollection 
     public static final String MUTECT3_ALT_DOWNSAMPLE_LONG_NAME = "mutect3-alt-downsample";
     public static final String MUTECT3_DATASET_LONG_NAME = "mutect3-dataset";
     public static final String MUTECT3_TRAINING_TRUTH_LONG_NAME = "mutect3-training-truth";
+    public static final String MUTECT3_DATASET_MODE_LONG_NAME = "mutect3-dataset-mode";
 
     public static final int DEFAULT_MUTECT3_REF_DOWNSAMPLE = 10;
     public static final int DEFAULT_MUTECT3_ALT_DOWNSAMPLE = 20;
-    public static final int DEFAULT_MUTECT3_NON_ARTIFACT_RATIO = 20;
+    public static final int DEFAULT_MUTECT3_NON_ARTIFACT_RATIO = 1;
 
     @Override
     protected int getDefaultMaxMnpDistance() { return 1; }
@@ -205,10 +206,33 @@ public class M2ArgumentCollection extends AssemblyBasedCallerArgumentCollection 
     @Argument(fullName = MUTECT3_DATASET_LONG_NAME, optional = true, doc="Destination for Mutect3 data collection")
     public File mutect3Dataset;
 
+    @Advanced
+    @Argument(fullName = MUTECT3_DATASET_MODE_LONG_NAME, optional = true, doc="The type of Mutect3 dataset.  Depends on sequencing technology.")
+    public Mutect3DatasetMode mutect3DatasetMode = Mutect3DatasetMode.ILLUMINA;
+
+    public enum Mutect3DatasetMode {
+        ILLUMINA(11 + FeaturizedReadSets.NUM_RANGED_FEATURES),
+        ULTIMA(11 + FeaturizedReadSets.NUM_RANGED_FEATURES);
+
+        final private int numReadFeatures;
+
+        Mutect3DatasetMode(final int numReadFeatures) {
+            this.numReadFeatures = numReadFeatures;
+        }
+
+        public int getNumReadFeatures() {
+            return numReadFeatures;
+        }
+    }
+
     /**
      * VCF of known calls for a sample used for generating a Mutect3 training dataset.  Unfiltered variants (PASS or empty FILTER field)
      * contained in this VCF are considered good; other variants (i.e. filtered in this VCF or absent from it) are considered errors.
      * If this VCF is not given the dataset is generated with an weak-labelling strategy based on allele fractions.
+     *
+     * Although the normal use of this input is in generating training data, it can also be used when generating test data
+     * for making Permutect calls.  In this case, the test data is labeled with truth from the VCF, Permutect makes filtered calls as
+     * usual, and Permutect uses the labels to analyze the quality of its results.
      */
     @Argument(fullName= MUTECT3_TRAINING_TRUTH_LONG_NAME, doc="VCF file of known variants for labeling Mutect3 training data", optional = true)
     public FeatureInput<VariantContext> mutect3TrainingTruth;

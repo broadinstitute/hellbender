@@ -9,6 +9,7 @@ import org.broadinstitute.barclay.help.DocumentedFeature;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
 import org.broadinstitute.hellbender.cmdline.programgroups.CoverageAnalysisProgramGroup;
 import org.broadinstitute.hellbender.engine.*;
+import org.broadinstitute.hellbender.engine.filters.MappingQualityReadFilter;
 import org.broadinstitute.hellbender.engine.filters.ReadFilter;
 import org.broadinstitute.hellbender.engine.filters.ReadFilterLibrary;
 import org.broadinstitute.hellbender.engine.filters.WellformedReadFilter;
@@ -100,6 +101,13 @@ import java.util.List;
  * file that have AF of 0.01 or more.
  * </p>
  *
+ * <p>
+ * Finally for those using mappers other than bwa mem or dragen-os, {@code --minimum-mapping-quality} threshold is
+ * set to 50, which limits the usable reads that tool considers for generating pileups. Certain mappers are known to
+ * assign scores less that this threshold even for the unique mappings. If you observe all empty results in your
+ * summary file please adjust the {@code --minimum-mapping-quality} parameter according to your input files.
+ * </p>
+ *
  */
 @CommandLineProgramProperties(
         summary = "Tabulates pileup metrics for inferring contamination",
@@ -112,8 +120,7 @@ public class GetPileupSummaries extends LocusWalker {
     public static final String MIN_SITE_AF_LONG_NAME = "minimum-population-allele-frequency";
     public static final String MAX_SITE_AF_SHORT_NAME = "max-af";
     public static final String MIN_SITE_AF_SHORT_NAME = "min-af";
-    public static final String MIN_MAPPING_QUALITY_LONG_NAME = "min-mapping-quality";
-    public static final String MIN_MAPPING_QUALITY_SHORT_NAME = "mmq";
+
 
     private static final double DEFAULT_MIN_POPULATION_AF = 0.01;
     private static final double DEFAULT_MAX_POPULATION_AF = 0.2;
@@ -136,9 +143,6 @@ public class GetPileupSummaries extends LocusWalker {
             shortName = MAX_SITE_AF_SHORT_NAME,
             doc = "Maximum population allele frequency of sites to consider.", optional = true)
     private double maxPopulationAlleleFrequency = DEFAULT_MAX_POPULATION_AF;
-
-    @Argument(fullName = MIN_MAPPING_QUALITY_LONG_NAME, shortName = MIN_MAPPING_QUALITY_SHORT_NAME, doc = "Minimum read mapping quality", optional = true)
-    private int minMappingQuality = DEFAULT_MINIMUM_MAPPING_QUALITY;
 
     private boolean sawVariantsWithoutAlleleFrequency = false;
     private boolean sawVariantsWithAlleleFrequency = false;
@@ -168,6 +172,7 @@ public class GetPileupSummaries extends LocusWalker {
     @Override
     public List<ReadFilter> getDefaultReadFilters() {
         final List<ReadFilter> filters = new ArrayList<>();
+        filters.add(new MappingQualityReadFilter(DEFAULT_MINIMUM_MAPPING_QUALITY));
         filters.add(ReadFilterLibrary.MAPPING_QUALITY_AVAILABLE);
         filters.add(ReadFilterLibrary.MAPPING_QUALITY_NOT_ZERO);
         filters.add(ReadFilterLibrary.MAPPED);
@@ -208,8 +213,7 @@ public class GetPileupSummaries extends LocusWalker {
         final VariantContext vc = vcs.get(0);
 
         if ( vc.isBiallelic() && vc.isSNP() && alleleFrequencyInRange(vc) ) {
-            final ReadPileup pileup = alignmentContext.getBasePileup()
-                    .makeFilteredPileup(pe -> pe.getRead().getMappingQuality() >= minMappingQuality);
+            final ReadPileup pileup = alignmentContext.getBasePileup();
             try {
                 writer.writeRecord(new PileupSummary(vc, pileup));
             } catch (final IOException ex) {

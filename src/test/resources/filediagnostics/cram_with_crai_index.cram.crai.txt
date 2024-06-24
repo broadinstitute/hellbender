@@ -1,0 +1,8 @@
+
+SeqId AlignmentStart AlignmentSpan ContainerOffset SliceOffset SliceSize
+
+0	200	976	1069	245	598
+1	500	226	1929	242	534
+2	300	176	2722	240	498
+3	700	76	3477	238	453
+

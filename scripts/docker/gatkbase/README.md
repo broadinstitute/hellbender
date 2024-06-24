@@ -1,16 +1,15 @@
 # How to update the GATK base docker image:
 
-1. choose a new version number for the base image and manually update the version in `scripts/docker/gatkbase/build_docker_base.sh`
-2. build the gatkbase image using that script and upload it to the [gatk-dev docker repo](https://hub.docker.com/r/broadinstitute/gatk-dev/) or [gcr-gatk-snapshots](us.gcr.io/broad-dsde-methods/broad-gatk-snapshots)
-   * cd to scripts/docker/gatkbase
-   * run `./build_docker_base.sh`
-   * `docker tag broadinstitute/gatk-dev:your-version-rc1` or whatever the correct tag is for where you want it uploaded
-   * `docker push tagname`
-3. update the Dockerfile in the main gatk to use the image you pushed
-4. commit the changes to the two docker files and to a new pull request
-5. wait for the tests to pass and show it to a reviewer
-6. push the base image to the official [gatk repo](https://hub.docker.com/r/broadinstitute/gatk) with the right name
-7. update the main docker to point to the official version you just released
-8. wait for tests to pass in travis and merge
+1. In a branch, make whatever updates you need to the base image Dockerfile in `scripts/docker/gatkbase`
+2. Choose a new version number for the new base image
+3. Build the GATK base image by running either `build_docker_base_cloud.sh` (to build in the cloud using Google Cloud Build) or `build_docker_base_locally.sh` (to build on your local machine) from within the `scripts/docker/gatkbase` directory in your GATK clone.
+   * Both scripts take the version of the new image as their only argument. Eg., `build_docker_base_cloud.sh 3.0.0rc1` will create the remote image `us.gcr.io/broad-dsde-methods/gatk-base-image-staging-area:gatkbase-3.0.0rc1`
+4. If you built the image locally, you'll need to manually push it to the staging area at `us.gcr.io/broad-dsde-methods/gatk-base-image-staging-area`
+5. Test the new image using the GATK branch with your changes to the base image Dockerfile, by modifying the FROM clause at the top of the main GATK Dockerfile to point to the base image you staged, and submit a PR for the branch to let the test suite run.
+6. Once tests pass and everything looks good, push the new base image to the release repositories using the `release_prebuilt_base_image.sh` script
+   * The release script takes as arguments the prebuilt image you've tested, and a final version number for release. For example: `release_prebuilt_base_image.sh us.gcr.io/broad-dsde-methods/gatk-base-image-staging-area:gatkbase-3.0.0rc1 3.0.0`
+   * The release script looks for the image locally first, and if not found locally it pulls it from the remote repository before releasing.
+7. Update the FROM clause in the main GATK Dockerfile in your GATK PR to point to the officially-released image, and merge it once tests pass.
+
 
 

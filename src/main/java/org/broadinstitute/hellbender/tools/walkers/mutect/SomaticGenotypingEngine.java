@@ -4,10 +4,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.Doubles;
 import htsjdk.samtools.SAMFileHeader;
+import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.util.Locatable;
 import htsjdk.variant.variantcontext.*;
 import htsjdk.variant.vcf.VCFConstants;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.DefaultRealMatrixChangingVisitor;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -51,7 +53,9 @@ public class SomaticGenotypingEngine implements AutoCloseable {
     private final double refPseudocount = 1;
     private final double altPseudocount;
 
-    public SomaticGenotypingEngine(final M2ArgumentCollection MTAC, final Set<String> normalSamples, final VariantAnnotatorEngine annotationEngine) {
+    public SomaticGenotypingEngine(final M2ArgumentCollection MTAC, final Set<String> normalSamples,
+                                   final VariantAnnotatorEngine annotationEngine,
+                                   final SAMFileHeader header, final SAMSequenceDictionary sequenceDictionary) {
         this.MTAC = MTAC;
         altPseudocount = MTAC.minAF == 0.0 ? 1 : 1 - Math.log(2)/Math.log(MTAC.minAF);
 
@@ -61,7 +65,7 @@ public class SomaticGenotypingEngine implements AutoCloseable {
 
         mutect3DatasetEngine = MTAC.mutect3Dataset == null ? Optional.empty() :
                 Optional.of(new Mutect3DatasetEngine(MTAC.mutect3Dataset, MTAC.mutect3TrainingDataMode, MTAC.maxRefCountForMutect3,
-                        MTAC.maxAltCountForMutect3, MTAC.mutect3NonArtifactRatio, normalSamples));
+                        MTAC.maxAltCountForMutect3, MTAC.mutect3NonArtifactRatio, normalSamples, header, sequenceDictionary));
         Utils.validateArg(!(MTAC.mutect3Dataset == null && MTAC.mutect3TrainingDataMode), "No dataset file specified for Mutect3 training data mode.");
     }
 
@@ -113,12 +117,14 @@ public class SomaticGenotypingEngine implements AutoCloseable {
         }
         final AlleleLikelihoods<Fragment, Haplotype> logFragmentLikelihoods = logReadLikelihoods.groupEvidence(MTAC.independentMates ? read -> read : GATKRead::getName, Fragment::createAndAvoidFailure);
 
+        final Set<Event> potentialSomaticEventsInRegion = new HashSet<>();
         for( final int loc : eventStarts ) {
             final List<VariantContext> eventsAtThisLoc = AssemblyBasedCallerUtils.getVariantsFromActiveHaplotypes(loc, haplotypes, false);
-            VariantContext mergedVC = AssemblyBasedCallerUtils.makeMergedVariantContext(eventsAtThisLoc);
-            if( mergedVC == null ) {
+            VariantContext merged = AssemblyBasedCallerUtils.makeMergedVariantContext(eventsAtThisLoc);
+            if( merged == null ) {
                 continue;
             }
+            final VariantContext mergedVC = emitRefConf ? ReferenceConfidenceUtils.addNonRefSymbolicAllele(merged) : merged;
 
             // converting haplotype likelihoods to allele likelihoods
             final Map<Allele, List<Haplotype>> alleleMapper = AssemblyBasedCallerUtils.createAlleleMapper(mergedVC, loc, haplotypes, true);
@@ -127,7 +133,6 @@ public class SomaticGenotypingEngine implements AutoCloseable {
             logLikelihoods.retainEvidence(variantCallingRelevantFragmentOverlap::overlaps);
 
             if (emitRefConf) {
-                mergedVC = ReferenceConfidenceUtils.addNonRefSymbolicAllele(mergedVC);
                 logLikelihoods.addNonReferenceAllele(Allele.NON_REF_ALLELE);
             }
             final List<LikelihoodMatrix<Fragment, Allele>> tumorMatrices = IntStream.range(0, logLikelihoods.numberOfSamples())
@@ -152,13 +157,21 @@ public class SomaticGenotypingEngine implements AutoCloseable {
                     .filter(allele -> forcedAlleles.contains(allele) || tumorLogOdds.getAlt(allele) > MTAC.getEmissionLogOdds())
                     .collect(Collectors.toList());
 
-            final long somaticAltCount = tumorAltAlleles.stream()
+            final List<Allele> allelesToGenotype = tumorAltAlleles.stream()
                     .filter(allele -> forcedAlleles.contains(allele) || !hasNormal || MTAC.genotypeGermlineSites || normalLogOdds.getAlt(allele) > MathUtils.log10ToLog(MTAC.normalLog10Odds))
-                    .count();
+                    .toList();
+
+            // record somatic alleles for later use in the Event Count annotation
+            // note that in tumor-only calling it does not attempt to detect germline events
+            mergedVC.getAlternateAlleles().stream()
+                    .filter(allele -> tumorLogOdds.getAlt(allele) > MTAC.getEmissionLogOdds())
+                    .filter(allele -> !hasNormal || normalLogOdds.getAlt(allele) > MathUtils.log10ToLog(MTAC.normalLog10Odds))
+                    .map(allele -> new Event(mergedVC.getContig(), mergedVC.getStart(), mergedVC.getReference(), allele))
+                    .forEach(potentialSomaticEventsInRegion::add);
 
             // if every alt allele is germline, skip this variant.  However, if some alt alleles are germline and others
             // are not we emit them all so that the filtering engine can see them
-            if (somaticAltCount == 0) {
+            if (allelesToGenotype.isEmpty()) {
                 continue;
             }
 
@@ -176,7 +189,7 @@ public class SomaticGenotypingEngine implements AutoCloseable {
 
             if (hasNormal) {
                 callVcb.attribute(GATKVCFConstants.NORMAL_ARTIFACT_LOG_10_ODDS_KEY,
-                        Arrays.stream(normalArtifactLogOdds.asDoubleArray(tumorAltAlleles)).map(x->-MathUtils.logToLog10(x)).toArray());
+                        Arrays.stream(normalArtifactLogOdds.asDoubleArray(tumorAltAlleles)).map(x->MathUtils.logToLog10(x)).toArray());
                 callVcb.attribute(GATKVCFConstants.NORMAL_LOG_10_ODDS_KEY,
                         Arrays.stream(normalLogOdds.asDoubleArray(tumorAltAlleles)).map(MathUtils::logToLog10).toArray());
             }
@@ -214,7 +227,7 @@ public class SomaticGenotypingEngine implements AutoCloseable {
             final Optional<List<VariantContext>> truthVCs = MTAC.mutect3TrainingTruth == null ? Optional.empty() :
                     Optional.of(featureContext.getValues(MTAC.mutect3TrainingTruth, mergedVC.getStart()));
             mutect3DatasetEngine.ifPresent(engine -> engine.addData(referenceContext, annotatedCall, truthVCs,
-                    trimmedLikelihoodsForAnnotation, logFragmentLikelihoods, logLikelihoods));
+                    trimmedLikelihoodsForAnnotation, logFragmentLikelihoods, logLikelihoods, MTAC.mutect3DatasetMode));
 
             call.getAlleles().stream().map(alleleMapper::get).filter(Objects::nonNull).forEach(calledHaplotypes::addAll);
             returnCalls.add( annotatedCall );
@@ -222,8 +235,41 @@ public class SomaticGenotypingEngine implements AutoCloseable {
 
         final List<VariantContext> outputCalls = AssemblyBasedCallerUtils.phaseCalls(returnCalls, calledHaplotypes);
         final int eventCount = outputCalls.size();
+
+        // calculate the number of somatic events in the best haplotype of each called variant
+        final Map<Haplotype, MutableInt> haplotypeSupportCounts = logReadLikelihoods.alleles().stream()
+                .collect(Collectors.toMap(hap -> hap, label -> new MutableInt(0)));
+        logReadLikelihoods.bestAllelesBreakingTies()
+                .forEach(bestHaplotype -> haplotypeSupportCounts.get(bestHaplotype.allele).increment());
+
+        final Map<Event, List<Haplotype>> haplotypesByEvent= new HashMap<>();
+        for (final Haplotype haplotype : logReadLikelihoods.alleles()) {
+            for (final Event event : haplotype.getEventMap().getEvents()) {
+                haplotypesByEvent.computeIfAbsent(event, e -> new ArrayList<>()).add(haplotype);
+            }
+        }
+        final Map<VariantContext, List<Integer>> eventCountAnnotations = new HashMap<>();
+        for (final VariantContext outputCall : outputCalls) {
+            for (final Allele allele : outputCall.getAlternateAlleles()) {
+                // note: this creates the minimal representation behind the scenes
+                final Event event = new Event(outputCall.getContig(), outputCall.getStart(), outputCall.getReference(), allele);
+                // haplotypesByEvent contains every *assembled* event, including events injected into the original assembly,
+                // but there are some modes where we genotype events that were never in an assembly graph, in which case
+                // this annotation is irrelevant
+                if (haplotypesByEvent.containsKey(event)) {
+                    final Haplotype bestHaplotype = haplotypesByEvent.get(event).stream()
+                            .sorted(Comparator.comparingInt(h -> haplotypeSupportCounts.getOrDefault(h, new MutableInt(0)).intValue()).reversed())
+                            .findFirst().get();
+
+                    eventCountAnnotations.computeIfAbsent(outputCall, vc -> new ArrayList<>())
+                            .add((int) bestHaplotype.getEventMap().getEvents().stream().filter(potentialSomaticEventsInRegion::contains).count());
+                }
+            }
+        }
         final List<VariantContext> outputCallsWithEventCountAnnotation = outputCalls.stream()
-                .map(vc -> new VariantContextBuilder(vc).attribute(GATKVCFConstants.EVENT_COUNT_IN_HAPLOTYPE_KEY, eventCount).make())
+                .map(vc -> new VariantContextBuilder(vc)
+                        .attribute(GATKVCFConstants.EVENT_COUNT_IN_HAPLOTYPE_KEY, eventCountAnnotations.get(vc))
+                        .attribute(GATKVCFConstants.EVENT_COUNT_IN_REGION_KEY, potentialSomaticEventsInRegion.size()).make())
                 .collect(Collectors.toList());
         return new CalledHaplotypes(outputCallsWithEventCountAnnotation, calledHaplotypes);
     }
@@ -361,9 +407,7 @@ public class SomaticGenotypingEngine implements AutoCloseable {
     private static Map<String, Object> getNegativeLogPopulationAFAnnotation(List<VariantContext> germlineResourceVariants,
                                                                             final List<Allele> allAlleles,
                                                                             final double afOfAllelesNotInGermlineResource) {
-        final Optional<VariantContext> germlineVC = germlineResourceVariants.isEmpty() ? Optional.empty()
-                : Optional.of(germlineResourceVariants.get(0));  // assume only one VC per site
-        final double[] populationAlleleFrequencies = getGermlineAltAlleleFrequencies(allAlleles, germlineVC, afOfAllelesNotInGermlineResource);
+        final double[] populationAlleleFrequencies = getGermlineAltAlleleFrequencies(allAlleles, germlineResourceVariants, afOfAllelesNotInGermlineResource);
 
         return ImmutableMap.of(GATKVCFConstants.POPULATION_AF_KEY, MathUtils.applyToArray(populationAlleleFrequencies, x -> - Math.log10(x)));
     }
@@ -373,27 +417,35 @@ public class SomaticGenotypingEngine implements AutoCloseable {
      * @param allAlleles    Every emitted allele, with the reference allele first.  Only alt alleles are annotated, but we
      *      *               need the ref allele in case the germline resource has a more or less parsimonious representation
      *      *               For example, eg ref = A, alt = C; germline ref = AT, germline alt = CT
-     * @param germlineVC    Germline resource variant context from which AF INFO field is drawn
+     * @param germlineVCs    Germline resource variant contexts from which AF INFO field is drawn
      * @param afOfAllelesNotInGermlineResource  Default value of population AF annotation
      * @return
      */
     @VisibleForTesting
-    static double[] getGermlineAltAlleleFrequencies(final List<Allele> allAlleles, final Optional<VariantContext> germlineVC, final double afOfAllelesNotInGermlineResource) {
+    static double[] getGermlineAltAlleleFrequencies(final List<Allele> allAlleles, final List<VariantContext> germlineVCs, final double afOfAllelesNotInGermlineResource) {
         Utils.validateArg(!allAlleles.isEmpty(), "allAlleles are empty -- there is not even a reference allele.");
-        if (germlineVC.isPresent())  {
-            if (! germlineVC.get().hasAttribute(VCFConstants.ALLELE_FREQUENCY_KEY)) {
-                logger.warn("Germline resource variant at " + germlineVC.get().getContig() + ":" + germlineVC.get().getStart() +" missing AF attribute");
-                return Doubles.toArray(Collections.nCopies(allAlleles.size() - 1, afOfAllelesNotInGermlineResource));
-            }
-            List<OptionalInt> germlineIndices = GATKVariantContextUtils.alleleIndices(allAlleles, germlineVC.get().getAlleles());
-            final List<Double> germlineAltAFs = Mutect2Engine.getAttributeAsDoubleList(germlineVC.get(), VCFConstants.ALLELE_FREQUENCY_KEY, afOfAllelesNotInGermlineResource);
+        final Map<Allele, Double> alleleFrequencies = new HashMap<>();
+        allAlleles.forEach(a -> alleleFrequencies.put(a, afOfAllelesNotInGermlineResource));    // initialize everything to the default
 
-            return germlineIndices.stream().skip(1)  // skip the reference allele
-                .mapToDouble(idx -> idx.isPresent() ? germlineAltAFs.get(idx.getAsInt() - 1) : afOfAllelesNotInGermlineResource)    // note the -1 since germlineAltAFs do not include ref
-                .toArray();
-        } else {
-            return Doubles.toArray(Collections.nCopies(allAlleles.size() - 1, afOfAllelesNotInGermlineResource));
+        // look through every germline resource variant context at this locus and fill in the AFs
+        for (final VariantContext germlineVC : germlineVCs) {
+            if (! germlineVC.hasAttribute(VCFConstants.ALLELE_FREQUENCY_KEY)) {
+                logger.warn("Germline resource variant at " + germlineVC.getContig() + ":" + germlineVC.getStart() +" missing AF attribute");
+            }
+
+            List<OptionalInt> germlineIndices = GATKVariantContextUtils.alleleIndices(allAlleles, germlineVC.getAlleles());
+            final List<Double> germlineAltAFs = Mutect2Engine.getAttributeAsDoubleList(germlineVC, VCFConstants.ALLELE_FREQUENCY_KEY, afOfAllelesNotInGermlineResource);
+
+            if (germlineAltAFs.size() == (germlineVC.getNAlleles() - 1)) {  // skip VCs with a bad AF field that got parsed as a wrong-length list
+                for (int alleleIndex = 1; alleleIndex < allAlleles.size(); alleleIndex++) { // start at 1 to skip the reference, which doesn't have an AF annotation
+                    final Allele allele = allAlleles.get(alleleIndex);
+                    // note the -1 since germlineAltAFs do not include ref
+                    germlineIndices.get(alleleIndex).ifPresent(germlineIndex -> alleleFrequencies.put(allele, germlineAltAFs.get(germlineIndex - 1)));
+                }
+            }
         }
+
+        return allAlleles.stream().skip(1).mapToDouble(alleleFrequencies::get).toArray();   // skip the reference allele
     }
 
     /**

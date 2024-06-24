@@ -2,7 +2,6 @@ package org.broadinstitute.hellbender.utils.read;
 
 
 import htsjdk.samtools.*;
-import org.bdgenomics.formats.avro.AlignmentRecord;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
@@ -35,42 +34,6 @@ public class GATKReadAdaptersUnitTest extends GATKBaseTest {
 
     private static GATKRead basicReadBackedBySam() {
         return new SAMRecordToGATKReadAdapter(basicSAMRecord());
-    }
-
-
-    @DataProvider(name = "readPairsForToString")
-    public Object[][] readPairsForToString() {
-        List<Object[]> testCases = new ArrayList<>();
-
-        final SAMRecord samRecord = basicSAMRecord();
-        final GATKRead basicSamRead = new SAMRecordToGATKReadAdapter(samRecord);
-
-        final SAMRecord samRecordUnmapped = basicUnmappedSAMRecord();
-        samRecordUnmapped.setReadUnmappedFlag(true);
-        final GATKRead basicSamReadUnmapped = new SAMRecordToGATKReadAdapter(samRecordUnmapped);
-
-        testCases.add(new GATKRead[]{basicSamRead, basicReadBackedByADAMRecord(samRecord)});
-
-        testCases.add(new GATKRead[]{basicSamReadUnmapped, basicReadBackedByADAMRecord(samRecordUnmapped)});
-        return testCases.toArray(new Object[][]{});
-    }
-
-    private static GATKRead basicReadBackedByADAMRecord(final SAMRecord sam) {
-        final AlignmentRecord record = new AlignmentRecord();
-        record.setReadName(sam.getReadName());
-        record.setSequence(new String(sam.getReadBases()));
-        record.setStart((long)sam.getAlignmentStart()-1); //ADAM records are 0-based
-        record.setEnd((long)sam.getAlignmentEnd()-1);     //ADAM records are 0-based
-        record.setReadMapped(!sam.getReadUnmappedFlag());
-        record.setCigar(sam.getCigarString());
-        record.setReferenceName(sam.getReferenceName());
-        return new BDGAlignmentRecordToGATKReadAdapter(record, getSAMHeader());
-    }
-
-    @Test(dataProvider = "readPairsForToString")
-    public void testToString(final GATKRead read1, final GATKRead read2){
-        Assert.assertNotEquals(read1, read2);
-        Assert.assertEquals(read1.toString(), read2.toString());
     }
 
     private static SAMFileHeader getSAMHeader() {

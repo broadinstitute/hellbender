@@ -43,7 +43,8 @@ public final class GATKVCFConstants {
     public static final String CULPRIT_KEY =                        "culprit";
     public static final String ORIGINAL_DP_KEY =                    "DP_Orig"; //SelectVariants
     public static final String DOWNSAMPLED_KEY =                    "DS";
-    public static final String EVENT_COUNT_IN_HAPLOTYPE_KEY =       "ECNT"; //M2
+    public static final String EVENT_COUNT_IN_REGION_KEY =          "ECNT"; //M2
+    public static final String EVENT_COUNT_IN_HAPLOTYPE_KEY =       "ECNTH"; //M2
     public static final String FISHER_STRAND_KEY =                  "FS";
     public static final String AS_FISHER_STRAND_KEY =               "AS_FS";
     public static final String AS_SB_TABLE_KEY =                    "AS_SB_TABLE";

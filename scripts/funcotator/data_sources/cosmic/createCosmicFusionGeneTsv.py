@@ -90,7 +90,7 @@ if __name__ == '__main__':
     tsvReader = GenericTsvReader(inputFilename)
     headers = tsvReader.getFieldNames()
     print('Found headers (input): ' + str(headers))
-    if "Translocation Name" not in headers:
+    if "TRANSLOCATION_NAME" not in headers:
         raise NotImplementedError("Could not find Translocation Name column in the input file.")
     
     outputHeaders = ['gene', 'fusion_genes', 'fusion_id']
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     fusionGeneDict = OrderedDict()
     last_i = 0
     for i, line in enumerate(tsvReader):
-        fusion_gene_description = line['Translocation Name']
+        fusion_gene_description = line['TRANSLOCATION_NAME']
         
         if len(fusion_gene_description.strip()) == 0:
             # blank

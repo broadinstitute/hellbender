@@ -18,6 +18,7 @@ set -e
 
 COSMIC_FILE=CosmicCompleteTargetedScreensMutantExport.tsv
 OUT_DB_FILE="Cosmic.db"
+OUT_TMP_FOLDER="~/tmp"
 
 ################################################################################
 
@@ -27,6 +28,10 @@ fi
 
 if [[ $# -gt 1 ]] ; then
     OUT_DB_FILE=$2
+fi
+
+if [[ $# -gt 2 ]] ; then
+    OUT_TMP_FOLDER=$3
 fi
 
 if [ ! -f ${COSMIC_FILE} ] ; then
@@ -42,6 +47,7 @@ sqlite3 ${OUT_DB_FILE} <<EOF
 .echo on
 .mode tabs
 .import ${COSMIC_FILE} RawCosmic
+pragma temp_store_directory = ${OUT_TMP_FOLDER};
 CREATE TABLE Cosmic AS SELECT * FROM RawCosmic WHERE ("Mutation AA" != "" OR "Mutation genome position" != "");
 DROP TABLE RawCosmic;
 UPDATE Cosmic SET "Mutation genome position" = "chr"||"Mutation genome position" WHERE "Mutation genome position" != "";

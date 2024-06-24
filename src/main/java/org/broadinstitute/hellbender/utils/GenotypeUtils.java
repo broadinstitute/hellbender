@@ -21,7 +21,7 @@ public final class GenotypeUtils {
     }
 
     /**
-     * Returns true if the genotype is a diploid genotype with likelihoods.
+     * Returns true if the genotype is a called diploid genotype with likelihoods.
      */
     public static boolean isCalledAndDiploidWithLikelihoodsOrWithGQ(final Genotype g) {
         return Utils.nonNull(g).isCalled() && g.getPloidy() == 2 && (Utils.nonNull(g).hasLikelihoods() || g.hasGQ()) ;
@@ -142,6 +142,7 @@ public final class GenotypeUtils {
     /**
      * Do we have (or can we infer) likelihoods necessary for allele frequency calculation?
      * Some reblocked and/or DRAGEN GVCFs omit likelihoods for ref blocks, but we can estimate them
+     * Ref blocks without likelihoods need to be retrieved from GenomicDB or CombineGVCFs with the --call-genotypes arg
      * If GenomicsDB max alt threshold is too low, non-reference genotypes may also be missing PLs -- we can't estimate, so reject those
      * @param g a genotype of unknown call and ploidy
      * @return  true if we have enough info for AF calculation
@@ -192,6 +193,6 @@ public final class GenotypeUtils {
     }
 
     public static boolean shouldBeCalled(final Genotype g) {
-        return !g.isNonInformative() || g.hasGQ();
+        return !g.isNonInformative() || (g.hasGQ() && g.getGQ() > 0);
     }
 }

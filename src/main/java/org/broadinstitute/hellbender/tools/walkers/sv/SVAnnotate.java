@@ -123,6 +123,11 @@ import java.util.*;
  *     duplicated. The partial duplication occurs when a duplication has one breakpoint within the transcript and one
  *     breakpoint after the end of the transcript. When the duplication is in tandem, the result is that there is one
  *     intact copy of the full endogenous gene.</p></li>
+ *     <li><p><i>PREDICTED_PARTIAL_DISPERSED_DUP</i><br />
+ *     Gene(s) which are partially overlapped by the duplicated segment involved in an SV's dispersed duplication.
+ *     This annotation is applied to a dispersed (non-tandem) duplication segment that is part of a complex SV if the
+ *     duplicated segment overlaps part of a transcript but not the entire transcript (which would be a
+ *     PREDICTED_COPY_GAIN event).</p></li>
  *     <li><p><i>PREDICTED_INV_SPAN</i><br />
  *     Gene(s) which are entirely spanned by an SV's inversion. A whole-gene inversion occurs when an inversion spans
  *     the entire transcript, from the first base of the 5' UTR to the last base of the 3' UTR. </p></li>
@@ -354,6 +359,7 @@ public final class SVAnnotate extends VariantWalker {
         header.addMetaDataLine(new VCFInfoHeaderLine(GATKSVVCFConstants.NONCODING_SPAN, VCFHeaderLineCount.UNBOUNDED, VCFHeaderLineType.String, "Class(es) of noncoding elements spanned by SV."));
         header.addMetaDataLine(new VCFInfoHeaderLine(GATKSVVCFConstants.NONCODING_BREAKPOINT, VCFHeaderLineCount.UNBOUNDED, VCFHeaderLineType.String, "Class(es) of noncoding elements disrupted by SV breakpoint."));
         header.addMetaDataLine(new VCFInfoHeaderLine(GATKSVVCFConstants.NEAREST_TSS, VCFHeaderLineCount.UNBOUNDED, VCFHeaderLineType.String, "Nearest transcription start site to an intergenic variant."));
+        header.addMetaDataLine(new VCFInfoHeaderLine(GATKSVVCFConstants.PARTIAL_DISPERSED_DUP, VCFHeaderLineCount.UNBOUNDED, VCFHeaderLineType.String, "Gene(s) overlapped partially by the duplicated interval involved in a dispersed duplication event in a complex SV."));
 
     }
 

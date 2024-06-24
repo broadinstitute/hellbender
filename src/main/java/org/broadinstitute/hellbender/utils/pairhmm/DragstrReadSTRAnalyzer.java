@@ -1,7 +1,7 @@
 package org.broadinstitute.hellbender.utils.pairhmm;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.param.ParamUtils;
 import org.broadinstitute.hellbender.utils.read.GATKRead;

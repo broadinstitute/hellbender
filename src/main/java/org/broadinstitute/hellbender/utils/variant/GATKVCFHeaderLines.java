@@ -225,7 +225,8 @@ public class GATKVCFHeaderLines {
         addInfoLine(new VCFInfoHeaderLine(TREE_SCORE, 1, VCFHeaderLineType.Float, "Score from single sample filtering with random forest model."));
 
         // M2-related info lines
-        addInfoLine(new VCFInfoHeaderLine(EVENT_COUNT_IN_HAPLOTYPE_KEY, 1, VCFHeaderLineType.Integer, "Number of events in this haplotype"));
+        addInfoLine(new VCFInfoHeaderLine(EVENT_COUNT_IN_HAPLOTYPE_KEY, VCFHeaderLineCount.A, VCFHeaderLineType.Integer, "Number of somatic events in best supporting haplotype for each alt allele"));
+        addInfoLine(new VCFInfoHeaderLine(EVENT_COUNT_IN_REGION_KEY, 1, VCFHeaderLineType.Integer, "Number of potential somatic events in the assembly region"));
         addInfoLine(new VCFInfoHeaderLine(NORMAL_LOG_10_ODDS_KEY, VCFHeaderLineCount.A, VCFHeaderLineType.Float, "Normal log 10 likelihood ratio of diploid het or hom alt genotypes"));
         addInfoLine(new VCFInfoHeaderLine(TUMOR_LOG_10_ODDS_KEY, VCFHeaderLineCount.A, VCFHeaderLineType.Float, "Log 10 likelihood ratio score of variant existing versus not existing"));
         addFormatLine(new VCFFormatHeaderLine(TUMOR_LOG_10_ODDS_KEY, VCFHeaderLineCount.A, VCFHeaderLineType.Float, "Log 10 likelihood ratio score of variant existing versus not existing"));
@@ -237,7 +238,7 @@ public class GATKVCFHeaderLines {
         addInfoLine(new VCFInfoHeaderLine(STRAND_QUAL_KEY, 1, VCFHeaderLineType.Integer, "Phred-scaled quality of strand bias artifact"));
         addInfoLine(new VCFInfoHeaderLine(CONTAMINATION_QUAL_KEY, 1, VCFHeaderLineType.Float, "Phred-scaled qualities that alt allele are not due to contamination"));
         addInfoLine(new VCFInfoHeaderLine(READ_ORIENTATION_QUAL_KEY, 1, VCFHeaderLineType.Float, "Phred-scaled qualities that alt allele are not due to read orientation artifact"));
-        addInfoLine(new VCFInfoHeaderLine(NORMAL_ARTIFACT_LOG_10_ODDS_KEY, VCFHeaderLineCount.A, VCFHeaderLineType.Float, "Negative log 10 odds of artifact in normal with same allele fraction as tumor"));
+        addInfoLine(new VCFInfoHeaderLine(NORMAL_ARTIFACT_LOG_10_ODDS_KEY, VCFHeaderLineCount.A, VCFHeaderLineType.Float, "Log 10 odds of artifact in normal with same allele fraction as tumor"));
         addInfoLine(new VCFInfoHeaderLine(ORIGINAL_CONTIG_MISMATCH_KEY, 1, VCFHeaderLineType.Integer, "Number of alt reads whose original alignment doesn't match the current contig."));
         addInfoLine(new VCFInfoHeaderLine(N_COUNT_KEY, 1, VCFHeaderLineType.Integer, "Count of N bases in the pileup"));
         addInfoLine(new VCFInfoHeaderLine(AS_UNIQUE_ALT_READ_SET_COUNT_KEY, VCFHeaderLineCount.A, VCFHeaderLineType.Integer, "Number of reads with unique start and mate end positions for each alt at a variant site"));

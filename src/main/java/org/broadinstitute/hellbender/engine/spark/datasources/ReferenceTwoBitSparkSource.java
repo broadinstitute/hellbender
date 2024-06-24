@@ -1,27 +1,17 @@
 package org.broadinstitute.hellbender.engine.spark.datasources;
 
-import com.google.common.io.ByteStreams;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
-import org.bdgenomics.adam.models.ReferenceRegion;
-import org.bdgenomics.adam.util.TwoBitFile;
-import org.bdgenomics.adam.util.TwoBitRecord;
-import org.bdgenomics.formats.avro.Strand;
-import org.bdgenomics.utils.io.ByteAccess;
+import htsjdk.samtools.reference.ReferenceSequence;
 import org.broadinstitute.hellbender.engine.GATKPath;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
-import org.broadinstitute.hellbender.utils.gcs.BucketUtils;
 import org.broadinstitute.hellbender.utils.reference.ReferenceBases;
-import scala.Tuple2;
-import scala.collection.JavaConversions;
+import org.broadinstitute.hellbender.utils.reference.TwoBitReference;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+
 
 /**
  * A ReferenceSource impl that is backed by a .2bit representation of a reference genome.  This loads an entire .2bit
@@ -34,8 +24,7 @@ public class ReferenceTwoBitSparkSource implements ReferenceSparkSource, Seriali
     public static final String TWO_BIT_EXTENSION = ".2bit";
 
     private final String referenceURL;
-    private final TwoBitFile twoBitFile;
-    private final Map<String, TwoBitRecord> twoBitSeqEntries;
+    private final TwoBitReference twoBitFile;
 
     public ReferenceTwoBitSparkSource( GATKPath referencePathSpecifier) throws IOException {
         // It would simplify this class if we could cache the GATKPath, but ReferenceFileSparkSource
@@ -43,13 +32,7 @@ public class ReferenceTwoBitSparkSource implements ReferenceSparkSource, Seriali
         // issue during broadcast with the Java 11 GATK build. See https://issues.apache.org/jira/browse/SPARK-26963.
         this.referenceURL = referencePathSpecifier.getRawInputString();
         Utils.validateArg(isTwoBit(referencePathSpecifier), "ReferenceTwoBitSource can only take .2bit files");
-        byte[] bytes = ByteStreams.toByteArray(BucketUtils.openFile(this.referenceURL));
-        ByteAccess byteAccess = new DirectFullByteArrayByteAccess(bytes);
-        this.twoBitFile = new TwoBitFile(byteAccess);
-        this.twoBitSeqEntries = new LinkedHashMap<>();
-        for (Tuple2<String, TwoBitRecord> pair: JavaConversions.seqAsJavaList(twoBitFile.seqRecords())) {
-            twoBitSeqEntries.put(pair._1, pair._2);
-        }
+        this.twoBitFile = new TwoBitReference(new GATKPath(referenceURL));
     }
 
     /**
@@ -63,36 +46,24 @@ public class ReferenceTwoBitSparkSource implements ReferenceSparkSource, Seriali
     @Override
     public ReferenceBases getReferenceBases(SimpleInterval interval) throws IOException {
         final SimpleInterval queryInterval = cropIntervalAtContigEnd(interval);
-        final String bases = twoBitFile.extract(simpleIntervalToReferenceRegion(queryInterval));
-        return new ReferenceBases(bases.getBytes(), queryInterval);
+        final ReferenceSequence result = twoBitFile.getReferenceBases(queryInterval);
+        return new ReferenceBases(result.getBases(), queryInterval);
     }
 
     @Override
     public SAMSequenceDictionary getReferenceSequenceDictionary(SAMSequenceDictionary optReadSequenceDictionaryToMatch) throws IOException {
-        List<SAMSequenceRecord> records = twoBitSeqEntries.entrySet().stream()
-                .map(pair -> new SAMSequenceRecord(pair.getKey(), pair.getValue().dnaSize()))
-                .collect(Collectors.toList());
-        return new SAMSequenceDictionary(records);
+        return twoBitFile.getSequenceDictionary();
     }
 
     public static boolean isTwoBit(final GATKPath referenceSpecifier) {
         return referenceSpecifier.getURI().getPath().endsWith(TWO_BIT_EXTENSION);
     }
 
-    private static ReferenceRegion simpleIntervalToReferenceRegion(SimpleInterval interval) {
-        // ADAM and GA4GH both use zero-based half-open intervals for genome coordinates
-        String contig = interval.getContig();
-        long start = interval.getGA4GHStart();
-        long end = interval.getGA4GHEnd();
-        return new ReferenceRegion(contig, start, end, Strand.UNKNOWN);
-    }
-
     private SimpleInterval cropIntervalAtContigEnd( final SimpleInterval interval ) {
         // The 2bit query API does not support queries beyond the ends of contigs, so we need
         // to truncate our interval at the contig end if necessary.
-        final TwoBitRecord contigRecord = twoBitSeqEntries.get(interval.getContig());
+        final SAMSequenceRecord contigRecord = twoBitFile.getSequenceDictionary().getSequence(interval.getContig());
         Utils.nonNull(contigRecord, () -> "Contig " + interval.getContig() + " not found in reference dictionary");
-        return new SimpleInterval(interval.getContig(), interval.getStart(), Math.min(interval.getEnd(), contigRecord.dnaSize()));
+        return new SimpleInterval(interval.getContig(), interval.getStart(), Math.min(interval.getEnd(), contigRecord.getSequenceLength()));
     }
-
 }

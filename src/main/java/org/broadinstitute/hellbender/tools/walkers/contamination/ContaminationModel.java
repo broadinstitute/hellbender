@@ -1,7 +1,7 @@
 package org.broadinstitute.hellbender.tools.walkers.contamination;
 
 import htsjdk.samtools.util.OverlapDetector;
-import org.apache.commons.lang.mutable.MutableDouble;
+import org.apache.commons.lang3.mutable.MutableDouble;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;

@@ -25,18 +25,17 @@ import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.http.nio.HttpFileSystemProvider;
+import org.broadinstitute.http.nio.HttpFileSystemProviderSettings;
 import org.broadinstitute.http.nio.HttpsFileSystemProvider;
 import com.google.api.gax.retrying.RetrySettings;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.http.HttpTransportOptions;
+import org.broadinstitute.http.nio.RetryHandler;
 import org.threeten.bp.Duration;
 
 import java.io.*;
 import java.net.URL;
 import java.nio.channels.SeekableByteChannel;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.UUID;
@@ -55,6 +54,7 @@ public final class BucketUtils {
 
     // slashes omitted since hdfs paths seem to only have 1 slash which would be weirder to include than no slashes
     public static final String FILE_PREFIX = "file:";
+    public static final int MAX_TIMEOUT = 120000;
 
     private BucketUtils(){} //private so that no one will instantiate this class
 
@@ -387,7 +387,7 @@ public final class BucketUtils {
      * Sets max_reopens, requester_pays, and generous timeouts as the global default.
      * These will apply even to library code that creates its own paths to access with NIO.
      *
-     * @param maxReopens If the GCS bucket channel errors out, how many times it will attempt to
+     * @param maxReopens If the channel errors out, how many times it will attempt to
      *                   re-initiate the connection.
      * @param requesterProject Project to bill when accessing "requester pays" buckets. If unset,
      *                         these buckets cannot be accessed.
@@ -395,6 +395,25 @@ public final class BucketUtils {
     public static void setGlobalNIODefaultOptions(int maxReopens, String requesterProject) {
         CloudStorageFileSystemProvider.setDefaultCloudStorageConfiguration(getCloudStorageConfiguration(maxReopens, requesterProject));
         CloudStorageFileSystemProvider.setStorageOptions(setGenerousTimeouts(StorageOptions.newBuilder()).build());
+        setGlobalHttpNioDefaultOptions(maxReopens);
+    }
+
+    /**
+     * Set the options for http-nio to have generous timeouts and defaults
+     */
+    public static void setGlobalHttpNioDefaultOptions(final int maxRetries) {
+        final HttpFileSystemProviderSettings.RetrySettings retrySettings = new HttpFileSystemProviderSettings.RetrySettings(
+                maxRetries,
+                RetryHandler.DEFAULT_RETRYABLE_HTTP_CODES,
+                RetryHandler.DEFAULT_RETRYABLE_EXCEPTIONS,
+                RetryHandler.DEFALT_RETRYABLE_MESSAGES,
+                e -> false);
+        final HttpFileSystemProviderSettings settings = new HttpFileSystemProviderSettings(
+                java.time.Duration.ofMillis(MAX_TIMEOUT),
+                HttpFileSystemProviderSettings.DEFAULT_SETTINGS.redirect(),
+                retrySettings);
+
+        HttpFileSystemProvider.setSettings(settings);
     }
 
     /**
@@ -437,8 +456,8 @@ public final class BucketUtils {
     private static StorageOptions.Builder setGenerousTimeouts(StorageOptions.Builder builder) {
         return builder
             .setTransportOptions(HttpTransportOptions.newBuilder()
-                .setConnectTimeout(120000)
-                .setReadTimeout(120000)
+                .setConnectTimeout(MAX_TIMEOUT)
+                .setReadTimeout(MAX_TIMEOUT)
                 .build())
             .setRetrySettings(RetrySettings.newBuilder()
                 .setMaxAttempts(15)

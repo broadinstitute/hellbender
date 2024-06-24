@@ -32,8 +32,8 @@ import java.nio.file.Path;
  * <p>
  * To download and extract the data sources, you can invoke {@link FuncotatorDataSourceDownloader} in the following ways:
  *     <ul>
- *         <li>For <strong>somatic</strong> data sources:<br /><pre>{@code ./gatk FuncotatorDataSourceDownloader --somatic --validate-integrity --extract-after-download}</pre></li>
- *         <li>For <strong>germline</strong> data sources:<br /><pre>{@code ./gatk FuncotatorDataSourceDownloader --germline --validate-integrity --extract-after-download}</pre></li>
+ *         <li>For <strong>somatic</strong> data sources:<br /><pre>{@code ./gatk FuncotatorDataSourceDownloader --somatic --validate-integrity --hg38 --extract-after-download}</pre></li>
+ *         <li>For <strong>germline</strong> data sources:<br /><pre>{@code ./gatk FuncotatorDataSourceDownloader --germline --validate-integrity --hg19 --extract-after-download}</pre></li>
  *     </ul>
  * </p>
  *
@@ -63,6 +63,8 @@ public class FuncotatorDataSourceDownloader extends CommandLineProgram {
     public static final String GERMLINE_ARG_LONG_NAME           = "germline";
     public static final String OVERWRITE_ARG_LONG_NAME          = "overwrite-output-file";
     public static final String EXTRACT_AFTER_DOWNLOAD           = "extract-after-download";
+    public static final String HG38_ARG_LONG_NAME               = "hg38";
+    public static final String HG19_ARG_LONG_NAME               = "hg19";
 
     //==================================================================================================================
     // Private Static Members:
@@ -73,18 +75,27 @@ public class FuncotatorDataSourceDownloader extends CommandLineProgram {
     // Private Static Members:
 
     // Set to always get the latest version of the data sources:
-    private static final String BASE_URL = DataSourceUtils.DATA_SOURCES_BUCKET_PATH +
-            DataSourceUtils.DATA_SOURCES_NAME_PREFIX + "." + DataSourceUtils.getDataSourceMaxVersionString();
+    private static final String HG38_BASE_URL = DataSourceUtils.DATA_SOURCES_BUCKET_PATH +
+            DataSourceUtils.DATA_SOURCES_NAME_PREFIX + "." + DataSourceUtils.getDataSourceMaxVersionString(38);
+    private static final String HG19_BASE_URL = DataSourceUtils.DATA_SOURCES_BUCKET_PATH +
+            DataSourceUtils.DATA_SOURCES_NAME_PREFIX + "." + DataSourceUtils.getDataSourceMaxVersionString(19);
 
-    private static final String GERMLINE_GCLOUD_DATASOURCES_BASEURL     = BASE_URL + DataSourceUtils.DS_GERMLINE_NAME_MODIFIER;
+    private static final String HG38_GERMLINE_GCLOUD_DATASOURCES_BASEURL     = HG38_BASE_URL + DataSourceUtils.DS_GERMLINE_NAME_MODIFIER;
+    private static final String HG19_GERMLINE_GCLOUD_DATASOURCES_BASEURL     = HG19_BASE_URL + DataSourceUtils.DS_GERMLINE_NAME_MODIFIER;
+
     @VisibleForTesting
-    static final Path   GERMLINE_GCLOUD_DATASOURCES_PATH        = IOUtils.getPath(GERMLINE_GCLOUD_DATASOURCES_BASEURL + DataSourceUtils.DS_EXTENSION);
-    private static final Path   GERMLINE_GCLOUD_DATASOURCES_SHA256_PATH = IOUtils.getPath(GERMLINE_GCLOUD_DATASOURCES_BASEURL + DataSourceUtils.DS_CHECKSUM_EXTENSION);
+    static final Path   HG38_GERMLINE_GCLOUD_DATASOURCES_PATH        = IOUtils.getPath(HG38_GERMLINE_GCLOUD_DATASOURCES_BASEURL + DataSourceUtils.DS_EXTENSION);
+    static final Path   HG19_GERMLINE_GCLOUD_DATASOURCES_PATH        = IOUtils.getPath(HG19_GERMLINE_GCLOUD_DATASOURCES_BASEURL + DataSourceUtils.DS_EXTENSION);
+    private static final Path   HG38_GERMLINE_GCLOUD_DATASOURCES_SHA256_PATH = IOUtils.getPath(HG38_GERMLINE_GCLOUD_DATASOURCES_BASEURL + DataSourceUtils.DS_CHECKSUM_EXTENSION);
+    private static final Path   HG19_GERMLINE_GCLOUD_DATASOURCES_SHA256_PATH = IOUtils.getPath(HG19_GERMLINE_GCLOUD_DATASOURCES_BASEURL + DataSourceUtils.DS_CHECKSUM_EXTENSION);
 
-    public static final String SOMATIC_GCLOUD_DATASOURCES_BASEURL     = BASE_URL + DataSourceUtils.DS_SOMATIC_NAME_MODIFIER;;
+    public static final String HG38_SOMATIC_GCLOUD_DATASOURCES_BASEURL     = HG38_BASE_URL + DataSourceUtils.DS_SOMATIC_NAME_MODIFIER;;
+    public static final String HG19_SOMATIC_GCLOUD_DATASOURCES_BASEURL     = HG19_BASE_URL + DataSourceUtils.DS_SOMATIC_NAME_MODIFIER;;
 
-    public static final Path   SOMATIC_GCLOUD_DATASOURCES_PATH        = IOUtils.getPath(SOMATIC_GCLOUD_DATASOURCES_BASEURL + DataSourceUtils.DS_EXTENSION);
-    private static final Path   SOMATIC_GCLOUD_DATASOURCES_SHA256_PATH = IOUtils.getPath(SOMATIC_GCLOUD_DATASOURCES_BASEURL + DataSourceUtils.DS_CHECKSUM_EXTENSION);
+    public static final Path   HG38_SOMATIC_GCLOUD_DATASOURCES_PATH        = IOUtils.getPath(HG38_SOMATIC_GCLOUD_DATASOURCES_BASEURL + DataSourceUtils.DS_EXTENSION);
+    public static final Path   HG19_SOMATIC_GCLOUD_DATASOURCES_PATH        = IOUtils.getPath(HG19_SOMATIC_GCLOUD_DATASOURCES_BASEURL + DataSourceUtils.DS_EXTENSION);
+    private static final Path   HG38_SOMATIC_GCLOUD_DATASOURCES_SHA256_PATH = IOUtils.getPath(HG38_SOMATIC_GCLOUD_DATASOURCES_BASEURL + DataSourceUtils.DS_CHECKSUM_EXTENSION);
+    private static final Path   HG19_SOMATIC_GCLOUD_DATASOURCES_SHA256_PATH = IOUtils.getPath(HG19_SOMATIC_GCLOUD_DATASOURCES_BASEURL + DataSourceUtils.DS_CHECKSUM_EXTENSION);
 
     //==================================================================================================================
     // Private Members:
@@ -129,6 +140,23 @@ public class FuncotatorDataSourceDownloader extends CommandLineProgram {
             optional = true)
     protected boolean extractDataSourcesAfterDownload = false;
 
+    @Argument(
+            shortName = HG38_ARG_LONG_NAME,
+            fullName  = HG38_ARG_LONG_NAME,
+            mutex = {HG19_ARG_LONG_NAME, TESTING_OVERRIDE_PATH_FOR_DATA_SOURCES_SHA256_ARG},
+            doc = "If set, will extract data from the HG38 data sources bucket.",
+            optional = true)
+    protected boolean getHg38Datasources = false;
+
+    @Argument(
+            //TODO should these be MUTEX or should one be allowed to download either?
+            shortName = HG19_ARG_LONG_NAME,
+            fullName  = HG19_ARG_LONG_NAME,
+            mutex = {HG38_ARG_LONG_NAME, TESTING_OVERRIDE_PATH_FOR_DATA_SOURCES_SHA256_ARG},
+            doc = "If set, will extract data from the HG19 data sources bucket.",
+            optional = true)
+    protected boolean getHg19Datasources = false;
+
     // Testing arguments:
     @Hidden
     @Advanced
@@ -164,6 +192,11 @@ public class FuncotatorDataSourceDownloader extends CommandLineProgram {
             throw new UserException("Must select either somatic or germline datasources.");
         }
 
+        // Make sure the user specified at least one reference source to download:
+        if ((!getHg38Datasources) && (!getHg19Datasources) && (testingOverrideDataSourcesPath == null)) {
+            throw new UserException("Must select either HG19 or HG38 datasources.");
+        }
+
         // Make sure the testing inputs are correct:
         if ( ((testingOverrideDataSourcesPath == null) && (testingOverrideDataSourcesSha256Path != null)) ||
              ((testingOverrideDataSourcesSha256Path == null) && (testingOverrideDataSourcesPath != null)) ) {
@@ -184,14 +217,26 @@ public class FuncotatorDataSourceDownloader extends CommandLineProgram {
 
         // Get the correct data source:
         if ( getSomaticDataSources ) {
-            dataSourceDescription = "Somatic";
-            dataSourcesPath = SOMATIC_GCLOUD_DATASOURCES_PATH;
-            dataSourcesSha256Path = SOMATIC_GCLOUD_DATASOURCES_SHA256_PATH;
+            if (getHg38Datasources) {
+                dataSourceDescription = "HG38_Somatic";
+                dataSourcesPath = HG38_SOMATIC_GCLOUD_DATASOURCES_PATH;
+                dataSourcesSha256Path = HG38_SOMATIC_GCLOUD_DATASOURCES_SHA256_PATH;
+            } else { // Okay because HG38 and HG19 datasources are currently MUTEX and at least one is required
+                dataSourceDescription = "HG19_Somatic";
+                dataSourcesPath = HG19_SOMATIC_GCLOUD_DATASOURCES_PATH;
+                dataSourcesSha256Path = HG19_SOMATIC_GCLOUD_DATASOURCES_SHA256_PATH;
+            }
         }
         else if ( getGermlineDataSources ) {
-            dataSourceDescription = "Germline";
-            dataSourcesPath = GERMLINE_GCLOUD_DATASOURCES_PATH;
-            dataSourcesSha256Path = GERMLINE_GCLOUD_DATASOURCES_SHA256_PATH;
+            if (getHg38Datasources) {
+                dataSourceDescription = "HG38_Germline";
+                dataSourcesPath = HG38_GERMLINE_GCLOUD_DATASOURCES_PATH;
+                dataSourcesSha256Path = HG38_GERMLINE_GCLOUD_DATASOURCES_SHA256_PATH;
+            } else {
+                dataSourceDescription = "HG19_Germline";
+                dataSourcesPath = HG19_GERMLINE_GCLOUD_DATASOURCES_PATH;
+                dataSourcesSha256Path = HG19_GERMLINE_GCLOUD_DATASOURCES_SHA256_PATH;
+            }
         }
         else {
             // Test case:

@@ -49,7 +49,7 @@ public class CapturedStreamOutput extends StreamOutput {
                         outputStream = new HardThresholdingOutputStream(bufferSize) {
                             @Override
                             protected OutputStream getStream() {
-                                return bufferTruncated ? NullOutputStream.NULL_OUTPUT_STREAM : bufferStream;
+                                return bufferTruncated ? NullOutputStream.INSTANCE : bufferStream;
                             }
 
                             @Override

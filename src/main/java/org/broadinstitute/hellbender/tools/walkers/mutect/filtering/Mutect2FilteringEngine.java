@@ -312,7 +312,7 @@ public class Mutect2FilteringEngine {
         }
 
         if (!MTFAC.mitochondria && !MTFAC.microbial) {
-            filters.add(new ClusteredEventsFilter(MTFAC.maxEventsInRegion));
+            filters.add(new ClusteredEventsFilter(MTFAC.maxEventsInRegion, MTFAC.maxEventsInHaplotype));
             filters.add(new MultiallelicFilter(MTFAC.numAltAllelesThreshold));
             filters.add(new FragmentLengthFilter(MTFAC.maxMedianFragmentLengthDifference));
             filters.add(new PolymeraseSlippageFilter(MTFAC.minSlippageLength, MTFAC.slippageRate));

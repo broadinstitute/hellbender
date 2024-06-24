@@ -126,6 +126,7 @@ public final class ReblockGVCF extends MultiVariantWalker {
 
     /**
      * Output the band lower bound for each GQ block instead of the min GQ -- for better compression
+     * Note that this argument also drops PLS for more efficient storage
      */
     @Advanced
     @Argument(fullName=HaplotypeCallerArgumentCollection.OUTPUT_BLOCK_LOWER_BOUNDS, doc = "Output the band lower bound for each GQ block regardless of the data it represents", optional = true)
@@ -350,6 +351,11 @@ public final class ReblockGVCF extends MultiVariantWalker {
     private VariantContext removeVCFFormatAnnotations(final VariantContext vc) {
         final Genotype genotype = vc.getGenotype(0);
         Map<String, Object> extendedAttributes = genotype.getExtendedAttributes();
+        // If extendedAttributes is empty, we get an unmodifiable empty map, so skip removing any annotations
+        if (extendedAttributes.isEmpty()) {
+            return vc;
+        }
+
         for (String annotation : annotationsToRemove) {
             extendedAttributes.remove(annotation);
         }
@@ -818,7 +824,7 @@ public final class ReblockGVCF extends MultiVariantWalker {
             final GenotypeBuilder builderToCallAlleles = new GenotypeBuilder(noCallGT);
             //TODO: update to support DRAGEN posteriors
             GATKVariantContextUtils.makeGenotypeCall(noCallGT.getPloidy(), builderToCallAlleles, GenotypeAssignmentMethod.USE_PLS_TO_ASSIGN,
-                    noCallGT.getLikelihoods().getAsVector(), variant.getAlleles(), null);
+                    noCallGT.getLikelihoods().getAsVector(), variant.getAlleles(), noCallGT, null);
             return builderToCallAlleles.make();
         } else {
             return variant.getGenotype(0);
@@ -935,7 +941,10 @@ public final class ReblockGVCF extends MultiVariantWalker {
                                             final boolean allelesNeedSubsetting, final int[] relevantIndices) {
         //copy over info annotations
         final Map<String, Object> origMap = sourceVC.getAttributes();
-        for(final InfoFieldAnnotation annotation : annotationEngine.getInfoAnnotations()) {
+        final List<VariantAnnotation> engineAnnotations = new ArrayList<>();
+        engineAnnotations.addAll(annotationEngine.getInfoAnnotations());
+        engineAnnotations.addAll(annotationEngine.getJumboInfoAnnotations());
+        for(final VariantAnnotation annotation : engineAnnotations) {
             for (final String key : annotation.getKeyNames()) {
                 if (infoFieldAnnotationKeyNamesToRemove.contains(key)) {
                     continue;
@@ -944,17 +953,34 @@ public final class ReblockGVCF extends MultiVariantWalker {
                     destinationAttrMap.put(key, origMap.get(key));
                 }
             }
-            if (annotation instanceof ReducibleAnnotation) {
-                for (final String rawKey : ((ReducibleAnnotation)annotation).getRawKeyNames()) {
+            if (annotation instanceof AlleleSpecificAnnotation) {
+                final boolean isReducible = annotation  instanceof ReducibleAnnotation;
+                final List<String> keyNames = isReducible ? ((ReducibleAnnotation)annotation).getRawKeyNames() :
+                        annotation.getKeyNames();
+                for (final String rawKey : keyNames) {
                     if (infoFieldAnnotationKeyNamesToRemove.contains(rawKey)) {
                         continue;
                     }
                     if (origMap.containsKey(rawKey)) {
-                        if (allelesNeedSubsetting && AnnotationUtils.isAlleleSpecific(annotation)) {
-                            final List<String> alleleSpecificValues = AnnotationUtils.getAlleleLengthListOfString(sourceVC.getAttributeAsString(rawKey, null));
+                        if (allelesNeedSubsetting && AnnotationUtils.isAlleleSpecific(annotation) && AnnotationUtils.isAlleleSpecificGatkKey(rawKey)) {
+                            final List<String> alleleSpecificValues;
+                            if (isReducible) {
+                                alleleSpecificValues = AnnotationUtils.getAlleleLengthListOfStringFromRawData(sourceVC.getAttributeAsString(rawKey, null));
+                            } else {
+                                String value = sourceVC.getAttributeAsString(rawKey, null);
+                                if (value == null) {
+                                    alleleSpecificValues = Collections.emptyList();
+                                } else {
+                                    alleleSpecificValues = AnnotationUtils.getAlleleLengthListOfString(value);
+                                }
+                            }
                             final List<String> subsetList;
                             if (alleleSpecificValues.size() > 0) {
-                                subsetList = AlleleSubsettingUtils.remapRLengthList(alleleSpecificValues, relevantIndices, "");
+                                if (isReducible) {
+                                    subsetList = AlleleSubsettingUtils.remapRLengthList(alleleSpecificValues, relevantIndices, "");
+                                } else {
+                                    subsetList = AlleleSubsettingUtils.remapALengthList(alleleSpecificValues, relevantIndices, "");
+                                }
                                 if (sourceVC.getAlleles().get(relevantIndices[relevantIndices.length - 1]).equals(Allele.NON_REF_ALLELE)) {
                                     //zero out non-ref value, just in case
                                     subsetList.set(subsetList.size() - 1, ((AlleleSpecificAnnotation) annotation).getEmptyRawValue());
@@ -963,7 +989,11 @@ public final class ReblockGVCF extends MultiVariantWalker {
                                 subsetList = Collections.nCopies(relevantIndices.length, "");
                             }
 
-                            destinationAttrMap.put(rawKey, AnnotationUtils.encodeAnyASListWithRawDelim(subsetList));
+                            if (isReducible) {
+                                destinationAttrMap.put(rawKey, AnnotationUtils.encodeAnyASListWithRawDelim(subsetList));
+                            } else {
+                                destinationAttrMap.put(rawKey, AnnotationUtils.encodeStringList(subsetList));
+                            }
                         } else {
                             destinationAttrMap.put(rawKey, origMap.get(rawKey));
                         }

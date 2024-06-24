@@ -6,28 +6,20 @@ import htsjdk.samtools.SBIIndexWriter;
 import htsjdk.samtools.util.FileExtensions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.parquet.avro.AvroParquetOutputFormat;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
-import org.bdgenomics.adam.models.ReadGroupDictionary;
-import org.bdgenomics.adam.models.SequenceDictionary;
-import org.bdgenomics.formats.avro.AlignmentRecord;
 import org.broadinstitute.hellbender.engine.GATKPath;
 import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.gcs.BucketUtils;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
-import org.broadinstitute.hellbender.utils.read.GATKReadToBDGAlignmentRecordConverter;
 import org.broadinstitute.hellbender.utils.read.HeaderlessSAMRecordCoordinateComparator;
 import org.broadinstitute.hellbender.utils.read.ReadsWriteFormat;
 import org.broadinstitute.hellbender.utils.spark.SparkUtils;
 import org.disq_bio.disq.*;
-import scala.Tuple2;
 
 import java.io.IOException;
 import java.util.Comparator;
@@ -131,11 +123,6 @@ public final class ReadsSparkSink {
             ReadsFormatWriteOption formatWriteOption = ReadsFormatWriteOption.BAM; // use BAM if output file is a directory
             FileCardinalityWriteOption fileCardinalityWriteOption = FileCardinalityWriteOption.MULTIPLE;
             writeReads(ctx, absoluteOutputFile, referencePathSpecifier, readsToOutput, header, splittingIndexGranularity, formatWriteOption, fileCardinalityWriteOption);
-        } else if (format == ReadsWriteFormat.ADAM) {
-            if (outputPartsDir!=null) {
-                throw new  GATKException(String.format("You specified the bam output parts directory %s, but requested an ADAM output format which does not use this option",outputPartsDir));
-            }
-            writeReadsADAM(ctx, absoluteOutputFile, readsToOutput, header);
         }
     }
 
@@ -153,29 +140,6 @@ public final class ReadsSparkSink {
                 .referenceSourcePath(referencePathSpecifier == null ? null : referencePathSpecifier.getRawInputString())
                 .sbiIndexGranularity(sbiIndexGranularity)
                 .write(htsjdkReadsRdd, outputFile, writeOptions);
-    }
-
-    private static void writeReadsADAM(
-            final JavaSparkContext ctx, final String outputFile, final JavaRDD<SAMRecord> reads,
-            final SAMFileHeader header) throws IOException {
-        final SequenceDictionary seqDict = SequenceDictionary.fromSAMSequenceDictionary(header.getSequenceDictionary());
-        final ReadGroupDictionary readGroups = ReadGroupDictionary.fromSAMHeader(header);
-        final JavaPairRDD<Void, AlignmentRecord> rddAlignmentRecords =
-                reads.map(read -> {
-                    read.setHeaderStrict(header);
-                    AlignmentRecord alignmentRecord = GATKReadToBDGAlignmentRecordConverter.convert(read, seqDict, readGroups);
-                    read.setHeaderStrict(null); // Restore the header to its previous state so as not to surprise the caller
-                    return alignmentRecord;
-                }).mapToPair(alignmentRecord -> new Tuple2<>(null, alignmentRecord));
-        // instantiating a Job is necessary here in order to set the Hadoop Configuration...
-        final Job job = Job.getInstance(ctx.hadoopConfiguration());
-        // ...here, which sets a config property that the AvroParquetOutputFormat needs when writing data. Specifically,
-        // we are writing the Avro schema to the Configuration as a JSON string. The AvroParquetOutputFormat class knows
-        // how to translate objects in the Avro data model to the Parquet primitives that get written.
-        AvroParquetOutputFormat.setSchema(job, AlignmentRecord.getClassSchema());
-        deleteHadoopFile(outputFile, ctx.hadoopConfiguration());
-        rddAlignmentRecords.saveAsNewAPIHadoopFile(
-                outputFile, Void.class, AlignmentRecord.class, AvroParquetOutputFormat.class, job.getConfiguration());
     }
 
     private static void deleteHadoopFile(String fileToObliterate, Configuration conf) throws IOException {

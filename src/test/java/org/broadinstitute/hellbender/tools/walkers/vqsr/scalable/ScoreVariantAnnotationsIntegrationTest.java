@@ -12,6 +12,7 @@ import org.broadinstitute.hellbender.tools.walkers.vqsr.scalable.modeling.Varian
 import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.hellbender.utils.io.Resource;
 import org.broadinstitute.hellbender.utils.python.PythonScriptExecutorException;
+import org.broadinstitute.hellbender.utils.runtime.ProcessController;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -163,12 +164,17 @@ public final class ScoreVariantAnnotationsIntegrationTest extends CommandLinePro
     private static void assertExpectedOutputs(final String tag,
                                               final String outputPrefix) {
         // vcf.idx files are not reproducible
-        SystemCommandUtilsTest.runSystemCommand(String.format("diff %s/%s.vcf %s.vcf",
-                EXPECTED_TEST_FILES_DIR, tag, outputPrefix));
-        SystemCommandUtilsTest.runSystemCommand(String.format("h5diff %s/%s.annot.hdf5 %s.annot.hdf5",
-                EXPECTED_TEST_FILES_DIR, tag, outputPrefix));
-        SystemCommandUtilsTest.runSystemCommand(String.format("h5diff %s/%s.scores.hdf5 %s.scores.hdf5",
-                EXPECTED_TEST_FILES_DIR, tag, outputPrefix));
+        SystemCommandUtilsTest.runDiff(
+                String.format("%s/%s.vcf", EXPECTED_TEST_FILES_DIR, tag),
+                String.format("%s.vcf", outputPrefix));
+
+        SystemCommandUtilsTest.runH5Diff(
+                String.format("%s/%s.annot.hdf5", EXPECTED_TEST_FILES_DIR, tag),
+                String.format("%s.annot.hdf5", outputPrefix));
+
+        SystemCommandUtilsTest.runH5Diff(
+                String.format("%s/%s.scores.hdf5", EXPECTED_TEST_FILES_DIR, tag),
+                String.format("%s.scores.hdf5", outputPrefix));
     }
 
     /**

@@ -30,20 +30,33 @@ public class FuncotatorDataSourceDownloaderIntegrationTest extends CommandLinePr
     //==================================================================================================================
     // Helper Methods:
 
-    private Path getDataSourceRemotePath(final String dsTypeArg) {
+    private Path getDataSourceRemotePath(final String dsTypeArg, final String refVer) {
         switch (dsTypeArg) {
             case FuncotatorDataSourceDownloader.SOMATIC_ARG_LONG_NAME:
-                return FuncotatorDataSourceDownloader.SOMATIC_GCLOUD_DATASOURCES_PATH;
+                switch (refVer) {
+                    case "hg19":
+                        return FuncotatorDataSourceDownloader.HG19_SOMATIC_GCLOUD_DATASOURCES_PATH;
+                    case "hg38":
+                        return FuncotatorDataSourceDownloader.HG38_SOMATIC_GCLOUD_DATASOURCES_PATH;
+                    default: throw new GATKException("Data source Reference Version does not exist: " + refVer);
+                }
+
             case FuncotatorDataSourceDownloader.GERMLINE_ARG_LONG_NAME:
-                return FuncotatorDataSourceDownloader.GERMLINE_GCLOUD_DATASOURCES_PATH;
+                switch (refVer) {
+                    case "hg19":
+                        return FuncotatorDataSourceDownloader.HG19_GERMLINE_GCLOUD_DATASOURCES_PATH;
+                    case "hg38":
+                        return FuncotatorDataSourceDownloader.HG38_GERMLINE_GCLOUD_DATASOURCES_PATH;
+                    default: throw new GATKException("Data source Reference Version does not exist: " + refVer);
+                }
             default: throw new GATKException("Data source type does not exist: " + dsTypeArg);
         }
     }
 
-    private void verifyDataSourcesExistThenDeleteThem(final String dsTypeArg, final boolean doExtract) {
+    private void verifyDataSourcesExistThenDeleteThem(final String dsTypeArg, final String refVer, final boolean doExtract) {
         // Get the path to our files:
         final Path currentPath          = IOUtils.getPath(".");
-        final Path remoteDataSourcePath = getDataSourceRemotePath(dsTypeArg);
+        final Path remoteDataSourcePath = getDataSourceRemotePath(dsTypeArg, refVer);
         final Path expectedDownloadedDataSourcePath = currentPath.resolve(remoteDataSourcePath.getFileName().toString());
 
         // Verify it exists and delete it:
@@ -105,36 +118,42 @@ public class FuncotatorDataSourceDownloaderIntegrationTest extends CommandLinePr
         return new Object[][] {
                 {
                         FuncotatorDataSourceDownloader.SOMATIC_ARG_LONG_NAME,
+                        FuncotatorDataSourceDownloader.HG38_ARG_LONG_NAME,
                         true,
                         true,
                         false
                 },
                 {
                         FuncotatorDataSourceDownloader.SOMATIC_ARG_LONG_NAME,
+                        FuncotatorDataSourceDownloader.HG19_ARG_LONG_NAME,
                         true,
                         false,
                         false
                 },
                 {
                         FuncotatorDataSourceDownloader.GERMLINE_ARG_LONG_NAME,
+                        FuncotatorDataSourceDownloader.HG38_ARG_LONG_NAME,
                         true,
                         true,
                         false
                 },
                 {
                         FuncotatorDataSourceDownloader.GERMLINE_ARG_LONG_NAME,
+                        FuncotatorDataSourceDownloader.HG19_ARG_LONG_NAME,
                         true,
                         false,
                         false
                 },
                 {
                         FuncotatorDataSourceDownloader.SOMATIC_ARG_LONG_NAME,
+                        FuncotatorDataSourceDownloader.HG38_ARG_LONG_NAME,
                         true,
                         false,
                         true
                 },
                 {
                         FuncotatorDataSourceDownloader.SOMATIC_ARG_LONG_NAME,
+                        FuncotatorDataSourceDownloader.HG19_ARG_LONG_NAME,
                         true,
                         false,
                         true
@@ -149,10 +168,11 @@ public class FuncotatorDataSourceDownloaderIntegrationTest extends CommandLinePr
             dataProvider = "provideForTestDownload",
             groups = {"funcotatorValidation", "bucket"}
     )
-    void testDownloadRealDataSources(final String dsTypeArg, final boolean doOverwrite, final boolean doValidate, final boolean doExtract) {
+    void testDownloadRealDataSources(final String dsTypeArg, final String refVer, final boolean doOverwrite, final boolean doValidate, final boolean doExtract) {
         final ArgumentsBuilder arguments = new ArgumentsBuilder();
 
         arguments.add(dsTypeArg, true);
+        arguments.add(refVer, true);
         arguments.add(FuncotatorDataSourceDownloader.OVERWRITE_ARG_LONG_NAME, doOverwrite);
         arguments.add(FuncotatorDataSourceDownloader.VALIDATE_INTEGRITY_ARG_LONG_NAME, doValidate);
         arguments.add(FuncotatorDataSourceDownloader.EXTRACT_AFTER_DOWNLOAD, doExtract);
@@ -162,7 +182,7 @@ public class FuncotatorDataSourceDownloaderIntegrationTest extends CommandLinePr
 
         // Now verify we got the data sources and clean up the files
         // so we don't have up to 30 gigs of stuff lying around:
-        verifyDataSourcesExistThenDeleteThem(dsTypeArg, doExtract);
+        verifyDataSourcesExistThenDeleteThem(dsTypeArg, refVer, doExtract);
     }
 
     @Test(dataProvider = "provideForTestDownloadSmallDummyDataSources",

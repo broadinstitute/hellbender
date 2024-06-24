@@ -144,6 +144,9 @@ task testOnPackagedReleaseJar(type: Test){
 
     jvmArgs = getJVMArgs(runtimeAddOpens, testAddOpens)
 
+    //Set this to match the name of the normal test output in order to simplify finding / uploading it
+    reports.html.outputLocation = file("$buildDir/reports/tests/test")
+
     classpath = files( gatkJar, testDependencyJar, testClassesJar)
     testClassesDirs = files(testClassesUnpacked)
 }

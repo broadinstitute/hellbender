@@ -4,12 +4,8 @@ import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.parquet.avro.AvroParquetInputFormat;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.broadcast.Broadcast;
-import org.bdgenomics.formats.avro.AlignmentRecord;
 import org.broadinstitute.hellbender.engine.GATKPath;
 import org.broadinstitute.hellbender.engine.ReadsDataSource;
 import org.broadinstitute.hellbender.engine.ReadsPathDataSource;
@@ -134,30 +130,6 @@ public final class ReadsSparkSource implements Serializable {
      */
     public JavaRDD<GATKRead> getParallelReads(final GATKPath readsPathSpecifier, final GATKPath referencePathSpecifier, int splitSize) {
         return getParallelReads(readsPathSpecifier, referencePathSpecifier, null /* all reads */, splitSize);
-    }
-
-    /**
-     * Loads ADAM reads stored as Parquet.
-     * @param inputPathSpecifier path to the Parquet data
-     * @return RDD of (ADAM-backed) GATKReads from the file.
-     */
-    public JavaRDD<GATKRead> getADAMReads(final GATKPath inputPathSpecifier, final TraversalParameters traversalParameters, final SAMFileHeader header) throws IOException {
-        Job job = Job.getInstance(ctx.hadoopConfiguration());
-        AvroParquetInputFormat.setAvroReadSchema(job, AlignmentRecord.getClassSchema());
-        Broadcast<SAMFileHeader> bHeader;
-        if (header == null) {
-            bHeader= ctx.broadcast(null);
-        } else {
-            bHeader = ctx.broadcast(header);
-        }
-        @SuppressWarnings("unchecked")
-        JavaRDD<AlignmentRecord> recordsRdd = ctx.newAPIHadoopFile(
-                inputPathSpecifier.getRawInputString(), AvroParquetInputFormat.class, Void.class, AlignmentRecord.class, job.getConfiguration())
-                .values();
-        JavaRDD<GATKRead> readsRdd = recordsRdd.map(record -> new BDGAlignmentRecordToGATKReadAdapter(record, bHeader.getValue()));
-        JavaRDD<GATKRead> filteredRdd = readsRdd.filter(record -> samRecordOverlaps(record.convertToSAMRecord(header), traversalParameters));
-
-        return fixPartitionsIfQueryGrouped(ctx, header, filteredRdd);
     }
 
     /**

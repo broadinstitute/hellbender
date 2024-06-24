@@ -2,6 +2,8 @@ package org.broadinstitute.hellbender.tools.copynumber.formats.records;
 
 import htsjdk.samtools.util.Locatable;
 import htsjdk.tribble.Feature;
+import htsjdk.tribble.NamedFeature;
+import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.param.ParamUtils;
@@ -19,7 +21,17 @@ public class SimpleCount implements Locatable, Feature {
     public SimpleCount(final SimpleInterval interval,
                        final int count) {
         this.interval = Utils.nonNull(interval);
-        this.count = ParamUtils.isPositiveOrZero(count, "Can't construct SimpleCount with negative count.");
+        this.count = ParamUtils.isPositiveOrZero(count, "Can't construct SimpleCount with negative count at " + interval.getContig() + ":" + interval.getStart() + "-" + interval.getEnd() + ".");
+    }
+
+    public SimpleCount(final NamedFeature namedFeature) {
+        try {
+            int count = Integer.parseInt(namedFeature.getName());
+            this.interval = new SimpleInterval(namedFeature);
+            this.count = ParamUtils.isPositiveOrZero(count, "Can't construct SimpleCount with negative count at " + namedFeature.getContig() + ":" + namedFeature.getStart() + "-" + namedFeature.getEnd() + ".");
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Error parsing name into integer for feature at " + namedFeature.getContig() + ":" + namedFeature.getStart() + "-" + namedFeature.getEnd() + ".");
+        }
     }
 
     @Override

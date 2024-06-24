@@ -1,7 +1,6 @@
 package org.broadinstitute.hellbender.utils.param;
 
-import org.apache.commons.lang.math.DoubleRange;
-import org.apache.commons.lang.math.IntRange;
+import org.apache.commons.lang3.Range;
 import org.apache.commons.math3.exception.NotFiniteNumberException;
 import org.apache.commons.math3.util.MathUtils;
 import org.broadinstitute.hellbender.exceptions.GATKException;
@@ -269,10 +268,10 @@ public class ParamUtils {
      * @return the input value.
      * @throws IllegalArgumentException if the value provided is in-valid.
      */
-    public static double inRange(final DoubleRange validRange, final double value, final String definition) {
+    public static double inRange(final Range<Double> validRange, final double value, final String definition) {
         Utils.nonNull(validRange);
-        Utils.validateArg(validRange.containsDouble(value), String.format("invalid value for %s: %g is not in [%g, %g]",
-                definition, value, validRange.getMinimumDouble(), validRange.getMaximumDouble()));
+        Utils.validateArg(validRange.contains(value), String.format("invalid value for %s: %g is not in [%g, %g]",
+                definition, value, validRange.getMinimum(), validRange.getMaximum()));
         return value;
     }
 
@@ -288,12 +287,12 @@ public class ParamUtils {
      * @return the input value.
      * @throws IllegalArgumentException if the value provided is in-valid.
      */
-    public static int inRange(final IntRange validRange, final int value, final String definition) {
+    public static int inRange(final Range<Integer> validRange, final int value, final String definition) {
         Utils.nonNull(validRange);
-        if (!validRange.containsInteger(value)) {
+        if (!validRange.contains(value)) {
             final String prefix = definition == null ? "invalid value" : "invalid value for " + definition;
             throw new IllegalArgumentException(String.format("%s: %d is not in [%d, %d]",
-                    prefix, value, validRange.getMinimumInteger(), validRange.getMaximumInteger()));
+                    prefix, value, validRange.getMinimum(), validRange.getMaximum()));
         }
         return value;
     }

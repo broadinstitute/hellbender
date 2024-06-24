@@ -309,8 +309,7 @@ workflows:
          branches:
              - master
              - ah_var_store
-             - vs_1396_bq_query_audit
-             - gg_VS-1395_Have_CreateVATFromVDS_MoreGoodness
+             - vs_1178_merge_master_to_ah_var_store_again
          tags:
              - /.*/
    - name: GvsIngestTieout
@@ -439,7 +438,7 @@ workflows:
          - master
          - ah_var_store
          - EchoCallset
-         - vs_1412_pgen_pvars_not_compressed
+         - vs_1178_merge_master_to_ah_var_store_again
    - name: MergePgenHierarchicalWdl
      subclass: WDL
      primaryDescriptorPath: /scripts/variantstore/wdl/MergePgenHierarchical.wdl
