@@ -1,6 +1,7 @@
 package org.broadinstitute.hellbender.engine;
 
 import com.google.common.annotations.VisibleForTesting;
+import htsjdk.beta.io.bundle.Bundle;
 import htsjdk.tribble.Feature;
 import htsjdk.tribble.FeatureCodec;
 import org.apache.logging.log4j.LogManager;
@@ -51,6 +52,11 @@ public final class FeatureInput<T extends Feature> extends GATKPath implements S
      * Cache the codec for this feature input the first time we discover it, so we only do it once
      */
     private transient Class<FeatureCodec<T, ?>> featureCodecClass;
+
+    /**
+     * retain any containing bundle in case we need to extract other resources from it
+     */
+    private Bundle parentBundle;
 
     /**
      * Delimiter between the logical name and the file name in the --argument_name logical_name:feature_file syntax
@@ -130,6 +136,34 @@ public final class FeatureInput<T extends Feature> extends GATKPath implements S
     }
 
     /**
+     * Construct a FeatureInput from a Bundle.
+     *
+     * @param primaryResourcePath the path for the primary feature resource for this bundle
+     * @param featureBundle an existing Bundle object; resources in this bundle MUST be IOPathBundleResources (that is,
+     *                      they must be backed by an IOPath, not an in-memory object)
+     * @param name the tag name for this feature input - may be null
+     */
+    public FeatureInput(
+            final GATKPath primaryResourcePath,
+            final Bundle featureBundle,
+            final String name) {
+        super(primaryResourcePath);
+        // retain the containing bundle for later so we can interrogate it for other resources, like the index
+        this.parentBundle = featureBundle;
+        if (name != null) {
+            if (primaryResourcePath.getTag() != null) {
+                logger.warn(String.format(
+                        "FeatureInput: user-provided tag name %s will be replaced with %s",
+                        primaryResourcePath.getTag(),
+                        name));
+            }
+            setTag(name);
+        }
+
+    }
+
+
+    /**
      * Remember the FeatureCodec class for this input the first time it is discovered so we can bypass dynamic codec
      * discovery when multiple FeatureDataSources are created for the same input.
      */
@@ -142,6 +176,14 @@ public final class FeatureInput<T extends Feature> extends GATKPath implements S
      */
     public Class<FeatureCodec<T, ?>> getFeatureCodecClass() {
         return this.featureCodecClass;
+    }
+
+    /**
+     * @return the parent bundle for this FeatureInput, if this input was derived from a Bundle.  May
+     * return {@code null}. The returned bundle can be interrogated for companion resources.
+     */
+    public Bundle getParentBundle() {
+        return parentBundle;
     }
 
     /**

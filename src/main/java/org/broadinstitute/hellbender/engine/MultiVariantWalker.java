@@ -1,5 +1,10 @@
 package org.broadinstitute.hellbender.engine;
 
+import htsjdk.beta.io.bundle.Bundle;
+import htsjdk.beta.io.bundle.BundleJSON;
+import htsjdk.beta.io.bundle.BundleResource;
+import htsjdk.beta.io.bundle.BundleResourceType;
+import htsjdk.beta.plugin.IOUtils;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFHeader;
@@ -74,17 +79,49 @@ public abstract class MultiVariantWalker extends VariantWalkerBase {
     @Override
     protected void initializeDrivingVariants() {
         multiVariantInputArgumentCollection.getDrivingVariantPaths().stream().forEach(
-                f -> {
-                    FeatureInput<VariantContext> featureInput = new FeatureInput<>(f);
-                    if (drivingVariantsFeatureInputs.contains(featureInput)) {
-                        throw new UserException.BadInput("Feature inputs must be unique: " + featureInput.toString());
+                gatkPath -> {
+                    if (gatkPath.hasExtension(BundleJSON.BUNDLE_EXTENSION)) {
+                        // expand any bundle(s) into one or more FeatureInputs (depending on whether it is a single
+                        // bundle or list)
+                        final List<Bundle> bundles = BundleJSON.toBundleList(IOUtils.getStringFromPath(gatkPath), GATKPath::new);
+                        for (final Bundle bundle : bundles) {
+                            if (bundle.getPrimaryContentType().equals(BundleResourceType.CT_VARIANT_CONTEXTS)) {
+                                // use the bundle primary resource as the FeatureInput URI, and tear off and attach the
+                                // individual bundle the bundle to the FI as the parent bundle so downstream code can
+                                // extract other resources from it on demand
+                                // note that if the original value from the user has a tag, we can't use it unless there
+                                // is only one input, since FIs have to be unique
+                                final FeatureInput<VariantContext> bundleFI = new FeatureInput<>(
+                                        new GATKPath(bundle.getPrimaryResource().getIOPath().get().getURIString()),
+                                        bundle,
+                                        bundles.size() > 1 ? gatkPath.getTag() : "drivingVariants"
+                                );
+                                if (drivingVariantsFeatureInputs.contains(bundleFI)) {
+                                    throw new UserException.BadInput("Feature inputs must be unique: " + gatkPath);
+                                }
+                                drivingVariantsFeatureInputs.add(bundleFI);
+                                // Add each driving variants FeatureInput to the feature manager so that it can be queried, using a lookahead value
+                                // of 0 to avoid caching because of windowed queries that need to "look behind" as well.
+                                features.addToFeatureSources(0, bundleFI, VariantContext.class, cloudPrefetchBuffer, cloudIndexPrefetchBuffer,
+                                        referenceArguments.getReferencePath());
+                            } else {
+                                final BundleResource br = bundle.getPrimaryResource();
+                                throw new UserException.BadInput(
+                                        String.format(
+                                                "Feature input bundles must have a primary resource of type %s. Found content type %s with path %s",
+                                                BundleResourceType.CT_VARIANT_CONTEXTS,
+                                                bundle.getPrimaryContentType(),
+                                                br.getIOPath().get()));
+                            }
+                        }
+                    } else {
+                        final FeatureInput<VariantContext> featureInput = new FeatureInput<>(gatkPath);
+                        drivingVariantsFeatureInputs.add(featureInput);
+                        // Add each driving variants FeatureInput to the feature manager so that it can be queried, using a lookahead value
+                        // of 0 to avoid caching because of windowed queries that need to "look behind" as well.
+                        features.addToFeatureSources(0, featureInput, VariantContext.class, cloudPrefetchBuffer, cloudIndexPrefetchBuffer,
+                                referenceArguments.getReferencePath());
                     }
-                    drivingVariantsFeatureInputs.add(featureInput);
-
-                    // Add each driving variants FeatureInput to the feature manager so that it can be queried, using a lookahead value
-                    // of 0 to avoid caching because of windowed queries that need to "look behind" as well.
-                    features.addToFeatureSources(0, featureInput, VariantContext.class, cloudPrefetchBuffer, cloudIndexPrefetchBuffer,
-                                                 referenceArguments.getReferencePath());
                 }
         );
 
