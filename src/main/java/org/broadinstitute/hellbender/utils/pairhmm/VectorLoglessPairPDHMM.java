@@ -26,6 +26,7 @@ import java.util.Map;
  */
 public final class VectorLoglessPairPDHMM extends LoglessPDPairHMM {
 
+    private Logger logger = LogManager.getLogger(VectorLoglessPairPDHMM.class);
     /**
      * Type for implementation of VectorLoglessPairHMM
      */
@@ -144,7 +145,20 @@ public final class VectorLoglessPairPDHMM extends LoglessPDPairHMM {
         int hapArraySize = totalComps * haplotypeMaxLength;
         int readArraySize = totalComps * readMaxLength;
 
-        // The following arrays are used to pass data to the native code, they expect the data to be in a contiguous arrays
+        if (hapArraySize > 1000000 || hapArraySize < 0) {
+            logger.warn("Haplotype array size is too large: " + hapArraySize);
+            logger.warn("TotalComps: " + totalComps + " haplotypeMaxLength: " + haplotypeMaxLength);
+            logger.warn("readMaxLength: " + readMaxLength + " haplotypeMaxLength: " + haplotypeMaxLength);
+            logger.warn("readCount: " + readCount + " alleleCount: " + alleleCount);
+        }
+
+        if (readArraySize > 1000000 || readArraySize < 0) {
+            logger.warn("Haplotype array size is too large: " + hapArraySize);
+            logger.warn("TotalComps: " + totalComps + " haplotypeMaxLength: " + haplotypeMaxLength);
+            logger.warn("readMaxLength: " + readMaxLength + " haplotypeMaxLength: " + haplotypeMaxLength);
+            logger.warn("readCount: " + readCount + " alleleCount: " + alleleCount);
+        }
+
         byte[] alleleBasesFull = new byte[hapArraySize];
         byte[] allelePDBasesFull = new byte[hapArraySize];
         byte[] readBasesFull = new byte[readArraySize];
