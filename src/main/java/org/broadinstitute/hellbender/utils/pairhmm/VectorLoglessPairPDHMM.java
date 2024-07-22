@@ -210,7 +210,7 @@ public final class VectorLoglessPairPDHMM extends LoglessPDPairHMM {
         mLogLikelihoodArray = new double[readCount * alleleCount];
         double[] mLogLikelihoodArray = pairPDHmm.computePDHMM(alleleBasesFull, allelePDBasesFull,
                 readBasesFull, readQualsFull, readInsQualsFull, readDelQualsFull,
-                overallGCPFull, hapLength, readLength, totalComps, maxHaplotypeLength, maxReadLength);
+                overallGCPFull, hapLength, readLength, totalComps, haplotypeMaxLength, readMaxLength);
 
 
         // Overwrite the likelihoods for reads that have invalid likelihoods due to not spanning the determined region
