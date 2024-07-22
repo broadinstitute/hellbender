@@ -26,7 +26,6 @@ import java.util.Map;
  */
 public final class VectorLoglessPairPDHMM extends LoglessPDPairHMM {
 
-    private Logger logger = LogManager.getLogger(VectorLoglessPairPDHMM.class);
     /**
      * Type for implementation of VectorLoglessPairHMM
      */
