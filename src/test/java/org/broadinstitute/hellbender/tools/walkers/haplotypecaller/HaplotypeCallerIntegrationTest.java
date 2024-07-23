@@ -2164,7 +2164,7 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
         final File output = createTempFile("testVCFModeIsConsistentWithPastResults", ".vcf");
         final File expected = new File(TEST_FILES_DIR, "expected.pileupCallerDRAGEN.378.gatk4.vcf");
 
-        final String outputPath = "gs://hellbender/emeryj/foo.vcf"; //UPDATE_EXACT_MATCH_EXPECTED_OUTPUTS ? expected.getAbsolutePath() : output.getAbsolutePath();
+        final String outputPath = "gs://hellbender/louisb/foo.vcf"; //UPDATE_EXACT_MATCH_EXPECTED_OUTPUTS ? expected.getAbsolutePath() : output.getAbsolutePath();
 
         final String[] args = {
                 "-I", inputFileName,
