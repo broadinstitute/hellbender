@@ -23,6 +23,7 @@ import java.util.Map;
  */
 public final class VectorLoglessPairPDHMM extends LoglessPDPairHMM {
 
+    //TODO what should this size be? make this configurable
     private final int GKL_COMP_BATCH_SIZE = 1000;
 
     /**
@@ -154,6 +155,7 @@ public final class VectorLoglessPairPDHMM extends LoglessPDPairHMM {
                         .overlapsWithMargin((Locatable) read.getTransientAttribute(PDPairHMMLikelihoodCalculationEngine.UNCLIPPED_ORIGINAL_SPAN_ATTR), rangeForReadOverlapToDeterminedBases + 1)) { // the +1 here is us erring on the side of caution
                     // append individual comparision case to the full arrays
                     submissionManager.addComp(comp);
+                    submittedComps.add(comp);
                 } else {
                     nullComps.add(comp);
                 }
@@ -194,7 +196,7 @@ public final class VectorLoglessPairPDHMM extends LoglessPDPairHMM {
 
     private class GKLSubmissionBatchManager {
 
-        private static long perepTimeStart = System.nanoTime();
+        private static long perepTimeStart = doProfiling ? System.nanoTime() : 0;
         private static long nativeTimeStart = 0;
 
         // (re)initialize the pairHMM only if necessary
@@ -203,7 +205,7 @@ public final class VectorLoglessPairPDHMM extends LoglessPDPairHMM {
         private final List<PDHMMComparisonContainer> submissionQueue = new ArrayList<>();
 
         // Storing the internal submission chunk outputs to hide from consumer
-        private List<double[]> compMatrixOutputChunks = new ArrayList<>();
+        private List<double[]> compMatrixOutputChunks = new ArrayList<>(GKL_COMP_BATCH_SIZE);
 
         GKLSubmissionBatchManager(final int readMaxLength, final int haplotypeMaxLength) {
             this.readMaxLength = readMaxLength;
@@ -263,7 +265,7 @@ public final class VectorLoglessPairPDHMM extends LoglessPDPairHMM {
             // Populate the array information from the queued read/haplotype information
             for (int i = 0; i < submissionQueue.size(); i++) {
                 final PDHMMComparisonContainer container = submissionQueue.get(i);
-                // pull information form the queued reads and alleles (NOTE: the intention is that none of these operations are copy operations)
+                // pull information form the queued reads and alleles (NOTE: the intention is that none of these operations are copy operations and are fairly light-weight)
                 final GATKRead read = container.read;
                 final PartiallyDeterminedHaplotype allele = container.allele;
                 final PairHMMInputScoreImputation inputScoreImputation = container.inputScoreImputation;
