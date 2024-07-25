@@ -111,7 +111,7 @@ public final class PDPairHMMLikelihoodCalculationEngine implements ReadLikelihoo
         this.log10globalReadMismappingRate = log10globalReadMismappingRate;
         this.pcrErrorModel = this.dragstrParams == null ? pcrErrorModel : PairHMMLikelihoodCalculationEngine.PCRErrorModel.NONE;
         // TODO later we probably need a LOG and LOGLESS version for parsimony with DRAGEN
-        this.pdPairHMM = new VectorLoglessPairPDHMM(VectorLoglessPairPDHMM.Implementation.OMP , null);
+        this.pdPairHMM = new VectorLoglessPairPDHMM(VectorLoglessPairPDHMM.Implementation.OMP , new PairHMMNativeArguments());
         if (resultsFile != null) {
             pdPairHMM.setAndInitializeDebugOutputStream(new OutputStreamWriter(resultsFile.getOutputStream()));
         }
