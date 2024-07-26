@@ -159,8 +159,8 @@ public final class VectorLoglessPairPDHMM extends LoglessPDPairHMM {
                 } else {
                     nullComps.add(comp);
                 }
+                currentTestcase++;
             }
-            currentTestcase++;
         }
 
         mLogLikelihoodArray = new double[readCount * alleleCount];
