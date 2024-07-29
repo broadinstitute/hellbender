@@ -24,7 +24,7 @@ import java.util.Map;
 public final class VectorLoglessPairPDHMM extends LoglessPDPairHMM {
 
     //TODO what should this size be? make this configurable
-    private final int GKL_COMP_BATCH_SIZE = 1000;
+    private final int GKL_COMP_BATCH_SIZE = 50;
 
     /**
      * Type for implementation of VectorLoglessPairHMM
