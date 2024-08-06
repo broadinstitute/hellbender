@@ -1,9 +1,13 @@
 package org.broadinstitute.hellbender.tools;
 
-import htsjdk.samtools.SamReaderFactory;
-import htsjdk.samtools.ValidationStringency;
+import htsjdk.beta.io.IOPathUtils;
+import htsjdk.beta.io.bundle.*;
+import htsjdk.io.IOPath;
+import htsjdk.samtools.*;
+import htsjdk.samtools.cram.ref.ReferenceSource;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
+import org.broadinstitute.hellbender.engine.GATKPath;
 import org.broadinstitute.hellbender.engine.ReadsDataSource;
 import org.broadinstitute.hellbender.engine.ReadsPathDataSource;
 import org.broadinstitute.hellbender.testutils.ArgumentsBuilder;
@@ -11,12 +15,15 @@ import org.broadinstitute.hellbender.testutils.SamAssertionUtils;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.gcs.BucketUtils;
+import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
@@ -102,6 +109,52 @@ public final class PrintReadsIntegrationTest extends AbstractPrintReadsIntegrati
         }
 
         SamAssertionUtils.assertEqualBamFiles(out, out2, false, ValidationStringency.DEFAULT_STRINGENCY);
+    }
+
+    @Test(groups = {"cloud"})
+    public void testPrintReadsWithReferenceBundle() throws IOException {
+        // test that both reading and writing a cram work when the reference is specified via a bundle where the
+        // reference, reference index, and reference dictionary are all in different buckets
+        final IOPath testFastaFile = new GATKPath(getTestDataDir() + "/print_reads.fasta");
+        final IOPath testIndexFile = new GATKPath(getTestDataDir() + "/print_reads.fasta.fai");
+        final IOPath testDictFile = new GATKPath(getTestDataDir() + "/print_reads.dict");
+
+        final String targetBucketName = BucketUtils.randomRemotePath(getGCPTestStaging(), "testPrintReadsWithReferenceBundle", "") + "/";
+        final IOPath targetBucket = new GATKPath(targetBucketName);
+        IOUtils.deleteOnExit(targetBucket.toPath());
+
+        final Path remoteFasta = Files.copy(testFastaFile.toPath(), new GATKPath(targetBucketName + "print_reads.fasta").toPath());
+        final IOPath targetIndex = new GATKPath(targetBucketName + "refindex/print_reads.fasta.fai");
+        final Path remoteFastaIndex = Files.copy(testIndexFile.toPath(), targetIndex.toPath());
+        final IOPath targetDict = new GATKPath(targetBucketName + "refdict/print_reads.dict");
+        final Path remoteFastaDict = Files.copy(testDictFile.toPath(), targetDict.toPath());
+
+        // create a bundle with the remote reference, index, and dict files
+        final Bundle refBundle = new BundleBuilder()
+                .addPrimary(new IOPathResource(new GATKPath(remoteFasta.toUri().toString()), BundleResourceType.CT_HAPLOID_REFERENCE))
+                .addSecondary(new IOPathResource(new GATKPath(remoteFastaIndex.toUri().toString()), BundleResourceType.CT_REFERENCE_INDEX))
+                .addSecondary(new IOPathResource(new GATKPath(remoteFastaDict.toUri().toString()), BundleResourceType.CT_REFERENCE_DICTIONARY))
+                .build();
+        final IOPath bundleFilePath = new GATKPath(targetBucketName + "refBundle.json");
+        IOPathUtils.writeStringToPath(bundleFilePath, BundleJSON.toJSON(refBundle));
+
+        final IOPath targetOutCRAM = new GATKPath(IOUtils.createTempFile("testReferenceSequenceForNioBundle", ".cram").getAbsolutePath());
+        final ArgumentsBuilder args = new ArgumentsBuilder()
+                .addInput(getTestDataDir() + "/print_reads.cram")
+                .addReference(bundleFilePath.toString())
+                .addOutput(targetOutCRAM.toString());
+                runCommandLine(args);
+
+        int count = 0;
+        try (final SamReader in = SamReaderFactory.makeDefault()
+                .validationStringency(ValidationStringency.SILENT)
+                .referenceSource(new ReferenceSource(bundleFilePath.toPath()))
+                .open(targetOutCRAM.toPath())) {
+            for (@SuppressWarnings("unused") final SAMRecord rec : in) {
+                count++;
+            }
+        }
+        Assert.assertEquals(count, 8);
     }
 
 }

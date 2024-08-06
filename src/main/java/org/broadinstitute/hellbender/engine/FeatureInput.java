@@ -54,7 +54,8 @@ public final class FeatureInput<T extends Feature> extends GATKPath implements S
     private transient Class<FeatureCodec<T, ?>> featureCodecClass;
 
     /**
-     * retain any containing bundle in case we need to extract other resources from it
+     * retain the parent (enclosing) bundle from which this feature input is derived, in case we need to extract
+     * other resources from it
      */
     private Bundle parentBundle;
 
@@ -148,7 +149,7 @@ public final class FeatureInput<T extends Feature> extends GATKPath implements S
             final Bundle featureBundle,
             final String name) {
         super(primaryResourcePath);
-        // retain the containing bundle for later so we can interrogate it for other resources, like the index
+        // retain the enclosing bundle for later, so we can interrogate it for other resources such as the index
         this.parentBundle = featureBundle;
         if (name != null) {
             if (primaryResourcePath.getTag() != null) {

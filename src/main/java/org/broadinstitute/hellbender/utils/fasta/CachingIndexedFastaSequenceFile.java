@@ -1,5 +1,9 @@
 package org.broadinstitute.hellbender.utils.fasta;
 
+import htsjdk.beta.io.bundle.Bundle;
+import htsjdk.beta.io.bundle.BundleJSON;
+import htsjdk.beta.plugin.IOUtils;
+import htsjdk.io.IOPath;
 import htsjdk.samtools.SAMException;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.SAMSequenceRecord;
@@ -143,14 +147,24 @@ public final class CachingIndexedFastaSequenceFile implements ReferenceSequenceF
      * @param preserveIUPAC If true, we will keep the IUPAC bases in the FASTA, otherwise they are converted to Ns
      */
      public CachingIndexedFastaSequenceFile(final Path fasta, final long cacheSize, final boolean preserveCase, final boolean  preserveIUPAC) {
-        // Check the FASTA path:
-        checkFastaPath(fasta);
         Utils.validate(cacheSize > 0, () -> "Cache size must be > 0 but was " + cacheSize);
 
         // Read reference data by creating an IndexedFastaSequenceFile.
         try {
-            final ReferenceSequenceFile referenceSequenceFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(fasta, true, true);
-            sequenceFile = requireIndex(fasta, referenceSequenceFile);
+            final IOPath fastaPath = new GATKPath(fasta.toUri().toString());
+            if (fastaPath.hasExtension(BundleJSON.BUNDLE_EXTENSION)) {
+                final Bundle referenceBundle = BundleJSON.toBundle(IOUtils.getStringFromPath(fastaPath), GATKPath::new);
+                final ReferenceSequenceFile referenceSequenceFile = ReferenceSequenceFileFactory.getReferenceSequenceFileFromBundle(
+                        referenceBundle,
+                        true,
+                        true);
+                sequenceFile = requireIndex(fasta, referenceSequenceFile);
+            } else {
+                // Check the FASTA path:
+                checkFastaPath(fasta);
+                final ReferenceSequenceFile referenceSequenceFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(fasta, GATKPath::new, true, true);
+                sequenceFile = requireIndex(fasta, referenceSequenceFile);
+            }
             this.cacheSize = cacheSize;
             this.cacheMissBackup = Math.max(cacheSize / 1000, 1);
             this.preserveCase = preserveCase;
@@ -158,9 +172,6 @@ public final class CachingIndexedFastaSequenceFile implements ReferenceSequenceF
         }
         catch (final IllegalArgumentException e) {
             throw new UserException.CouldNotReadInputFile(fasta, "Could not read reference sequence.  The FASTA must have either a .fasta or .fa extension", e);
-        }
-        catch (final Exception e) {
-            throw new UserException.CouldNotReadInputFile(fasta, e);
         }
     }
 

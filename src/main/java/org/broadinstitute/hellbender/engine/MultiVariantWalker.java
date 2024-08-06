@@ -86,15 +86,17 @@ public abstract class MultiVariantWalker extends VariantWalkerBase {
                         final List<Bundle> bundles = BundleJSON.toBundleList(IOUtils.getStringFromPath(gatkPath), GATKPath::new);
                         for (final Bundle bundle : bundles) {
                             if (bundle.getPrimaryContentType().equals(BundleResourceType.CT_VARIANT_CONTEXTS)) {
-                                // use the bundle primary resource as the FeatureInput URI, and tear off and attach the
-                                // individual bundle the bundle to the FI as the parent bundle so downstream code can
-                                // extract other resources from it on demand
-                                // note that if the original value from the user has a tag, we can't use it unless there
-                                // is only one input, since FIs have to be unique
+                                // use the bundle primary resource as the FeatureInput URI, and tear off and attach
+                                // the enclosing bundle as the parent bundle for the FI so downstream code can extract
+                                // other resources from it on demand. note that if the original value from the user has
+                                // a tag, we can't propagate it unless there is only one input, since FIs have to be
+                                // unique
                                 final FeatureInput<VariantContext> bundleFI = new FeatureInput<>(
                                         new GATKPath(bundle.getPrimaryResource().getIOPath().get().getURIString()),
                                         bundle,
-                                        bundles.size() > 1 ? gatkPath.getTag() : "drivingVariants"
+                                        bundles.size() > 1 ?
+                                                gatkPath.getTag() :
+                                                "drivingVariants"
                                 );
                                 if (drivingVariantsFeatureInputs.contains(bundleFI)) {
                                     throw new UserException.BadInput("Feature inputs must be unique: " + gatkPath);

@@ -1,0 +1,10 @@
+{
+ "schema": {
+  "schemaVersion": "0.1.0",
+  "schemaName": "htsbundle"
+ },
+ "HAPLOID_REFERENCE": {"path": "file:///Users/cnorman/projects/gatk/src/test/resources/org/broadinstitute/hellbender/tools/print_reads.fasta"},
+ "REFERENCE_DICTIONARY": {"path": "file:///Users/cnorman/projects/gatk/src/test/resources/org/broadinstitute/hellbender/tools/print_reads.dict"},
+ "REFERENCE_INDEX": {"path": "file:///Users/cnorman/projects/gatk/src/test/resources/org/broadinstitute/hellbender/tools/print_reads.fasta.fai"},
+ "primary": "HAPLOID_REFERENCE"
+}

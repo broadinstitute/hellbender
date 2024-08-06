@@ -167,8 +167,7 @@ public final class MultiVariantWalkerIntegrationTest extends CommandLineProgramT
             final File index1,
             final File vcf2,
             final File index2) throws IOException {
-        //TODO: replace this path with getGCPTestStaging()
-        final String remotePath = BucketUtils.randomRemotePath("gs://hellbender/test/staging/remoteBundles", "remote_bundle_test", "dir");
+        final String remotePath = BucketUtils.randomRemotePath(getGCPTestStaging() + "remoteBundles", "remote_bundle_test", "dir");
         final Path remoteDirPath = IOUtils.getPath(remotePath + "/");
 
         Files.createDirectory(remoteDirPath);
