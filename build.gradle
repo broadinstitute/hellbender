@@ -335,7 +335,7 @@ dependencies {
 //    implementation('com.intel.gkl:gkl:0.8.11') {
 //        exclude module: 'htsjdk'
 //    }
-    implementation files('libs/gkl-2024_05_31.jar')
+    implementation files('libs/gkl-2024_08_08.jar')
 
     implementation 'org.broadinstitute:gatk-bwamem-jni:1.0.4'
     implementation 'org.broadinstitute:gatk-fermilite-jni:1.2.0'
