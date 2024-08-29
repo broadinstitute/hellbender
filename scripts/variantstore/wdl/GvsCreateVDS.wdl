@@ -143,6 +143,10 @@ workflow GvsCreateVDS {
             region = region,
             workspace_bucket = effective_workspace_bucket,
             gcs_subnetwork_name = gcs_subnetwork_name,
+            leave_cluster_running_at_end = leave_cluster_running_at_end,
+            cluster_max_idle_minutes = cluster_max_idle_minutes,
+            cluster_max_age_minutes = cluster_max_age_minutes,
+            master_memory_fraction = master_memory_fraction,
             cloud_sdk_slim_docker = effective_cloud_sdk_slim_docker,
     }
 
@@ -271,6 +275,10 @@ task CreateVds {
 task ValidateVds {
     input {
         Boolean go
+        Boolean leave_cluster_running_at_end
+        Int? cluster_max_idle_minutes
+        Int? cluster_max_age_minutes
+        Float? master_memory_fraction
         File run_in_hail_cluster_script
         File vds_validation_script
         String prefix
@@ -330,7 +338,11 @@ task ValidateVds {
             --autoscaling-policy gvs-autoscaling-policy \
             --region ~{region} \
             --gcs-project ~{workspace_project} \
-            --cluster-name ${cluster_name}
+            --cluster-name ${cluster_name} \
+            ~{'--cluster-max-idle-minutes ' + cluster_max_idle_minutes} \
+            ~{'--cluster-max-age-minutes ' + cluster_max_age_minutes} \
+            ~{'--master-memory-fraction ' + master_memory_fraction} \
+            ~{true='--leave-cluster-running-at-end' false='' leave_cluster_running_at_end}
     >>>
 
     runtime {
