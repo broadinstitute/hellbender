@@ -22,7 +22,7 @@ import java.util.*;
 /**
  * <p>
  * Create a single bundle (JSON) file for one or more related inputs, for use as input to a GATK tool.
- * <h2>Bundle Structure</h2>
+ * <h3>Bundle File Structure</h3>
  * A bundle is a JSON file that contains references to one or more related resources (i.e., a VCF file
  * and it's associated index file, or a .fasta reference file and it's associated index and dictionary files).
  * Bundle files can be supplied as inputs for many GATK tools. The primary advantage to using a bundle input
@@ -34,8 +34,8 @@ import java.util.*;
  * Each resource in a bundle has an associated content type, which is a string that identifies the type of data
  * in that resource. One resource in the bundle is always designated as the "primary" resource, which determines
  * the type of the bundle.
- *
- * <p>An example bundle JSON file is show below. The bundle has 3 resources, with content types
+ *<p>
+ *  An example bundle JSON file is show below. The bundle has 3 resources, with content types
  * "HAPLOID_REFERENCE", "REFERENCE_DICTIONARY", and "REFERENCE_INDEX" respectively, with the "HAPLOID_REFERENCE"
  * resource designated as the primary resource. This bundle is a reference bundle, and can be used as an
  * input where ever a reference argument is required.
@@ -51,7 +51,7 @@ import java.util.*;
  *    "primary": "HAPLOID_REFERENCE"
  *  }
  * </pre>
- * <h2>Using CreateBundle</h2>
+ * <h3>Using CreateBundle</h3>
  * <p>
  * CreateBundle requires at least one primary resource input. One or more optional secondary resource inputs
  * may also be supplied.
@@ -79,7 +79,7 @@ import java.util.*;
  * <p>
  * Bundle output file names must end with the suffix ".json".
  * <p>
- * <h2>Standard Content Types</h2>
+ * <h3>Standard Content Types</h3>
  * In general, bundle content types can be any string, but many tools expect bundles to use standard, well known
  * content types that are pre-defined, such as content types for a VCF, a VCF index, a .fasta file, or a reference
  * dictionary file. The common well known content types are:
@@ -88,25 +88,25 @@ import java.util.*;
  *  <li>"CT_VARIANT_CONTEXTS": a VCF file</li>
  *  <li>"CT_VARIANTS_INDEX": a VCF index file</li>
  * </ul>
- * <h4>Standard Reference Content Types</h4>
+ * <h4>Standard Reference Content Types:</h4>
  * <ul>
  *  <li>"CT_HAPLOID_REFERENCE": a fasta reference file</li>
  *  <li>"CT_HAPLOID_REFERENCE_INDEX": a fasta index file</li>
  *  <li>"CT_HAPLOID_REFERENCE_DICTIONARY": a fasta dictionary file</li>
  * </ul><p>
- * <h2>Standard Secondary Resources</h2>
- * <h3>For VCFS, the standard (inferred) secondary resources are:</h3>
+ * <h3>Standard Secondary Resources</h3>
+ * <h4>VCF standard secondary resources:</h4>
  * <ul>
  * <li>an index file</li>
  * </ul>
- *<h3>For references, the standard secondary resources are:</h3>
+ *<h4> FASTA reference standard secondary resources:</h4>
  * <ul>
  * <li>an index file</li>
  *<li>a dictionary file</li>
  * </ul>
- * <h3>Common bundle creation examples:</h3>
+ * <h3>Bundle Creation Examples</h3>
  * </p>
- * <h3>VCF Bundle Examples</h3>
+ * <h4>VCF Bundle Examples</h4>
  * <p>
  * 1) Create a resource bundle for a VCF from just the VCF, letting the tool resolve the secondary (index) resource by
  * automatically finding the sibling index file, and letting the tool determine the content types. If the sibling index
@@ -150,7 +150,7 @@ import java.util.*;
  *      --secondary:CT_VARIANTS_INDEX some/other/path/to/vcd.idx \
  *      --output mybundle.json
  * </pre><p>
- *<h3>Reference Bundle Examples</h3>
+ *<h4>Reference Bundle Examples</h4>
  *<p>
  * 1) Create a resource bundle for a reference from just the .fasta, letting the tool resolve the secondary
  * (index and dictionary) resource by automatically finding the sibling files, and determining the content types.
@@ -179,7 +179,7 @@ import java.util.*;
  *      --secondary:CT_HAPLOID_REFERENCE_INDEX some/other/path/to/my.fai \
  *      --secondary:CT_HAPLOID_REFERENCE_DICTIONARY some/other/path/to/my.dict \
  *      --output mybundle.json
- * </pre><p>
+ * </pre>
  *  4) Create a resource bundle for a fasta, but specify the fasta, index and dictionary resources and the content
  *  types explicitly. The resulting bundle will contain the fasta, index  and dictionary resources:
  * <pre>
@@ -188,7 +188,7 @@ import java.util.*;
  *      --secondary:CT_HAPLOID_REFERENCE_INDEX some/other/path/to/my.fai \
  *      --secondary:CT_HAPLOID_REFERENCE_DICTIONARY some/other/path/to/my.dict \
  *      --output mybundle.json
- * </pre><p>
+ * </pre>
  */
 @DocumentedFeature
 @CommandLineProgramProperties(
