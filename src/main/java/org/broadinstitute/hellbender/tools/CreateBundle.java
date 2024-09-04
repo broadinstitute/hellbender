@@ -27,9 +27,9 @@ import java.util.*;
  * and it's associated index file, or a .fasta reference file and it's associated index and dictionary files).
  * Bundle files can be supplied as inputs for many GATK tools. The primary advantage to using a bundle input
  * over an individual file input is that a bundle allows the individual resources to be located in different
- * directories (ie., when providing a VCF input, it's corresponding index file generally need to be a sibling
- * file in the same directory as the VCF, whereas using a bundle file, because you reference each resource
- * explicitly, the index can be located in a different directory from the VCF).
+ * directories (ie., when providing a VCF input, the corresponding index file generally needs to be a sibling
+ * file in the same directory as the VCF, whereas using a bundle file, because each resource is specified
+ * explicitly, the index file can be located in a different directory than the VCF).
  * <p>
  * Each resource in a bundle has an associated content type, which is a string that identifies the type of data
  * in that resource. One resource in the bundle is always designated as the "primary" resource, which determines
@@ -57,19 +57,19 @@ import java.util.*;
  * may also be supplied.
  * <p>
  * The simplest way to use CreateBundle is to specify only the primary resource. In this case, with no secondary
- * resources are explicitly provided, CreateBundle will attempt to locate and infer "standard" secondary resources
+ * resources are explicitly provided, CreateBundle will attempt to locate and resolve "standard" secondary resources
  * (see "Standard Secondary Resources" below) for the primary resource, as long as:
  * <ul>
  *     <li>the content type of the primary resource can be determined from the resources's file extension</li>
  *     <li>the primary resource content type is a well known type (i.e., a variants or a fasta file)</li>
  *     <li>the secondary resources are siblings (in the same parent directory) as the primary resource</li>
  * </ul>
- * The "--suppress-resource-resolution" argument can be used to suppress this secondary
- * resource inference behavior. If the type of the primary resource is not expliclty provided, or cannot be
- * determined from the file extensions, or if the standard secondary resources for a standard primary resource
- * cannot be found in the same director as the primary, an exception will be thrown.
+ * The "--suppress-resource-resolution" argument can be used to suppress secondary resource resolution behavior.
+ * If the type of the primary resource is not explicitly provided, or cannot be determined from the file extension,
+ * or if a standard secondary resource for a standard primary resource cannot be found in the same directory as
+ * the primary, an exception will be thrown.
  * <p>
- * Alternatively, you can explicitly specify all of the resources and their content types. This is useful when
+ * Alternatively, you can specify all of the resources and their content types explicitly. This is useful when
  * the resources are not in the same directory, or when the content types are not standard.
  * <p>
  * For the primary resource, if the content type is not specified on the command line (content types are
@@ -82,7 +82,7 @@ import java.util.*;
  * <h3>Standard Content Types</h3>
  * In general, bundle content types can be any string, but many tools expect bundles to use standard, well known
  * content types that are pre-defined, such as content types for a VCF, a VCF index, a .fasta file, or a reference
- * dictionary file. The common well known content types are:
+ * dictionary file. The common well known content type strings that can be used as command line argument tags are:
  * <h4>Standard VCF Content Types:</h4>
  * <ul>
  *  <li>"CT_VARIANT_CONTEXTS": a VCF file</li>
@@ -208,7 +208,7 @@ public class CreateBundle extends CommandLineProgram {
             shortName = StandardArgumentDefinitions.SECONDARY_RESOURCE_SHORT_NAME,
             doc = "Path to a secondary resource for" + StandardArgumentDefinitions.PRIMARY_RESOURCE_LONG_NAME +
                     " (usually an index). If no secondary resource is specified, standard secondary resources" +
-                    " for the primary bundle resource will be automatically inferred unless " +
+                    " for the primary bundle resource will be automatically resolved unless " +
                     SUPPRESS_SECONDARY_RESOURCE_RESOLUTION_FULL_NAME +
                     " is specified.",
             optional = true)
@@ -319,7 +319,7 @@ public class CreateBundle extends CommandLineProgram {
             if (indexPath.isEmpty()) {
                 throw new IllegalArgumentException(
                         String.format(
-                                "Could not infer an index for %s, you must either specify the index path as a secondary input on the command line or specify the %s argument.",
+                                "Could not resolve an index for %s, you must either specify the index path as a secondary input on the command line or specify the %s argument.",
                                 primaryResource.getRawInputString(),
                                 SUPPRESS_SECONDARY_RESOURCE_RESOLUTION_FULL_NAME));
             }
@@ -344,7 +344,7 @@ public class CreateBundle extends CommandLineProgram {
     private Bundle createHaploidReferenceBundle() {
         final Collection<BundleResource> bundleResources = new ArrayList<>();
         if (secondaryResource == null && (otherResources == null || otherResources.isEmpty())) {
-            // infer dictionary and index
+            // resolve dictionary and index
             return HaploidReferenceResolver.referenceBundleFromFastaPath(primaryResource, GATKPath::new);
         }
 
