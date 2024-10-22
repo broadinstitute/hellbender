@@ -24,6 +24,7 @@ public class PDPairHMMLikelihoodCalculationEngineUnitTest extends GATKBaseTest  
     public Object[][] PairHMMResultsModes() {
         return new Object[][]{
                 {PDPairHMM.Implementation.LOGLESS_CACHING},
+                {PDPairHMM.Implementation.AVX_LOGLESS_CACHING},
         };
     }
 

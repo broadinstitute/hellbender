@@ -240,7 +240,10 @@ dependencies {
     // Library for configuration:
     implementation 'org.aeonbits.owner:owner:1.0.9'
 
-    implementation 'com.github.broadinstitute:picard:' + picardVersion
+    implementation ('com.github.broadinstitute:picard:' + picardVersion) {
+        exclude module: 'gkl'
+    }
+
     externalSourceConfiguration 'com.github.broadinstitute:picard:' + picardVersion + ':sources'
     implementation ('org.genomicsdb:genomicsdb:' + genomicsdbVersion)  {
         exclude module: 'log4j-api'
@@ -331,9 +334,10 @@ dependencies {
     implementation('com.github.fommil.netlib:netlib-native_system-linux-x86_64:1.1:natives')
     implementation('com.github.fommil.netlib:netlib-native_system-osx-x86_64:1.1:natives')
 
-    implementation('com.intel.gkl:gkl:0.8.11') {
-        exclude module: 'htsjdk'
-    }
+//    implementation('com.intel.gkl:gkl:0.8.11') {
+//        exclude module: 'htsjdk'
+//    }
+    implementation files('libs/gkl-2024_08_13.jar')
 
     implementation 'org.broadinstitute:gatk-bwamem-jni:1.0.4'
     implementation 'org.broadinstitute:gatk-fermilite-jni:1.2.0'

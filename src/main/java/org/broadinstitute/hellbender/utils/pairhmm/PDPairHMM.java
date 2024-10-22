@@ -50,6 +50,12 @@ public abstract class PDPairHMM implements Closeable{
             logger.info("Using the non-hardware-accelerated Java LOGLESS_CACHING PairHMM implementation");
             return hmm;
         }),
+        /* Optimized version of the PairHMM which caches per-read computations and operations in real space to avoid costly sums of log10'ed likelihoods */
+        AVX_LOGLESS_CACHING(args -> {
+            final PDPairHMM hmm = new VectorLoglessPairPDHMM(VectorLoglessPairPDHMM.Implementation.OMP, args);
+            logger.info("Using the non-hardware-accelerated Java LOGLESS_CACHING PairHMM implementation");
+            return hmm;
+        }),
         FASTEST_AVAILABLE(args -> {
                 return new LoglessPDPairHMM();
         });
@@ -120,7 +126,7 @@ public abstract class PDPairHMM implements Closeable{
         initialize(readMaxLength, haplotypeMaxLength);
     }
 
-    private static int findMaxAlleleLength(final List<? extends Allele> alleles) {
+    static int findMaxAlleleLength(final List<? extends Allele> alleles) {
         int max = 0;
         for (final Allele allele : alleles) {
             final int alleleLength = allele.length();

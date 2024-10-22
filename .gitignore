@@ -35,7 +35,7 @@ funcotator_tmp
 #Eclipse files
 /bin/
 .project
-*.jar
+#*.jar
 
 #JENV local file
 .java-version

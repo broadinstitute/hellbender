@@ -14,10 +14,7 @@ import org.broadinstitute.hellbender.utils.clipping.ReadClipper;
 import org.broadinstitute.hellbender.utils.genotyper.*;
 import org.broadinstitute.hellbender.utils.haplotype.Haplotype;
 import org.broadinstitute.hellbender.utils.haplotype.PartiallyDeterminedHaplotype;
-import org.broadinstitute.hellbender.utils.pairhmm.LoglessPDPairHMM;
-import org.broadinstitute.hellbender.utils.pairhmm.PDPairHMM;
-import org.broadinstitute.hellbender.utils.pairhmm.PairHMM;
-import org.broadinstitute.hellbender.utils.pairhmm.PairHMMInputScoreImputator;
+import org.broadinstitute.hellbender.utils.pairhmm.*;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.read.ReadUtils;
 
@@ -114,7 +111,7 @@ public final class PDPairHMMLikelihoodCalculationEngine implements ReadLikelihoo
         this.log10globalReadMismappingRate = log10globalReadMismappingRate;
         this.pcrErrorModel = this.dragstrParams == null ? pcrErrorModel : PairHMMLikelihoodCalculationEngine.PCRErrorModel.NONE;
         // TODO later we probably need a LOG and LOGLESS version for parsimony with DRAGEN
-        this.pdPairHMM = new LoglessPDPairHMM();
+        this.pdPairHMM = new VectorLoglessPairPDHMM(VectorLoglessPairPDHMM.Implementation.OMP , new PairHMMNativeArguments());
         if (resultsFile != null) {
             pdPairHMM.setAndInitializeDebugOutputStream(new OutputStreamWriter(resultsFile.getOutputStream()));
         }

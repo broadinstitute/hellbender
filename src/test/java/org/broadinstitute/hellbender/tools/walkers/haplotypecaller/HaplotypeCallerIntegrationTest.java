@@ -2158,14 +2158,14 @@ public class HaplotypeCallerIntegrationTest extends CommandLineProgramTest {
         }
     }
 
-    @Test(dataProvider="HaplotypeCallerTestInputs")
+    @Test(dataProvider="HaplotypeCallerTestInputs", groups={"bucket"})
     public void testPileupCallingDRAGEN378OptimizedModeConsistentWithPastResults(final String inputFileName, final String referenceFileName) throws Exception {
         Utils.resetRandomGenerator();
 
         final File output = createTempFile("testVCFModeIsConsistentWithPastResults", ".vcf");
         final File expected = new File(TEST_FILES_DIR, "expected.pileupCallerDRAGEN.378.gatk4.vcf");
 
-        final String outputPath = UPDATE_EXACT_MATCH_EXPECTED_OUTPUTS ? expected.getAbsolutePath() : output.getAbsolutePath();
+        final String outputPath = "gs://hellbender-test-logs/staging/emeryj/test-foo.vcf"; //UPDATE_EXACT_MATCH_EXPECTED_OUTPUTS ? expected.getAbsolutePath() : output.getAbsolutePath();
 
         final String[] args = {
                 "-I", inputFileName,
