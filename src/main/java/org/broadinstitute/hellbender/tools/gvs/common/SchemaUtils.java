@@ -79,7 +79,7 @@ public class SchemaUtils {
             CALL_PGT, CALL_PID, CALL_PS);
 
 
-    public static final List<String> SAMPLE_PLOIDY_FIELDS = Arrays.asList(CHROMOSOME, SAMPLE_ID, PLOIDY);
+    public static final List<String> SAMPLE_PLOIDY_FIELDS = Arrays.asList(CHROMOSOME, SAMPLE_ID, GENOTYPE, PLOIDY);
 
     public static final List<String> EXTRACT_REF_FIELDS = Arrays.asList(LOCATION_FIELD_NAME, SAMPLE_ID_FIELD_NAME, LENGTH_FIELD_NAME, STATE_FIELD_NAME);
 

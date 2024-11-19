@@ -28,7 +28,11 @@ workflow GvsAssignIds {
   String vcf_header_lines_schema_json = '[{"name":"vcf_header_lines_hash","type":"STRING","mode":"REQUIRED"}, {"name":"vcf_header_lines","type":"STRING","mode":"REQUIRED"},{"name":"is_expected_unique","type":"BOOLEAN","mode":"REQUIRED"}]'
   String sample_vcf_header_schema_json = '[{"name": "sample_id","type": "INTEGER","mode": "REQUIRED"}, {"name":"vcf_header_lines_hash","type":"STRING","mode":"REQUIRED"}]'
   String sample_load_status_schema_json = '[{"name": "sample_id","type": "INTEGER","mode": "REQUIRED"},{"name":"status","type":"STRING","mode":"REQUIRED"}, {"name":"event_timestamp","type":"TIMESTAMP","mode":"REQUIRED"}]'
-  String sample_chromosome_ploidy_schema_json = '[{"name": "sample_id","type": "INTEGER","mode": "REQUIRED"},{"name": "chromosome","type": "INTEGER","mode": "REQUIRED"},{"name": "ploidy","type": "INTEGER","mode": "REQUIRED"}]'
+  # The schema below for the `sample_chromosome_ploidy` table matches that in the AoU `echo` dataset, which differs from
+  # the standard `sample_chromosome_ploidy` schema by the addition of the `genotype` column. At the time of this writing
+  # it is not expected that any additional samples will be loaded into the `echo` dataset, but if there are additional
+  # samples then this code will match the actual `echo` schema.
+  String sample_chromosome_ploidy_schema_json = '[{"name": "sample_id","type": "INTEGER","mode": "REQUIRED"},{"name": "chromosome","type": "INTEGER","mode": "REQUIRED"},{"name":"genotype","type":"STRING","mode":"NULLABLE"},{"name": "ploidy","type": "INTEGER","mode": "REQUIRED"}]'
 
   if (!defined(git_hash) || !defined(cloud_sdk_docker)) {
     call Utils.GetToolVersions {
