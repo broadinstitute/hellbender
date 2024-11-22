@@ -1,7 +1,7 @@
 version 1.0
 
 import "GvsUtils.wdl" as Utils
-# A
+# B
 workflow GvsExtractCallset {
   input {
     Boolean go = true
@@ -516,7 +516,7 @@ task CreateManifestAndOptionallyCopyOutputs {
     String? output_gcs_dir
     String cloud_sdk_docker
   }
-  parameter_meta {
+  meta {
     # Not `volatile: true` since there shouldn't be a need to re-run this if there has already been a successful execution.
     output_vcfs: {
       localization_optional: true

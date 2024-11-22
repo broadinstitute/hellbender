@@ -126,7 +126,6 @@ workflow GvsExtractCohortFromSampleNames {
       destination_dataset = destination_dataset_name,
       fq_temp_table_dataset = fq_gvs_extraction_temp_tables_dataset,
       write_cost_to_db = write_cost_to_db,
-      cloud_sdk_docker = effective_cloud_sdk_docker,
       enable_extract_table_ttl = true,
       interval_list = effective_interval_list,
       control_samples = control_samples,
@@ -165,7 +164,6 @@ workflow GvsExtractCohortFromSampleNames {
       control_samples = control_samples,
 
       cloud_sdk_docker = effective_cloud_sdk_docker,
-      gatk_docker = effective_gatk_docker,
       gatk_override = gatk_override,
       gatk_docker = effective_gatk_docker,
       git_hash = effective_git_hash,
