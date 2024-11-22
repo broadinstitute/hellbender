@@ -540,7 +540,7 @@ task CreateManifestAndOptionallyCopyOutputs {
     declare -a output_vcf_bytes=(~{sep=' ' output_vcf_bytes})
     declare -a output_vcf_index_bytes=(~{sep=' ' output_vcf_index_bytes})
 
-    # (Possibly) create a manifest of VCFs and indexes to bulk copy with `gcloud storage cp`.
+    # (Possibly) create a manifest of VCFs and indexes to bulk copy with `gsutil cp`.
     echo -n > vcf_manifest.txt
 
     echo -n >> manifest_lines.txt
@@ -573,7 +573,10 @@ task CreateManifestAndOptionallyCopyOutputs {
     if [ -n "$OUTPUT_GCS_DIR" ]; then
       # Copy VCFs, indexes and the manifest to the output directory.
       echo manifest.txt >> vcf_manifest.txt
-      cat vcf_manifest.txt | gcloud storage cp -I ${OUTPUT_GCS_DIR}
+      echo "hello"
+      cat vcf_manifest.txt
+      echo "there"
+      cat vcf_manifest.txt | gsutil -m cp -I ${OUTPUT_GCS_DIR}
     fi
   >>>
   output {

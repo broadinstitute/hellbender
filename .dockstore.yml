@@ -173,6 +173,7 @@ workflows:
          branches:
              - master
              - ah_var_store
+             - gg_UseGsUtilInsteadOfGcloudToCopy
          tags:
              - /.*/
    - name: GvsImportGenomes
