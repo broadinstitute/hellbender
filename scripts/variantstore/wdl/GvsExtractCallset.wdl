@@ -517,6 +517,8 @@ task CreateManifestAndOptionallyCopyOutputs {
     String cloud_sdk_docker
   }
 
+  Int disk_size_gb = ceil(2*size(output_vcfs, "GiB") + 2*size(output_vcf_indices, "GiB")) + 200
+
   command <<<
     # Prepend date, time and pwd to xtrace log entries.
     PS4='\D{+%F %T} \w $ '
@@ -575,7 +577,7 @@ task CreateManifestAndOptionallyCopyOutputs {
   runtime {
     docker: cloud_sdk_docker
     memory: "3 GB"
-    disks: "local-disk 500 HDD"
+    disks: "local-disk ${disk_size_gb} HDD"
     preemptible: 3
     cpu: 1
   }
