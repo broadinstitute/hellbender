@@ -243,6 +243,35 @@ public class ExtractCohortEngine {
 
     public void traverse() {
 
+        logger.info("minLocation: " + minLocation + ", maxLocation: " + maxLocation);
+
+        if (!SchemaUtils.decodeContig(minLocation).equals(SchemaUtils.decodeContig(maxLocation))) {
+            throw new GATKException("Can not process cross-contig boundaries for Ranges implementation");
+        }
+
+        String ploidyTableRestriction = null;
+        final Map<String, Integer> samplePloidyMap = new HashMap<>();
+
+        if (minLocation != null && maxLocation != null) {
+            // This block of code already requires minLocation and maxLocation to be on the same chromosome, so we can rely on that here
+            ploidyTableRestriction = "chromosome = " + ((minLocation/SchemaUtils.chromAdjustment) * SchemaUtils.chromAdjustment);
+        }
+
+        if (samplePloidyTableRef != null) {
+            try (StorageAPIAvroReader reader = new StorageAPIAvroReader(samplePloidyTableRef, ploidyTableRestriction, projectID)) {
+                logger.info("Found ploidy lookup table.  Reading it into memory");
+                for (final GenericRecord queryRow : reader) {
+                    // the key will be a basic joining of chromosome (represented as a location) with sample name
+                    String chromosome = queryRow.get(SchemaUtils.CHROMOSOME).toString();
+                    String sampleId = queryRow.get(SchemaUtils.SAMPLE_ID).toString();
+                    Integer ploidy = Integer.parseInt(queryRow.get(SchemaUtils.PLOIDY).toString());
+                    samplePloidyMap.put(makePloidyLookupKey(chromosome, sampleId), ploidy);
+                }
+                processBytesScanned(reader);
+                logger.info("Finished reading ploidy table into memory. " + samplePloidyMap.size() + " entries read.");
+            }
+        }
+
         SortedSet<Long> sampleIdsToExtract = new TreeSet<>(this.sampleIdToName.keySet());
         VariantBitSet vbs = new VariantBitSet(minLocation, maxLocation);
         VariantIterables variantIterables;
@@ -251,7 +280,7 @@ public class ExtractCohortEngine {
         } else if (vetRangesFQDataSet != null) {
             variantIterables = createVariantIterablesFromUnsortedBigQueryRanges(vetRangesFQDataSet, sampleIdsToExtract, vbs);
         } else {
-            variantIterables = createVariantsIterablesFromUnsortedAvroRanges(vetAvroFileName, refRangesAvroFileName, vbs, presortedAvroFiles);
+            variantIterables = createVariantIterablesFromUnsortedAvroRanges(vetAvroFileName, refRangesAvroFileName, vbs, presortedAvroFiles);
         }
 
         // First allele here is the ref, followed by the alts associated with that ref. We need this because at this
@@ -260,14 +289,10 @@ public class ExtractCohortEngine {
         final Map<Long, Map<Allele, Map<Allele, Double>>> fullVQScoreMap = new HashMap<>();
         final Map<Long, Map<Allele, Map<Allele, String>>> fullYngMap = new HashMap<>();
         final Map<Long, List<String>> siteFilterMap = new HashMap<>();
-        final Map<String, Integer> samplePloidyMap = new HashMap<>();
 
         String rowRestriction = null;
-        String ploidyTableRestriction = null;
         if (minLocation != null && maxLocation != null) {
             rowRestriction = "location >= " + minLocation + " AND location <= " + maxLocation;
-            // This block of code already requires minLocation and maxLocation to be on the same chromosome, so we can rely on that here
-            ploidyTableRestriction = "chromosome = " + ((minLocation/SchemaUtils.chromAdjustment) * SchemaUtils.chromAdjustment);
         }
         final String rowRestrictionWithFilterSetName = rowRestriction + " AND " + SchemaUtils.FILTER_SET_NAME + " = '" + filterSetName + "'";
 
@@ -280,11 +305,11 @@ public class ExtractCohortEngine {
 
             // get filter info (vqslod/sensitivity & yng values)
             try (StorageAPIAvroReader reader = new StorageAPIAvroReader(filterSetInfoTableRef, rowRestrictionWithFilterSetName, projectID)) {
-                long recordsProcessed = 0;
-                long recordsDropped = 0;
+                long filterRecordsProcessed = 0;
+                long filterRecordsDropped = 0;
                 for (final GenericRecord queryRow : reader) {
-                    if (++recordsProcessed % 100000 == 0) {
-                        logger.info("Processed " + recordsProcessed + " filter set info records, dropped " + recordsDropped + ".");
+                    if (++filterRecordsProcessed % 100000 == 0) {
+                        logger.info("Processed " + filterRecordsProcessed + " filter set info records, dropped " + filterRecordsDropped + ".");
                     }
                     final ExtractCohortFilterRecord filterRow = new ExtractCohortFilterRecord(queryRow, getVQScoreFieldName(), getScoreFieldName());
 
@@ -293,7 +318,7 @@ public class ExtractCohortEngine {
                     final Allele alt = Allele.create(filterRow.getAltAllele(), false);
 
                     if (!vbs.containsVariant(location, location + Math.max(ref.length(), alt.length()))) {
-                        ++recordsDropped;
+                        ++filterRecordsDropped;
                         continue;
                     }
                     final Double score = filterRow.getScore();
@@ -310,7 +335,7 @@ public class ExtractCohortEngine {
                     fullYngMap.get(location).putIfAbsent(ref, new HashMap<>());
                     fullYngMap.get(location).get(ref).put(alt, yng);
                 }
-                logger.info("Processed " + recordsProcessed + " filter set info records, dropped " + recordsDropped + ".");
+                logger.info("Processed " + filterRecordsProcessed + " filter set info records, dropped " + filterRecordsDropped + ".");
                 processBytesScanned(reader);
             }
         }
@@ -318,15 +343,15 @@ public class ExtractCohortEngine {
         // load site-level filter data into data structure
         if (filterSetSiteTableRef != null) {
             try (StorageAPIAvroReader reader = new StorageAPIAvroReader(filterSetSiteTableRef, rowRestrictionWithFilterSetName, projectID)) {
-                long recordsProcessed = 0;
-                long recordsDropped = 0;
+                long filterRecordsProcessed = 0;
+                long filterRecordsDropped = 0;
                 for (final GenericRecord queryRow : reader) {
-                    if (++recordsProcessed % 10000 == 0) {
-                        logger.info("Processed " + recordsProcessed + " filter set sites records, dropped " + recordsDropped + ".");
+                    if (++filterRecordsProcessed % 10000 == 0) {
+                        logger.info("Processed " + filterRecordsProcessed + " filter set sites records, dropped " + filterRecordsDropped + ".");
                     }
                     long location = Long.parseLong(queryRow.get(SchemaUtils.LOCATION_FIELD_NAME).toString());
                     if (!vbs.containsVariant(location, location + 1)) {
-                        ++recordsDropped;
+                        ++filterRecordsDropped;
                         continue;
                     }
                     List<String> filters = Arrays.asList(queryRow.get(SchemaUtils.FILTERS).toString().split(","));
@@ -336,33 +361,7 @@ public class ExtractCohortEngine {
             }
         }
 
-        if (samplePloidyTableRef != null) {
-            try (StorageAPIAvroReader reader = new StorageAPIAvroReader(samplePloidyTableRef, ploidyTableRestriction, projectID)) {
-                logger.info("Found ploidy lookup table.  Reading it into memory");
-                for (final GenericRecord queryRow : reader) {
-                    // the key will be a basic joining of chromosome (represented as a location) with sample name
-                    String chromosome = queryRow.get(SchemaUtils.CHROMOSOME).toString();
-                    String sampleId = queryRow.get(SchemaUtils.SAMPLE_ID).toString();
-                    Integer ploidy = Integer.parseInt(queryRow.get(SchemaUtils.PLOIDY).toString());
-                    samplePloidyMap.put(makePloidyLookupKey(chromosome, sampleId), ploidy);
-                }
-                processBytesScanned(reader);
-                logger.info("Finished reading ploidy table into memory. "+samplePloidyMap.size()+" entries read.");
-            }
-        }
-
-        if (printDebugInformation) {
-            logger.debug("using storage api with local sort");
-        }
-        logger.debug("Initializing Reader");
-
-        if (!SchemaUtils.decodeContig(minLocation).equals(SchemaUtils.decodeContig(maxLocation))) {
-            throw new GATKException("Can not process cross-contig boundaries for Ranges implementation");
-        }
-
         createVariantsFromSortedRanges(sampleIdsToExtract, variantIterables, fullScoreMap, fullVQScoreMap, fullYngMap, samplePloidyMap, siteFilterMap, noVQScoreFilteringRequested);
-
-        logger.debug("Finished Initializing Reader");
 
         logger.info("Processed " + totalRangeRecords + " range records and rejected " + totalIrrelevantRangeRecords + " irrelevant ones ");
     }
@@ -1196,7 +1195,7 @@ public class ExtractCohortEngine {
     //
     // END REF RANGES COHORT EXTRACT
     //
-    private VariantIterables createVariantsIterablesFromUnsortedAvroRanges(
+    private VariantIterables createVariantIterablesFromUnsortedAvroRanges(
             final GATKPath vetAvroFileName,
             final GATKPath refRangesAvroFileName,
             VariantBitSet vbs,
