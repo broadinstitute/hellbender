@@ -239,7 +239,9 @@ def make_annotated_json_row(row_position, row_ref, row_alt, variant_line, transc
         ## TODO add clinvar star rating!!!
         for clinvar_obj in clinvar_objs:
             # get only the clinvar objs with right variant and the id that starts with RCV
-            if (clinvar_obj.get("refAllele") == var_ref) and (clinvar_obj.get("altAllele") == var_alt) and (clinvar_obj.get("id")[:3] == "RCV"):
+            if (((clinvar_obj.get("refAllele") == var_ref) and (clinvar_obj.get("altAllele") == var_alt)) or
+            ((clinvar_obj.get("refAllele") == Bio.Seq.reverse_complement(variant_line["refAllele"])) and (clinvar_obj.get("altAllele") == Bio.Seq.reverse_complement(variant_line["altAllele"]))))
+            and (clinvar_obj.get("id")[:3] == "RCV"):
                 clinvar_ids.append(clinvar_obj.get("id"))
                 significance_values.extend([x.lower() for x in clinvar_obj.get("significance")])
                 updated_dates.append(clinvar_obj.get("lastUpdatedDate"))
