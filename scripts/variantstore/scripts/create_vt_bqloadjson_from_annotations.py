@@ -240,17 +240,13 @@ def make_annotated_json_row(row_position, row_ref, row_alt, variant_line, transc
         for clinvar_obj in clinvar_objs:
             # get only the clinvar objs with right variant and the id that starts with RCV
             if (((clinvar_obj.get("refAllele") == var_ref) and (clinvar_obj.get("altAllele") == var_alt)) or
-            ((clinvar_obj.get("refAllele") == Bio.Seq.reverse_complement(variant_line["refAllele"])) and (clinvar_obj.get("altAllele") == Bio.Seq.reverse_complement(variant_line["altAllele"]))))
-            and (clinvar_obj.get("id")[:3] == "RCV"):
+            ((clinvar_obj.get("refAllele") == Bio.Seq.reverse_complement(variant_line["refAllele"])) and (clinvar_obj.get("altAllele") == Bio.Seq.reverse_complement(variant_line["altAllele"])))) and (clinvar_obj.get("id")[:3] == "RCV"):
                 clinvar_ids.append(clinvar_obj.get("id"))
                 significance_values.extend([x.lower() for x in clinvar_obj.get("significance")])
                 updated_dates.append(clinvar_obj.get("lastUpdatedDate"))
                 phenotypes.extend(clinvar_obj.get("phenotypes"))
-            elif (clinvar_obj.get("refAllele") == Bio.Seq.reverse_complement(variant_line["refAllele"])) and (clinvar_obj.get("altAllele") == Bio.Seq.reverse_complement(variant_line["altAllele"])) and (clinvar_obj.get("id")[:3] == "RCV"):
-                clinvar_ids.append(clinvar_obj.get("id"))
-                significance_values.extend([x.lower() for x in clinvar_obj.get("significance")])
-                updated_dates.append(clinvar_obj.get("lastUpdatedDate"))
-                phenotypes.extend(clinvar_obj.get("phenotypes"))
+                ## TODO add the ("variationId") and the ("reviewStatus")--note that the reviewStatus will need to maintain the ordering of the significance arrays
+                ## we need to do this with a tuple so that the reviewStatus lines up with the significance (since significance seems to be an array, while star is a single value)
         if len(clinvar_ids) > 0:
             ordered_significance_values = []
             # We want to collect all the significance values and order them by the significance_ordering list
