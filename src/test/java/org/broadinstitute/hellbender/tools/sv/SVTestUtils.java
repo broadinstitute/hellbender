@@ -405,6 +405,16 @@ public class SVTestUtils {
                 Collections.emptyMap(), Collections.emptySet(), null);
     }
 
+    public static SVCallRecord newDeletionRecordWithCoordinates(final String id, final String contig, final int positionA, final int positionB) {
+        return new SVCallRecord(id, contig, positionA, true, contig, positionB, false,
+                GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, null, Collections.emptyList(),
+                getLength(positionA, positionB, GATKSVVCFConstants.StructuralVariantAnnotationType.DEL),
+                Collections.emptyList(), Collections.singletonList(GATKSVVCFConstants.DEPTH_ALGORITHM),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Collections.emptyMap(), Collections.emptySet(), null);
+    }
+
     public static SVCallRecord newDeletionRecordWithAttributes(final Map<String, Object> attributes) {
         return new SVCallRecord("", "chr1", 100, true, "chr1", 199, false,
                 GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, null, Collections.emptyList(),

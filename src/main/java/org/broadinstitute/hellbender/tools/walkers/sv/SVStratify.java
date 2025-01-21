@@ -22,7 +22,8 @@ import org.broadinstitute.hellbender.tools.copynumber.arguments.CopyNumberStanda
 import org.broadinstitute.hellbender.tools.spark.sv.utils.GATKSVVCFConstants;
 import org.broadinstitute.hellbender.tools.sv.SVCallRecord;
 import org.broadinstitute.hellbender.tools.sv.SVCallRecordUtils;
-import org.broadinstitute.hellbender.tools.sv.stratify.SVStatificationEngine;
+import org.broadinstitute.hellbender.tools.sv.stratify.RequiredSVStratificationEngineArgumentsCollection;
+import org.broadinstitute.hellbender.tools.sv.stratify.SVStratificationEngine;
 import org.broadinstitute.hellbender.tools.sv.stratify.SVStratificationEngineArgumentsCollection;
 import org.broadinstitute.hellbender.utils.*;
 
@@ -195,7 +196,7 @@ public final class SVStratify extends MultiVariantWalker {
     private String outputPrefix;
 
     @ArgumentCollection
-    private final SVStratificationEngineArgumentsCollection stratArgs = new SVStratificationEngineArgumentsCollection();
+    private final RequiredSVStratificationEngineArgumentsCollection stratArgs = new RequiredSVStratificationEngineArgumentsCollection();
 
     @Argument(
             doc = "Do not enforce mutual exclusivity for each stratification group",
@@ -213,7 +214,7 @@ public final class SVStratify extends MultiVariantWalker {
 
     protected SAMSequenceDictionary dictionary;
     protected Map<String, VariantContextWriter> writers;
-    protected SVStatificationEngine engine;
+    protected SVStratificationEngine engine;
 
     @Override
     public void onTraversalStart() {
@@ -221,9 +222,9 @@ public final class SVStratify extends MultiVariantWalker {
         dictionary = getMasterSequenceDictionary();
         Utils.validateArg(dictionary != null, "Reference dictionary is required; please specify with --" +
                 StandardArgumentDefinitions.SEQUENCE_DICTIONARY_NAME);
-        engine = loadStratificationConfig(stratArgs, dictionary);
+        engine = loadStratificationConfig(stratArgs.configFile, stratArgs, dictionary);
         logger.debug("Loaded stratification groups:");
-        for (final SVStatificationEngine.Stratum s : engine.getStrata()) {
+        for (final SVStratificationEngine.Stratum s : engine.getStrata()) {
             logger.debug(s);
         }
         initializeWriters();
@@ -256,7 +257,7 @@ public final class SVStratify extends MultiVariantWalker {
             Utils.validateArg(outputPrefix != null, "Argument --" + CopyNumberStandardArgument.OUTPUT_PREFIX_LONG_NAME + " required if using --" + SPLIT_OUTPUT_LONG_NAME);
             Utils.validateArg(new File(outputPath.toString()).isDirectory(), "Argument --" + StandardArgumentDefinitions.OUTPUT_LONG_NAME + " must be a directory if using " + SPLIT_OUTPUT_LONG_NAME);
             createGroupWriter(DEFAULT_STRATUM, generateGroupOutputPath(DEFAULT_STRATUM));
-            for (final SVStatificationEngine.Stratum s : engine.getStrata()) {
+            for (final SVStratificationEngine.Stratum s : engine.getStrata()) {
                 createGroupWriter(s.getName(), generateGroupOutputPath(s.getName()));
             }
         } else {
@@ -265,10 +266,12 @@ public final class SVStratify extends MultiVariantWalker {
     }
 
     /**
-     * Reusable method for loading the stratification configuration table. See tool doc for the expected format.
+     * Reusable method for loading the stratification configuration table. See tool doc for the expected format. If
+     * the provided path is null, returns an empty engine.
      */
-    public static SVStatificationEngine loadStratificationConfig(final SVStratificationEngineArgumentsCollection args,
-                                                                 final SAMSequenceDictionary dictionary) {
+    public static SVStratificationEngine loadStratificationConfig(final GATKPath path,
+                                                                  final SVStratificationEngineArgumentsCollection args,
+                                                                  final SAMSequenceDictionary dictionary) {
         Utils.validateArg(args.trackNameList.size() == args.trackFileList.size(), "Arguments --" +
                 SVStratificationEngineArgumentsCollection.TRACK_NAME_FILE_LONG_NAME + " and --" + SVStratificationEngineArgumentsCollection.TRACK_INTERVAL_FILE_LONG_NAME +
                 " must be specified the same number of times.");
@@ -278,20 +281,25 @@ public final class SVStratify extends MultiVariantWalker {
         final GenomeLocParser genomeLocParser = new GenomeLocParser(dictionary);
         while (nameIterator.hasNext() && pathIterator.hasNext()) {
             final String name = nameIterator.next();
-            final GATKPath path = pathIterator.next();
-            final GenomeLocSortedSet genomeLocs = IntervalUtils.loadIntervals(Collections.singletonList(path.toString()), IntervalSetRule.UNION, IntervalMergingRule.ALL, 0, genomeLocParser);
+            final GATKPath intervalsPath = pathIterator.next();
+            final GenomeLocSortedSet genomeLocs = IntervalUtils.loadIntervals(Collections.singletonList(intervalsPath.toString()), IntervalSetRule.UNION, IntervalMergingRule.ALL, 0, genomeLocParser);
             final List<Locatable> intervals = Collections.unmodifiableList(genomeLocs.toList());
             if (map.containsKey(name)) {
                 throw new UserException.BadInput("Duplicate track name was specified: " + name);
             }
             map.put(name, intervals);
         }
-        final SVStatificationEngine engine = SVStatificationEngine.create(map, args.configFile, dictionary);
-        if (engine.getStrata().stream().anyMatch(s -> s.getName().equals(DEFAULT_STRATUM))) {
-            throw new UserException.BadInput("Stratification configuration contains entry with reserved " +
-                    "ID \"" + DEFAULT_STRATUM + "\"");
+        if (path == null) {
+            // Default if no configuration file is provided
+            return new SVStratificationEngine(dictionary);
+        } else {
+            final SVStratificationEngine engine = SVStratificationEngine.create(map, path, dictionary);
+            if (engine.getStrata().stream().anyMatch(s -> s.getName().equals(DEFAULT_STRATUM))) {
+                throw new UserException.BadInput("Stratification configuration contains entry with reserved " +
+                        "ID \"" + DEFAULT_STRATUM + "\"");
+            }
+            return engine;
         }
-        return engine;
     }
 
     @Override
@@ -308,17 +316,17 @@ public final class SVStratify extends MultiVariantWalker {
         // Save a ton of compute by not copying genotypes into the new record
         final VariantContext variantNoGenotypes = new VariantContextBuilder(variant).genotypes(Collections.emptyList()).make();
         final SVCallRecord record = SVCallRecordUtils.create(variantNoGenotypes, dictionary);
-        final Collection<SVStatificationEngine.Stratum> stratifications = engine.getMatches(record,
+        final Collection<SVStratificationEngine.Stratum> stratifications = engine.getMatches(record,
                 stratArgs.overlapFraction, stratArgs.numBreakpointOverlaps, stratArgs.numBreakpointOverlapsInterchrom);
         final VariantContextBuilder builder = new VariantContextBuilder(variant);
         if (stratifications.isEmpty()) {
             writers.get(DEFAULT_STRATUM).add(builder.attribute(GATKSVVCFConstants.STRATUM_INFO_KEY, DEFAULT_STRATUM).make());
         } else {
             if (!allowMultipleMatches && stratifications.size() > 1) {
-                final String matchesString = String.join(", ", stratifications.stream().map(SVStatificationEngine.Stratum::getName).collect(Collectors.toList()));
+                final String matchesString = String.join(", ", stratifications.stream().map(SVStratificationEngine.Stratum::getName).collect(Collectors.toList()));
                 throw new GATKException("Record " + record.getId() + " matched multiple groups: " + matchesString + ". Bypass this error using the --" + ALLOW_MULTIPLE_MATCHES_LONG_NAME + " argument");
             }
-            for (final SVStatificationEngine.Stratum stratum : stratifications) {
+            for (final SVStratificationEngine.Stratum stratum : stratifications) {
                 final VariantContextWriter writer = splitOutput ? writers.get(stratum.getName()) : writers.get(DEFAULT_STRATUM);
                 if (writer == null) {
                     throw new GATKException("Writer not found for group: " + stratum.getName());

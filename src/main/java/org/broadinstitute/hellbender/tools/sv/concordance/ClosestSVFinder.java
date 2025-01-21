@@ -37,9 +37,8 @@ public class ClosestSVFinder {
     private final SVConcordanceLinkage linkage;
     private final Function<ClosestPair, SVCallRecord> collapser;
 
-    private final PriorityQueue<SVCallRecord> outputBuffer;
+    private final PriorityQueue<ConcordanceRecord> outputBuffer;
 
-    private Long nextItemId;
     private Integer lastItemStart;
     private String lastItemContig;
 
@@ -55,10 +54,15 @@ public class ClosestSVFinder {
         this.sortOutput = sortOutput;
         this.linkage = Utils.nonNull(linkage);
         this.collapser = Utils.nonNull(collapser);
-        outputBuffer = new PriorityQueue<>(SVCallRecordUtils.getCallComparator(dictionary));
+        outputBuffer = new PriorityQueue<>(new Comparator<>() {
+            private final Comparator<SVCallRecord> callComparator = SVCallRecordUtils.getCallComparator(dictionary);
+            @Override
+            public int compare(ConcordanceRecord o1, ConcordanceRecord o2) {
+                return callComparator.compare(o1.record, o2.record);
+            }
+        });
         truthIdToItemMap = new HashMap<>();
         idToClusterMap = new HashMap<>();
-        nextItemId = 0L;
         lastItemStart = null;
         lastItemContig = null;
     }
@@ -77,10 +81,10 @@ public class ClosestSVFinder {
      * @param force flushes all variants in the output buffer regardless of position
      * @return finalized variants
      */
-    public List<SVCallRecord> flush(final boolean force) {
-        final List<SVCallRecord> collapsedRecords = flushClusters(force).stream()
-                .map(c -> new ClosestPair(c.getItem(), c.getClosest()))
-                .map(collapser)
+    public List<ConcordanceRecord> flush(final boolean force) {
+        final List<ConcordanceRecord> collapsedRecords = flushClusters(force).stream()
+                .map(c -> new ClosestPair(c.getItemId(), c.getItem(), c.getClosest()))
+                .map(p -> new ConcordanceRecord(p.getId(), collapser.apply(p)))
                 .collect(Collectors.toList());
         if (sortOutput) {
             outputBuffer.addAll(collapsedRecords);
@@ -93,18 +97,18 @@ public class ClosestSVFinder {
     /**
      * Flushes output buffer
      */
-    private List<SVCallRecord> flushBuffer(final boolean force) {
+    private List<ConcordanceRecord> flushBuffer(final boolean force) {
         if (force) {
-            final List<SVCallRecord> output = new ArrayList<>(outputBuffer.size());
+            final List<ConcordanceRecord> output = new ArrayList<>(outputBuffer.size());
             while (!outputBuffer.isEmpty()) {
                 output.add(outputBuffer.poll());
             }
             return output;
         } else {
-            final ArrayList<SVCallRecord> output = new ArrayList<>();
+            final ArrayList<ConcordanceRecord> output = new ArrayList<>();
             final Integer minActiveStartPosition = minActiveStartPosition();
             while (!outputBuffer.isEmpty() &&
-                    (minActiveStartPosition == null || outputBuffer.peek().getPositionA() <= minActiveStartPosition)) {
+                    (minActiveStartPosition == null || outputBuffer.peek().record.getPositionA() <= minActiveStartPosition)) {
                 output.add(outputBuffer.poll());
             }
             output.trimToSize();
@@ -142,25 +146,26 @@ public class ClosestSVFinder {
     /**
      * Adds and clusters a new variant. Variants must be added in dictionary-sorted order.
      */
-    public void add(final SVCallRecord item, final boolean isTruthVariant) {
+    public void add(final SVCallRecord item, final Long id, final boolean isTruthVariant) {
         Utils.validateArg(lastItemContig == null || lastItemContig.equals(item.getContigA()), "Attempted to add item on a new contig; please run a force flush beforehand");
         Utils.validateArg(lastItemStart == null || lastItemStart <= item.getPositionA(), "Items must be added in dictionary-sorted order");
+        Utils.validateArg(!idToClusterMap.containsKey(id), "ID already in use: " + id);
         lastItemContig = item.getContigA();
         lastItemStart = item.getPositionA();
         if (isTruthVariant) {
-            truthIdToItemMap.put(nextItemId, item);
+            Utils.validateArg(!truthIdToItemMap.containsKey(id), "ID already in use: " + id);
+            truthIdToItemMap.put(id, item);
             idToClusterMap.values().stream()
                 .filter(other -> linkage.areClusterable(other.getItem(), item))
-                .forEach(cluster -> cluster.update(nextItemId, item));
+                .forEach(cluster -> cluster.update(id, item));
         } else {
             final int maxStart = linkage.getMaxClusterableStartingPosition(item);
             final Map.Entry<Long, SVCallRecord> minEntry = getClosestItem(item, truthIdToItemMap.entrySet());
             final Long closestId = minEntry == null ? null : minEntry.getKey();
             final SVCallRecord closest = minEntry == null ? null : minEntry.getValue();
-            final ActiveClosestPair cluster = new ActiveClosestPair(nextItemId, item, closestId, closest, maxStart);
-            idToClusterMap.put(nextItemId, cluster);
+            final ActiveClosestPair cluster = new ActiveClosestPair(id, item, closestId, closest, maxStart);
+            idToClusterMap.put(id, cluster);
         }
-        nextItemId++;
     }
 
     /**
@@ -230,15 +235,27 @@ public class ClosestSVFinder {
         }
     }
 
+    public String getLastItemContig() {
+        return lastItemContig;
+    }
+
+    public record ConcordanceRecord (Long id, SVCallRecord record) {}
+
     /**
      * Output container for an evaluation record and its closest truth record.
      */
     public static class ClosestPair {
+        final Long id;
         final SVCallRecord evalItem;
         final SVCallRecord closest;
-        public ClosestPair(final SVCallRecord evalItem, final SVCallRecord closest) {
+        public ClosestPair(final Long id, final SVCallRecord evalItem, final SVCallRecord closest) {
+            this.id = id;
             this.evalItem = evalItem;
             this.closest = closest;
+        }
+
+        public Long getId() {
+            return id;
         }
 
         public SVCallRecord getEvalItem() {

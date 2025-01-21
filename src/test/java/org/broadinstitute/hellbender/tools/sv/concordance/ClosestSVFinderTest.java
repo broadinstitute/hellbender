@@ -15,6 +15,7 @@ import org.testng.annotations.Test;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ClosestSVFinderTest {
 
@@ -81,19 +82,20 @@ public class ClosestSVFinderTest {
                 )
         );
 
-        engine.add(eval1, false);
-        engine.add(truth1, true);
+        engine.add(eval1, 0L, false);
+        engine.add(truth1, 1L, true);
         Assert.assertEquals(engine.flush(false).size(), 0);
-        engine.add(truth2, true);
-        final List<SVCallRecord> out1 = engine.flush(false);
+        engine.add(truth2, 2L, true);
+        final List<ClosestSVFinder.ConcordanceRecord> out1 = engine.flush(false);
         Assert.assertEquals(engine.flush(true).size(), 0);
 
         Assert.assertEquals(out1.size(), 1);
-        final SVCallRecord outEval1 = out1.get(0);
-        Assert.assertEquals(outEval1.getId(), eval1.getId());
-        assertConcordanceMembers(outEval1, truth1.getId());
+        final ClosestSVFinder.ConcordanceRecord outEval1 = out1.get(0);
+        Assert.assertEquals(outEval1.record().getId(), eval1.getId());
+        Assert.assertEquals(outEval1.id(), 0L);
+        assertConcordanceMembers(outEval1.record(), truth1.getId());
         // Would be 1 if missing samples were treated as hom-ref
-        Assert.assertEquals(outEval1.getAttributes().get(GATKSVVCFConstants.GENOTYPE_CONCORDANCE_INFO), 0.5);
+        Assert.assertEquals(outEval1.record().getAttributes().get(GATKSVVCFConstants.GENOTYPE_CONCORDANCE_INFO), 0.5);
 
         final SVCallRecord eval2 = SVTestUtils.makeRecord(
                 "eval2",
@@ -130,17 +132,18 @@ public class ClosestSVFinderTest {
                 )
         );
 
-        engine.add(eval2, false);
-        engine.add(truth3, true);
-        final List<SVCallRecord> out2 = engine.flush(true);
+        engine.add(eval2, 3L, false);
+        engine.add(truth3, 4L, true);
+        final List<ClosestSVFinder.ConcordanceRecord> out2 = engine.flush(true);
 
         Assert.assertEquals(out2.size(), 1);
 
-        final SVCallRecord outEval2 = out2.get(0);
-        Assert.assertEquals(outEval2.getId(), eval2.getId());
-        assertConcordanceMembers(outEval2, null);
+        final ClosestSVFinder.ConcordanceRecord outEval2 = out2.get(0);
+        Assert.assertEquals(outEval2.record().getId(), eval2.getId());
+        Assert.assertEquals(outEval2.id(), 3L);
+        assertConcordanceMembers(outEval2.record(), null);
 
-        final Map<String, Object> outEval2Attr = outEval2.getAttributes();
+        final Map<String, Object> outEval2Attr = outEval2.record().getAttributes();
         Assert.assertEquals(outEval2Attr.get(Concordance.TRUTH_STATUS_VCF_ATTRIBUTE), ConcordanceState.FALSE_POSITIVE.getAbbreviation());
         Assert.assertEquals(outEval2Attr.get(GATKSVVCFConstants.GENOTYPE_CONCORDANCE_INFO), null);
     }
@@ -260,16 +263,16 @@ public class ClosestSVFinderTest {
                 Lists.newArrayList()
         );
 
-        engine.add(eval1, false);
-        engine.add(truth1, true);
-        engine.add(truth2, true);
-        engine.add(truth3, true);
-        engine.add(eval2, false);
-        engine.add(truth4, true);
-        engine.add(eval3, false);
-        final List<SVCallRecord> softFlush1 = engine.flush(false);
-        final List<SVCallRecord> softFlush2 = engine.flush(false);
-        final List<SVCallRecord> hardFlush = engine.flush(true);
+        engine.add(eval1, 0L, false);
+        engine.add(truth1, 1L, true);
+        engine.add(truth2, 2L, true);
+        engine.add(truth3, 3L, true);
+        engine.add(eval2, 4L, false);
+        engine.add(truth4, 5L, true);
+        engine.add(eval3, 6L, false);
+        final List<SVCallRecord> softFlush1 = engine.flush(false).stream().map(ClosestSVFinder.ConcordanceRecord::record).collect(Collectors.toUnmodifiableList());
+        final List<SVCallRecord> softFlush2 = engine.flush(false).stream().map(ClosestSVFinder.ConcordanceRecord::record).collect(Collectors.toUnmodifiableList());
+        final List<SVCallRecord> hardFlush = engine.flush(true).stream().map(ClosestSVFinder.ConcordanceRecord::record).collect(Collectors.toUnmodifiableList());
 
         // Expect eval1 to cluster with truth1 and truth2, and eval2 and eval3 do not cluster
         Assert.assertEquals(softFlush1.size(), 2);
@@ -348,10 +351,10 @@ public class ClosestSVFinderTest {
                 Collections.singletonList(SVTestUtils.getDiploidCNVGenotypeBuilder("sample1", truthCopyNumber))
         );
 
-        engine.add(eval, false);
-        engine.add(truth, true);
+        engine.add(eval, 0L, false);
+        engine.add(truth, 1L, true);
 
-        final List<SVCallRecord> out = engine.flush(true);
+        final List<SVCallRecord> out = engine.flush(true).stream().map(ClosestSVFinder.ConcordanceRecord::record).collect(Collectors.toUnmodifiableList());
         Assert.assertEquals(out.size(), 1);
         final SVCallRecord outEval = out.get(0);
         Assert.assertEquals(outEval.getId(), eval.getId());

@@ -26,13 +26,13 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
     private static final List<Locatable> CONTEXT_1_INTERVALS = Lists.newArrayList(new SimpleInterval("chr1", 1000, 2000));
     private static final List<Locatable> CONTEXT_2_INTERVALS = Lists.newArrayList(new SimpleInterval("chr2", 1000, 2000));
     
-    private static SVStatificationEngine makeDefaultEngine() {
-        return new SVStatificationEngine(SVTestUtils.hg38Dict);
+    private static SVStratificationEngine makeDefaultEngine() {
+        return new SVStratificationEngine(SVTestUtils.hg38Dict);
     }
 
     @Test
     public void testAddContext() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
         Assert.assertNotNull(engine.getTrackIntervals(CONTEXT_1_NAME));
         Assert.assertNull(engine.getTrackIntervals(CONTEXT_2_NAME));
@@ -40,26 +40,26 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testAddDuplicateContext() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_2_INTERVALS);
     }
 
     @Test
     public void testNoContexts() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         Assert.assertTrue(engine.getStrata().isEmpty());
     }
 
     @Test
     public void testAddStratification() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
         engine.addStratification("strat", GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, 50, 500, Collections.singleton(CONTEXT_1_NAME));
-        final Collection<SVStatificationEngine.Stratum> stratificationCollection = engine.getStrata();
+        final Collection<SVStratificationEngine.Stratum> stratificationCollection = engine.getStrata();
         Assert.assertNotNull(stratificationCollection);
         Assert.assertEquals(stratificationCollection.size(), 1);
-        final SVStatificationEngine.Stratum stratification = stratificationCollection.iterator().next();
+        final SVStratificationEngine.Stratum stratification = stratificationCollection.iterator().next();
         Assert.assertNotNull(stratification);
         Assert.assertEquals(stratification.getSvType(), GATKSVVCFConstants.StructuralVariantAnnotationType.DEL);
         Assert.assertNotNull(stratification.getMinSize());
@@ -72,31 +72,31 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testAddStratificationBadMinSize() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addStratification("strat", GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, -1, 500, Collections.emptySet());
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testAddStratificationBadMaxSize() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addStratification("strat", GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, null, -1, Collections.emptySet());
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testAddStratificationBadMaxSizeInfinity() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addStratification("strat", GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, null, Integer.MAX_VALUE, Collections.emptySet());
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testAddStratificationMaxEqualToMin() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addStratification("strat", GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, 50, 50, Collections.emptySet());
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testAddStratificationMaxLessThanMin() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addStratification("strat", GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, 50, 49, Collections.emptySet());
     }
 
@@ -105,7 +105,7 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
         final Map<String, List<Locatable>> map = new HashMap<>();
         map.put(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
         map.put(CONTEXT_2_NAME, CONTEXT_2_INTERVALS);
-        final SVStatificationEngine engine = SVStatificationEngine.create(map, CONFIG_FILE_PATH, SVTestUtils.hg38Dict);
+        final SVStratificationEngine engine = SVStratificationEngine.create(map, CONFIG_FILE_PATH, SVTestUtils.hg38Dict);
         Assert.assertNotNull(engine);
         Assert.assertNotNull(engine.getTrackIntervals(CONTEXT_1_NAME));
         Assert.assertEquals(engine.getStrata().size(), 7);
@@ -196,14 +196,14 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
         final Map<String, List<Locatable>> map = new HashMap<>();
         map.put(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
         map.put(CONTEXT_2_NAME, CONTEXT_2_INTERVALS);
-        final SVStatificationEngine engine = SVStatificationEngine.create(map, CONFIG_FILE_PATH, SVTestUtils.hg38Dict);
+        final SVStratificationEngine engine = SVStratificationEngine.create(map, CONFIG_FILE_PATH, SVTestUtils.hg38Dict);
         final SVCallRecord record;
         if (svType == GATKSVVCFConstants.StructuralVariantAnnotationType.INS) {
             record = SVTestUtils.newCallRecordInsertionWithLengthAndCoordinates(chromA, posA, svlen);
         } else {
             record = SVTestUtils.newCallRecordWithCoordinatesAndType("record", chromA, posA, chromB, posB, svType);
         }
-        final Collection<SVStatificationEngine.Stratum> result = engine.getMatches(record, 0.5, 0, 2);
+        final Collection<SVStratificationEngine.Stratum> result = engine.getMatches(record, 0.5, 0, 2);
         if (expectedStratName == null) {
             Assert.assertTrue(result.isEmpty());
         } else {
@@ -215,7 +215,7 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
     // Not supported
     @Test(expectedExceptions = GATKException.class)
     public void testGetMatchVariantsCpx() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
         engine.addTrack("context3", Lists.newArrayList(new SimpleInterval("chr1", 1500, 2500)));
         engine.addStratification("strat1", GATKSVVCFConstants.StructuralVariantAnnotationType.CPX, 50, 500, Collections.singleton("context1"));
@@ -227,51 +227,51 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test
     public void testGetMatchVariantsMultiple() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
         engine.addTrack("context3", Lists.newArrayList(new SimpleInterval("chr1", 1500, 2500)));
         engine.addStratification("strat1", GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, 50, 500, Collections.singleton("context1"));
         engine.addStratification("strat2", GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, 50, 500, Collections.singleton("context3"));
         final SVCallRecord record = SVTestUtils.newCallRecordWithCoordinatesAndType("record", "chr1", 1800, "chr1", 2100, GATKSVVCFConstants.StructuralVariantAnnotationType.DEL);
-        final Collection<SVStatificationEngine.Stratum> result = engine.getMatches(record, 0.5, 0, 2);
-        final List<String> names = result.stream().map(SVStatificationEngine.Stratum::getName).collect(Collectors.toList());
+        final Collection<SVStratificationEngine.Stratum> result = engine.getMatches(record, 0.5, 0, 2);
+        final List<String> names = result.stream().map(SVStratificationEngine.Stratum::getName).collect(Collectors.toList());
         Assert.assertTrue(names.contains("strat1"));
         Assert.assertTrue(names.contains("strat2"));
     }
 
     @Test
     public void testGetMatchVariantsNullContexts() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
         engine.addStratification("strat1", GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, 50, 500, Collections.emptySet());
         final SVCallRecord record = SVTestUtils.newCallRecordWithCoordinatesAndType("record", "chr2", 1800, "chr2", 2100, GATKSVVCFConstants.StructuralVariantAnnotationType.DEL);
-        final Collection<SVStatificationEngine.Stratum> result = engine.getMatches(record, 0.5, 0, 2);
-        final List<String> names = result.stream().map(SVStatificationEngine.Stratum::getName).collect(Collectors.toList());
+        final Collection<SVStratificationEngine.Stratum> result = engine.getMatches(record, 0.5, 0, 2);
+        final List<String> names = result.stream().map(SVStratificationEngine.Stratum::getName).collect(Collectors.toList());
         Assert.assertEquals(names.size(), 1);
         Assert.assertEquals(names.get(0), "strat1");
     }
 
     @Test
     public void testGetMatchVariantsNoEngineContexts() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addStratification("strat1", GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, 50, 500, Collections.emptySet());
         final SVCallRecord record = SVTestUtils.newCallRecordWithCoordinatesAndType("record", "chr2", 1800, "chr2", 2100, GATKSVVCFConstants.StructuralVariantAnnotationType.DEL);
-        final Collection<SVStatificationEngine.Stratum> result = engine.getMatches(record, 0.5, 0, 2);
-        final List<String> names = result.stream().map(SVStatificationEngine.Stratum::getName).collect(Collectors.toList());
+        final Collection<SVStratificationEngine.Stratum> result = engine.getMatches(record, 0.5, 0, 2);
+        final List<String> names = result.stream().map(SVStratificationEngine.Stratum::getName).collect(Collectors.toList());
         Assert.assertEquals(names.size(), 1);
         Assert.assertEquals(names.get(0), "strat1");
     }
 
     @Test
     public void testTestAddStratificationInnerClass() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
-        final SVStatificationEngine.Stratum stratification = engine.new Stratum("strat", GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, 50, 500, Collections.singleton(CONTEXT_1_NAME));
+        final SVStratificationEngine.Stratum stratification = engine.new Stratum("strat", GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, 50, 500, Collections.singleton(CONTEXT_1_NAME));
         engine.addStratification(stratification);
-        final Collection<SVStatificationEngine.Stratum> stratificationCollection = engine.getStrata();
+        final Collection<SVStratificationEngine.Stratum> stratificationCollection = engine.getStrata();
         Assert.assertNotNull(stratificationCollection);
         Assert.assertEquals(stratificationCollection.size(), 1);
-        final SVStatificationEngine.Stratum stratificationOut = stratificationCollection.iterator().next();
+        final SVStratificationEngine.Stratum stratificationOut = stratificationCollection.iterator().next();
         Assert.assertNotNull(stratificationOut);
         Assert.assertEquals(stratificationOut.getSvType(), GATKSVVCFConstants.StructuralVariantAnnotationType.DEL);
         Assert.assertNotNull(stratificationOut.getMinSize());
@@ -284,8 +284,8 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test
     public void testMatchesType() {
-        final SVStatificationEngine engine = makeDefaultEngine();
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.DEL,
                 100, 500,
@@ -297,8 +297,8 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test
     public void testMatchesSizeSimple() {
-        final SVStatificationEngine engine = makeDefaultEngine();
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.DEL,
                 100, 500,
@@ -312,8 +312,8 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test
     public void testMatchesSizeNoMin() {
-        final SVStatificationEngine engine = makeDefaultEngine();
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.DEL,
                 null, 500,
@@ -327,8 +327,8 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test
     public void testMatchesSizeNoMax() {
-        final SVStatificationEngine engine = makeDefaultEngine();
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.DEL,
                 50, null,
@@ -341,8 +341,8 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test
     public void testMatchesSizeNoMinOrMax() {
-        final SVStatificationEngine engine = makeDefaultEngine();
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.DEL,
                 null, null,
@@ -354,8 +354,8 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test
     public void testMatchesSizeInsertion() {
-        final SVStatificationEngine engine = makeDefaultEngine();
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.INS,
                 100, 500,
@@ -369,8 +369,8 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test
     public void testMatchesSizeInsertionNullLength() {
-        final SVStatificationEngine engine = makeDefaultEngine();
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.INS,
                 0, Integer.MAX_VALUE - 1,
@@ -381,8 +381,8 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test
     public void testMatchesSizeInsertionNullLength2() {
-        final SVStatificationEngine engine = makeDefaultEngine();
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.INS,
                 null, null,
@@ -393,8 +393,8 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test
     public void testMatchesSizeBnd() {
-        final SVStatificationEngine engine = makeDefaultEngine();
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.BND,
                 null, null,
@@ -424,9 +424,9 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
     public void testMatchesContextDel(final String chrom, final int start, final int end,
                                       final double overlapFraction, final int numBreakpointOverlaps,
                                       final boolean expected) {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.BND,
                 null, null,
@@ -450,9 +450,9 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
     public void testMatchesContextIns(final String chrom, final int start, final int length,
                                       final double overlapFraction, final int numBreakpointOverlaps,
                                       final boolean expected) {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.BND,
                 null, null,
@@ -481,9 +481,9 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
     @Test(dataProvider = "testMatchesContextBndData")
     public void testMatchesContextBnd(final String chromA, final int posA, final String chromB, final int posB,
                                       final int numBreakpointOverlapsInterchrom, final boolean expected) {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.BND,
                 null, null,
@@ -514,9 +514,9 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test(dataProvider = "testCountAnyContextOverlapData")
     public void testCountAnyContextOverlap(final String chrom, final int start, final int end, final int expected) {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.BND,
                 null, null,
@@ -536,9 +536,9 @@ public class SVStratificationEngineUnitTest extends GATKBaseTest {
 
     @Test
     public void testGetters() {
-        final SVStatificationEngine engine = makeDefaultEngine();
+        final SVStratificationEngine engine = makeDefaultEngine();
         engine.addTrack(CONTEXT_1_NAME, CONTEXT_1_INTERVALS);
-        final SVStatificationEngine.Stratum strat = engine.new Stratum(
+        final SVStratificationEngine.Stratum strat = engine.new Stratum(
                 "strat",
                 GATKSVVCFConstants.StructuralVariantAnnotationType.DEL,
                 50, 500,

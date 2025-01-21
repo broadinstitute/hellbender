@@ -12,14 +12,18 @@ import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.tools.spark.sv.utils.GATKSVVCFConstants;
 import org.broadinstitute.hellbender.tools.sv.SVCallRecord;
 import org.broadinstitute.hellbender.tools.sv.cluster.*;
-import org.broadinstitute.hellbender.tools.sv.stratify.SVStatificationEngine;
+import org.broadinstitute.hellbender.tools.sv.stratify.RequiredSVStratificationEngineArgumentsCollection;
+import org.broadinstitute.hellbender.tools.sv.stratify.SVStratificationEngine;
 import org.broadinstitute.hellbender.tools.sv.stratify.SVStratificationEngineArgumentsCollection;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.tsv.TableReader;
 import org.broadinstitute.hellbender.utils.tsv.TableUtils;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -133,7 +137,7 @@ public final class GroupedSVCluster extends SVClusterWalker {
     public static final String CLUSTERING_CONFIG_FILE_LONG_NAME = "clustering-config";
 
     @ArgumentCollection
-    private final SVStratificationEngineArgumentsCollection stratArgs = new SVStratificationEngineArgumentsCollection();
+    private final RequiredSVStratificationEngineArgumentsCollection stratArgs = new RequiredSVStratificationEngineArgumentsCollection();
 
     /**
      * Expected format is tab-delimited and contains columns NAME, RECIPROCAL_OVERLAP, SIZE_SIMILARITY, BREAKEND_WINDOW,
@@ -146,7 +150,7 @@ public final class GroupedSVCluster extends SVClusterWalker {
     )
     public GATKPath strataClusteringConfigFile;
 
-    private SVStatificationEngine stratEngine;
+    private SVStratificationEngine stratEngine;
     private final Map<String, SVClusterEngine> clusterEngineMap = new HashMap<>();
 
     @Override
@@ -154,13 +158,13 @@ public final class GroupedSVCluster extends SVClusterWalker {
         super.onTraversalStart();
         // sorting not guaranteed
         createOutputVariantIndex = false;
-        stratEngine = SVStratify.loadStratificationConfig(stratArgs, dictionary);
+        stratEngine = SVStratify.loadStratificationConfig(stratArgs.configFile, stratArgs, dictionary);
         Utils.validate(!stratEngine.getStrata().isEmpty(),
                 "No strata defined with --" + SVStratificationEngineArgumentsCollection.STRATIFY_CONFIG_FILE_LONG_NAME);
         readStrataClusteringConfig();
         Utils.validate(stratEngine.getStrata().size() == clusterEngineMap.size(),
                 "Stratification and clustering configurations have a different number of groups.");
-        for (final SVStatificationEngine.Stratum stratum : stratEngine.getStrata()) {
+        for (final SVStratificationEngine.Stratum stratum : stratEngine.getStrata()) {
             Utils.validate(clusterEngineMap.containsKey(stratum.getName()),
                     "Could not find group " + stratum.getName() + " in clustering configuration.");
         }
@@ -215,11 +219,11 @@ public final class GroupedSVCluster extends SVClusterWalker {
 
     @Override
     public void applyRecord(final SVCallRecord record) {
-        final Collection<SVStatificationEngine.Stratum> stratifications = stratEngine.getMatches(record,
+        final Collection<SVStratificationEngine.Stratum> stratifications = stratEngine.getMatches(record,
                 stratArgs.overlapFraction, stratArgs.numBreakpointOverlaps, stratArgs.numBreakpointOverlapsInterchrom);
         if (stratifications.size() > 1) {
             // don't allow more than one match since it would proliferate variants
-            final String matchesString = String.join(", ", stratifications.stream().map(SVStatificationEngine.Stratum::getName).collect(Collectors.toList()));
+            final String matchesString = String.join(", ", stratifications.stream().map(SVStratificationEngine.Stratum::getName).collect(Collectors.toList()));
             throw new GATKException("Record " + record.getId() + " matched multiple groups: " + matchesString +
                     ". Groups must be mutually exclusive. Please modify the group configurations and/or tracks so that " +
                     "no variant can match more than one group.");
@@ -230,7 +234,7 @@ public final class GroupedSVCluster extends SVClusterWalker {
             write(record);
         } else {
             // exactly one match
-            final SVStatificationEngine.Stratum stratum = stratifications.iterator().next();
+            final SVStratificationEngine.Stratum stratum = stratifications.iterator().next();
             Utils.validate(clusterEngineMap.containsKey(stratum.getName()), "Group undefined: " + stratum.getName());
             record.getAttributes().put(GATKSVVCFConstants.STRATUM_INFO_KEY, Collections.singletonList(stratum.getName()));
             clusterAndWrite(record, clusterEngineMap.get(stratum.getName()));

@@ -1,5 +1,6 @@
 package org.broadinstitute.hellbender.tools.walkers.sv;
 
+import com.google.common.collect.Lists;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.VariantContextBuilder;
@@ -22,6 +23,7 @@ import org.broadinstitute.hellbender.tools.sv.cluster.SVClusterEngineArgumentsCo
 import org.broadinstitute.hellbender.tools.sv.concordance.ClosestSVFinder;
 import org.broadinstitute.hellbender.tools.sv.concordance.SVConcordanceAnnotator;
 import org.broadinstitute.hellbender.tools.sv.concordance.SVConcordanceLinkage;
+import org.broadinstitute.hellbender.tools.sv.stratify.SVStratificationEngineArgumentsCollection;
 import org.broadinstitute.hellbender.tools.walkers.validation.Concordance;
 import org.broadinstitute.hellbender.tools.walkers.validation.ConcordanceState;
 import org.broadinstitute.hellbender.utils.MathUtilsUnitTest;
@@ -90,10 +92,11 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
         for (final SVCallRecord record : inputTruthVariants) {
             truthRecords.add(new AbstractMap.SimpleImmutableEntry<>(itemId++, record));
         }
+        Long nextId = 0L;
         for (final SVCallRecord evalRecord : inputEvalVariants) {
             final Map.Entry<Long, SVCallRecord> closestRecord = finder.getClosestItem(evalRecord, truthRecords);
             final ClosestSVFinder.ClosestPair cluster =
-                    new ClosestSVFinder.ClosestPair(evalRecord, closestRecord == null ? null : closestRecord.getValue());
+                    new ClosestSVFinder.ClosestPair(nextId++, evalRecord, closestRecord == null ? null : closestRecord.getValue());
             expectedRecords.add(annotator.annotate(cluster));
         }
 
@@ -113,6 +116,7 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
         Assert.assertEquals(outputVariants.size(), idSortedInputEvalVariants.size());
         Assert.assertEquals(outputVariants.size(), expectedVariants.size());
         final Set<String> checkedVariantsSet = new HashSet<>();
+        int numTP = 0;
         for (int i = 0; i < outputVariants.size(); i++) {
             final VariantContext outputVariant = outputVariants.get(i);
             final VariantContext expectedVariant = expectedVariants.get(i);
@@ -127,6 +131,10 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
             Assert.assertEquals(outputVariant.getAttributeAsString(GATKSVVCFConstants.SVTYPE, "test_default"), expectedVariant.getAttributeAsString(GATKSVVCFConstants.SVTYPE, "expected_default"));
             checkTruthVariantId(outputVariant, expectedVariant);
             Assert.assertEquals(outputVariant.getAttributeAsString(Concordance.TRUTH_STATUS_VCF_ATTRIBUTE, "test_default"), expectedVariant.getAttributeAsString(Concordance.TRUTH_STATUS_VCF_ATTRIBUTE, "expected_default"));
+            Assert.assertEquals(outputVariant.getAttributeAsString(GATKSVVCFConstants.STRATUM_INFO_KEY, ""), SVStratify.DEFAULT_STRATUM);
+            if (outputVariant.getAttributeAsString(Concordance.TRUTH_STATUS_VCF_ATTRIBUTE, "").equals(ConcordanceState.TRUE_POSITIVE.getAbbreviation())) {
+                numTP++;
+            }
             if (outputVariant.getID().equals("ref_panel_1kg.chr22.final_cleanup_DEL_chr22_1")) {
                 checkVariant(outputVariant, expectedVariant, "ref_panel_1kg_raw_00000062",
                         268./312, 66./312, checkedVariantsSet);
@@ -138,10 +146,97 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
                         1., 1./312, checkedVariantsSet);
             }
         }
+        Assert.assertEquals(numTP, 1104);
         Assert.assertEquals(checkedVariantsSet.size(), 3);
         Assert.assertTrue(checkedVariantsSet.contains("ref_panel_1kg.chr22.final_cleanup_DEL_chr22_1"));
         Assert.assertTrue(checkedVariantsSet.contains("ref_panel_1kg.chr22.final_cleanup_DEL_chr22_140"));
         Assert.assertTrue(checkedVariantsSet.contains("ref_panel_1kg.chr22.final_cleanup_INS_chr22_100"));
+    }
+
+    @Test
+    public void testRefPanelStratified() {
+        final File output = createTempFile("concord", ".vcf.gz");
+        final String evalVcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.vcf.gz";
+
+        /**
+         * Test file produced from raw standardized VCFs from manta, melt, wham, and cnv callers with SVCluster parameters:
+         * --algorithm SINGLE_LINKAGE
+         * --pesr-interval-overlap 0.9
+         * --pesr-breakend-window 50
+         */
+        final String truthVcfPath = getToolTestDataDir() + "ref_panel_1kg.raw_calls.chr22_chrY.vcf.gz";
+
+        final String clusteringConfigFile = getToolTestDataDir() + "../GroupedSVCluster/stratified_cluster_params.tsv";
+        final String stratifyConfigFile = getToolTestDataDir() + "../GroupedSVCluster/stratified_cluster_strata.tsv";
+        final String segdupFile = getToolTestDataDir() + "../SVStratify/hg38.SegDup.chr22.bed";
+        final String segdupName = "SD";
+        final String repeatmaskerFile = getToolTestDataDir() + "../SVStratify/hg38.RM.chr22_subsampled.bed";
+        final String repeatmaskerName = "RM";
+
+        final ArgumentsBuilder args = new ArgumentsBuilder()
+                .addOutput(output)
+                .add(StandardArgumentDefinitions.SEQUENCE_DICTIONARY_NAME, GATKBaseTest.FULL_HG38_DICT)
+                .add(SVClusterEngineArgumentsCollection.DEPTH_SAMPLE_OVERLAP_FRACTION_NAME, 0)
+                .add(SVClusterEngineArgumentsCollection.DEPTH_INTERVAL_OVERLAP_FRACTION_NAME, 0.5)
+                .add(SVClusterEngineArgumentsCollection.DEPTH_BREAKEND_WINDOW_NAME, 10000000)
+                .add(SVClusterEngineArgumentsCollection.MIXED_SAMPLE_OVERLAP_FRACTION_NAME, 0)
+                .add(SVClusterEngineArgumentsCollection.MIXED_INTERVAL_OVERLAP_FRACTION_NAME, 0.1)
+                .add(SVClusterEngineArgumentsCollection.MIXED_BREAKEND_WINDOW_NAME, 2000)
+                .add(SVClusterEngineArgumentsCollection.PESR_SAMPLE_OVERLAP_FRACTION_NAME, 0)
+                .add(SVClusterEngineArgumentsCollection.PESR_INTERVAL_OVERLAP_FRACTION_NAME, 0.1)
+                .add(SVClusterEngineArgumentsCollection.PESR_BREAKEND_WINDOW_NAME, 500)
+                .add(AbstractConcordanceWalker.TRUTH_VARIANTS_LONG_NAME, truthVcfPath)
+                .add(AbstractConcordanceWalker.EVAL_VARIANTS_SHORT_NAME, evalVcfPath)
+                .add(GroupedSVCluster.CLUSTERING_CONFIG_FILE_LONG_NAME, clusteringConfigFile)
+                .add(SVStratificationEngineArgumentsCollection.STRATIFY_CONFIG_FILE_LONG_NAME, stratifyConfigFile)
+                .add(SVStratificationEngineArgumentsCollection.TRACK_NAME_FILE_LONG_NAME, segdupName)
+                .add(SVStratificationEngineArgumentsCollection.TRACK_INTERVAL_FILE_LONG_NAME, segdupFile)
+                .add(SVStratificationEngineArgumentsCollection.TRACK_NAME_FILE_LONG_NAME, repeatmaskerName)
+                .add(SVStratificationEngineArgumentsCollection.TRACK_INTERVAL_FILE_LONG_NAME, repeatmaskerFile);
+
+        runCommandLine(args, SVConcordance.class.getSimpleName());
+
+        final Pair<VCFHeader, List<VariantContext>> outputVcf = VariantContextTestUtils.readEntireVCFIntoMemory(output.getAbsolutePath());
+        final List<SVCallRecord> inputEvalVariants = VariantContextTestUtils.readEntireVCFIntoMemory(evalVcfPath).getValue()
+                .stream().map(v -> SVCallRecordUtils.create(v, SVTestUtils.hg38Dict)).collect(Collectors.toList());
+        final Comparator<VariantContext> idComparator = Comparator.comparing(VariantContext::getID);
+        final List<VariantContext> outputVariants = outputVcf.getValue().stream().sorted(idComparator).collect(Collectors.toList());
+        final List<VariantContext> idSortedInputEvalVariants = inputEvalVariants.stream()
+                .map(SVCallRecordUtils::getVariantBuilder)
+                .map(VariantContextBuilder::make)
+                .sorted(idComparator)
+                .collect(Collectors.toList());
+
+        Assert.assertEquals(outputVariants.size(), inputEvalVariants.size());
+        int numTP = 0;
+        final Set<String> checkedVariantsSet = new HashSet<>();
+        final Map<String, Integer> strataCounts = new HashMap<>();
+        for (int i = 0; i < outputVariants.size(); i++) {
+            final VariantContext outputVariant = outputVariants.get(i);
+            if (outputVariant.getAttributeAsString(Concordance.TRUTH_STATUS_VCF_ATTRIBUTE, "").equals(ConcordanceState.TRUE_POSITIVE.getAbbreviation())) {
+                numTP++;
+            }
+            final List<String> strata = outputVariant.getAttributeAsStringList(GATKSVVCFConstants.STRATUM_INFO_KEY, "");
+            for (final String stratum: strata) {
+                strataCounts.putIfAbsent(stratum, 0);
+                strataCounts.put(stratum, strataCounts.get(stratum) + 1);
+            }
+            Assert.assertEquals(outputVariant.getID(), idSortedInputEvalVariants.get(i).getID());
+            if (outputVariant.getID().equals("ref_panel_1kg.chr22.final_cleanup_DEL_chr22_12")) {
+                Assert.assertEquals(outputVariant.getAttributeAsStringList(GATKSVVCFConstants.STRATUM_INFO_KEY, ""),  Lists.newArrayList("DEL_50_5k_SD_RM", SVStratify.DEFAULT_STRATUM));
+                checkedVariantsSet.add(outputVariant.getID());
+            } else if (outputVariant.getID().equals("ref_panel_1kg.chr22.final_cleanup_INS_chr22_36")) {
+                Assert.assertEquals(outputVariant.getAttributeAsStringList(GATKSVVCFConstants.STRATUM_INFO_KEY, ""), Lists.newArrayList("INS_small_SD", SVStratify.DEFAULT_STRATUM));
+                checkedVariantsSet.add(outputVariant.getID());
+            }
+        }
+        Assert.assertEquals(checkedVariantsSet.size(), 2);
+        Assert.assertTrue(checkedVariantsSet.contains("ref_panel_1kg.chr22.final_cleanup_DEL_chr22_12"));
+        Assert.assertTrue(checkedVariantsSet.contains("ref_panel_1kg.chr22.final_cleanup_INS_chr22_36"));
+        Assert.assertEquals(numTP, 1104);
+        Assert.assertEquals(strataCounts.size(), 3);
+        Assert.assertEquals(strataCounts.get("INS_small_SD"), 27);
+        Assert.assertEquals(strataCounts.get("DEL_50_5k_SD_RM"), 93);
     }
 
     private static void checkTruthVariantId(final VariantContext actual, final VariantContext expected) {
@@ -191,6 +286,89 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
                 .add(SVClusterEngineArgumentsCollection.PESR_BREAKEND_WINDOW_NAME, 500)
                 .add(AbstractConcordanceWalker.TRUTH_VARIANTS_LONG_NAME, vcfPath)
                 .add(AbstractConcordanceWalker.EVAL_VARIANTS_SHORT_NAME, vcfPath);
+
+        runCommandLine(args, SVConcordance.class.getSimpleName());
+
+        final Pair<VCFHeader, List<VariantContext>> outputVcf = VariantContextTestUtils.readEntireVCFIntoMemory(output.getAbsolutePath());
+
+        final SAMSequenceDictionary dictionary = SVTestUtils.hg38Dict;
+        final ClusteringParameters depthParameters = ClusteringParameters.createDepthParameters(0.5, 0, 10000000, 0);
+        final ClusteringParameters mixedParameters = ClusteringParameters.createMixedParameters(0.1, 0, 2000, 0);
+        final ClusteringParameters pesrParameters = ClusteringParameters.createPesrParameters(0.1, 0, 500, 0);
+        final SVConcordanceLinkage linkage = new SVConcordanceLinkage(dictionary);
+        linkage.setDepthOnlyParams(depthParameters);
+        linkage.setMixedParams(mixedParameters);
+        linkage.setEvidenceParams(pesrParameters);
+
+        final Comparator<VariantContext> idComparator = Comparator.comparing(VariantContext::getID);
+        final List<VariantContext> inputVariants = VariantContextTestUtils.readEntireVCFIntoMemory(vcfPath).getValue()
+                .stream()
+                .sorted(idComparator)
+                .collect(Collectors.toList());
+        final List<VariantContext> outputVariants = outputVcf.getValue().stream().sorted(idComparator).collect(Collectors.toList());
+
+        Assert.assertEquals(outputVariants.size(), inputVariants.size());
+        for (int i = 0; i < outputVariants.size(); i++) {
+            final VariantContext outputVariant = outputVariants.get(i);
+            final VariantContext expectedVariant = inputVariants.get(i);
+            Assert.assertEquals(outputVariant.getID(), expectedVariant.getID());
+            Assert.assertEquals(outputVariant.getContig(), expectedVariant.getContig());
+            Assert.assertEquals(outputVariant.getStart(), expectedVariant.getStart());
+            Assert.assertEquals(outputVariant.getEnd(), expectedVariant.getEnd());
+            Assert.assertEquals(outputVariant.getAlleles(), expectedVariant.getAlleles());
+            Assert.assertEquals(outputVariant.getFilters(), expectedVariant.getFilters());
+            Assert.assertEquals(outputVariant.getPhredScaledQual(), expectedVariant.getPhredScaledQual());
+            final String svtype = outputVariant.getAttributeAsString(GATKSVVCFConstants.SVTYPE, "test_default");
+            Assert.assertEquals(svtype, expectedVariant.getAttributeAsString(GATKSVVCFConstants.SVTYPE, "expected_default"));
+            // check the variant matched itself with perfect concordance
+            Assert.assertEquals(outputVariant.getAttributeAsString(Concordance.TRUTH_STATUS_VCF_ATTRIBUTE, "test_default"), ConcordanceState.TRUE_POSITIVE.getAbbreviation());
+            Assert.assertEquals(outputVariant.getAttributeAsString(GATKSVVCFConstants.TRUTH_VARIANT_ID_INFO, ""), outputVariant.getID());
+            if (svtype.equals(GATKSVVCFConstants.StructuralVariantAnnotationType.CNV.toString())) {
+                MathUtilsUnitTest.assertEqualsDoubleSmart(outputVariant.getAttributeAsDouble(GATKSVVCFConstants.COPY_NUMBER_CONCORDANCE_INFO, -1.), 1.0, TOLERANCE);
+            } else {
+                MathUtilsUnitTest.assertEqualsDoubleSmart(outputVariant.getAttributeAsDouble(GATKSVVCFConstants.GENOTYPE_CONCORDANCE_INFO, -1.), 1.0, TOLERANCE);
+            }
+        }
+    }
+
+    @Test
+    public void testSelfStratified() {
+
+        // Run a vcf against itself and check that every variant matched itself
+
+        final File output = createTempFile("concord", ".vcf.gz");
+        final String vcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.vcf.gz";
+
+        final String clusteringConfigFile = getToolTestDataDir() + "../GroupedSVCluster/stratified_cluster_params.tsv";
+        final String stratifyConfigFile = getToolTestDataDir() + "../GroupedSVCluster/stratified_cluster_strata.tsv";
+        final String segdupFile = getToolTestDataDir() + "../SVStratify/hg38.SegDup.chr22.bed";
+        final String segdupName = "SD";
+        final String repeatmaskerFile = getToolTestDataDir() + "../SVStratify/hg38.RM.chr22_subsampled.bed";
+        final String repeatmaskerName = "RM";
+
+        final ArgumentsBuilder args = new ArgumentsBuilder()
+                .addOutput(output)
+                .add(StandardArgumentDefinitions.SEQUENCE_DICTIONARY_NAME, GATKBaseTest.FULL_HG38_DICT)
+                .add(SVClusterEngineArgumentsCollection.DEPTH_SAMPLE_OVERLAP_FRACTION_NAME, 0)
+                .add(SVClusterEngineArgumentsCollection.DEPTH_INTERVAL_OVERLAP_FRACTION_NAME, 0.5)
+                .add(SVClusterEngineArgumentsCollection.DEPTH_SIZE_SIMILARITY_NAME, 0)
+                .add(SVClusterEngineArgumentsCollection.DEPTH_BREAKEND_WINDOW_NAME, 10000000)
+                .add(SVClusterEngineArgumentsCollection.MIXED_SAMPLE_OVERLAP_FRACTION_NAME, 0)
+                .add(SVClusterEngineArgumentsCollection.MIXED_INTERVAL_OVERLAP_FRACTION_NAME, 0.1)
+                .add(SVClusterEngineArgumentsCollection.MIXED_SIZE_SIMILARITY_NAME, 0)
+                .add(SVClusterEngineArgumentsCollection.MIXED_BREAKEND_WINDOW_NAME, 2000)
+                .add(SVClusterEngineArgumentsCollection.PESR_SAMPLE_OVERLAP_FRACTION_NAME, 0)
+                .add(SVClusterEngineArgumentsCollection.PESR_INTERVAL_OVERLAP_FRACTION_NAME, 0.1)
+                .add(SVClusterEngineArgumentsCollection.PESR_SIZE_SIMILARITY_NAME, 0)
+                .add(SVClusterEngineArgumentsCollection.PESR_BREAKEND_WINDOW_NAME, 500)
+                .add(AbstractConcordanceWalker.TRUTH_VARIANTS_LONG_NAME, vcfPath)
+                .add(AbstractConcordanceWalker.EVAL_VARIANTS_SHORT_NAME, vcfPath)
+                .add(GroupedSVCluster.CLUSTERING_CONFIG_FILE_LONG_NAME, clusteringConfigFile)
+                .add(SVStratificationEngineArgumentsCollection.STRATIFY_CONFIG_FILE_LONG_NAME, stratifyConfigFile)
+                .add(SVStratificationEngineArgumentsCollection.TRACK_NAME_FILE_LONG_NAME, segdupName)
+                .add(SVStratificationEngineArgumentsCollection.TRACK_INTERVAL_FILE_LONG_NAME, segdupFile)
+                .add(SVStratificationEngineArgumentsCollection.TRACK_NAME_FILE_LONG_NAME, repeatmaskerName)
+                .add(SVStratificationEngineArgumentsCollection.TRACK_INTERVAL_FILE_LONG_NAME, repeatmaskerFile);
 
         runCommandLine(args, SVConcordance.class.getSimpleName());
 
@@ -369,25 +547,5 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
                 .add(AbstractConcordanceWalker.EVAL_VARIANTS_SHORT_NAME, evalVcfPath);
 
         runCommandLine(args, SVConcordance.class.getSimpleName());
-    }
-
-    @Test
-    public void testSelfUnsorted() {
-
-        // Run a vcf against itself but don't sort the output
-
-        final File output = createTempFile("concord", ".vcf");
-        final String evalVcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.vcf.gz";
-        final String truthVcfPath = getToolTestDataDir() + "ref_panel_1kg.cleaned.gatk.chr22_chrY.vcf.gz";
-
-        final ArgumentsBuilder args = new ArgumentsBuilder()
-                .addOutput(output)
-                .add(StandardArgumentDefinitions.SEQUENCE_DICTIONARY_NAME, GATKBaseTest.FULL_HG38_DICT)
-                .add(AbstractConcordanceWalker.EVAL_VARIANTS_LONG_NAME, evalVcfPath)
-                .add(AbstractConcordanceWalker.TRUTH_VARIANTS_LONG_NAME, truthVcfPath)
-                .add(SVConcordance.UNSORTED_OUTPUT_LONG_NAME, true);
-
-        runCommandLine(args, SVConcordance.class.getSimpleName());
-        assertPerfectConcordance(output, evalVcfPath);
     }
 }

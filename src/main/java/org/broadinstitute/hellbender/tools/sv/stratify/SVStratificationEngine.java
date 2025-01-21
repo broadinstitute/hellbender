@@ -24,7 +24,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 // Groups variants by SVTYPE, SVLEN, and overlap with one or more interval sets
-public class SVStatificationEngine {
+public class SVStratificationEngine {
 
     // Configuration table column names
     public static final String NAME_COLUMN = "NAME";
@@ -38,12 +38,12 @@ public class SVStatificationEngine {
     public static final Set<String> NULL_TABLE_VALUES = Set.of("-1", "", "NULL", "NA");
 
     protected final Map<String, OverlapDetector<Locatable>> trackMap;
-    protected final Map<String, Stratum> strata;
+    protected final LinkedHashMap<String, Stratum> strata;
     protected final SAMSequenceDictionary dictionary;
 
-    public SVStatificationEngine(final SAMSequenceDictionary dictionary) {
+    public SVStratificationEngine(final SAMSequenceDictionary dictionary) {
         trackMap = new HashMap<>();
-        strata = new HashMap<>();
+        strata = new LinkedHashMap<>();
         this.dictionary = Utils.nonNull(dictionary);
     }
 
@@ -91,12 +91,12 @@ public class SVStatificationEngine {
      * @param dictionary reference dict
      * @return new engine
      */
-    public static SVStatificationEngine create(final Map<String, List<Locatable>> trackMap,
-                                               final GATKPath configFilePath,
-                                               final SAMSequenceDictionary dictionary) {
+    public static SVStratificationEngine create(final Map<String, List<Locatable>> trackMap,
+                                                final GATKPath configFilePath,
+                                                final SAMSequenceDictionary dictionary) {
         Utils.nonNull(trackMap);
         Utils.nonNull(configFilePath);
-        final SVStatificationEngine engine = new SVStatificationEngine(dictionary);
+        final SVStratificationEngine engine = new SVStratificationEngine(dictionary);
         for (final Map.Entry<String, List<Locatable>> entry : trackMap.entrySet()) {
             engine.addTrack(entry.getKey(), entry.getValue());
         }
@@ -118,7 +118,7 @@ public class SVStatificationEngine {
      * @param numBreakpointOverlapsInterchrom minimum breakpoint ends for interchromosomal variants (1, 2)
      * @return all matching strata
      */
-    public Collection<Stratum> getMatches(final SVCallRecord record, final double overlapFraction, final int numBreakpointOverlaps, final int numBreakpointOverlapsInterchrom) {
+    public List<Stratum> getMatches(final SVCallRecord record, final double overlapFraction, final int numBreakpointOverlaps, final int numBreakpointOverlapsInterchrom) {
         Utils.nonNull(record);
         final List<Stratum> result = new ArrayList<>();
         for (final Stratum stratification : strata.values()) {

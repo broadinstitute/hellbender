@@ -334,7 +334,7 @@ public class SVConcordanceAnnotatorTest {
         final GenotypeBuilder builder = new GenotypeBuilder().alleles(Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL));
         final SVCallRecord evalRecord = SVTestUtils.newNamedDeletionRecordWithAttributesAndGenotypes("eval", Collections.singletonList(builder.make()), evalAttr);
         final SVCallRecord truthRecord = SVTestUtils.newNamedDeletionRecordWithAttributesAndGenotypes("truth", Collections.singletonList(builder.make()), Collections.emptyMap());
-        final ClosestSVFinder.ClosestPair pair = new ClosestSVFinder.ClosestPair(evalRecord, truthRecord);
+        final ClosestSVFinder.ClosestPair pair = new ClosestSVFinder.ClosestPair(0L, evalRecord, truthRecord);
         final SVCallRecord result = new SVConcordanceAnnotator().annotate(pair);
         Assert.assertTrue(result.getAttributes().containsKey(VCFConstants.ALLELE_NUMBER_KEY));
         Assert.assertTrue(result.getAttributes().containsKey(VCFConstants.ALLELE_COUNT_KEY));
@@ -349,7 +349,7 @@ public class SVConcordanceAnnotatorTest {
         final GenotypeBuilder builder = new GenotypeBuilder().alleles(Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL));
         final SVCallRecord evalRecord = SVTestUtils.newNamedDeletionRecordWithAttributesAndGenotypes("eval", Collections.singletonList(builder.make()), Collections.emptyMap());
         final SVCallRecord truthRecord = SVTestUtils.newNamedDeletionRecordWithAttributesAndGenotypes("truth", Collections.singletonList(builder.make()), Collections.emptyMap());
-        final ClosestSVFinder.ClosestPair pair = new ClosestSVFinder.ClosestPair(evalRecord, truthRecord);
+        final ClosestSVFinder.ClosestPair pair = new ClosestSVFinder.ClosestPair(0L, evalRecord, truthRecord);
         final SVCallRecord result = new SVConcordanceAnnotator().annotate(pair);
         Assert.assertTrue(result.getAttributes().containsKey(VCFConstants.ALLELE_NUMBER_KEY));
         Assert.assertTrue(result.getAttributes().containsKey(VCFConstants.ALLELE_COUNT_KEY));
@@ -368,7 +368,7 @@ public class SVConcordanceAnnotatorTest {
         final GenotypeBuilder builder = new GenotypeBuilder().alleles(Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL));
         final SVCallRecord evalRecord = SVTestUtils.newNamedDeletionRecordWithAttributesAndGenotypes("eval", Collections.singletonList(builder.make()), Collections.emptyMap());
         final SVCallRecord truthRecord = SVTestUtils.newNamedDeletionRecordWithAttributesAndGenotypes("truth", Collections.singletonList(builder.make()), truthAttr);
-        final ClosestSVFinder.ClosestPair pair = new ClosestSVFinder.ClosestPair(evalRecord, truthRecord);
+        final ClosestSVFinder.ClosestPair pair = new ClosestSVFinder.ClosestPair(0L, evalRecord, truthRecord);
         final SVCallRecord result = new SVConcordanceAnnotator().annotate(pair);
         Assert.assertTrue(result.getAttributes().containsKey(GATKSVVCFConstants.TRUTH_ALLELE_NUMBER_INFO));
         Assert.assertTrue(result.getAttributes().containsKey(GATKSVVCFConstants.TRUTH_ALLELE_COUNT_INFO));
@@ -383,7 +383,7 @@ public class SVConcordanceAnnotatorTest {
         final GenotypeBuilder builder = new GenotypeBuilder().alleles(Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL));
         final SVCallRecord evalRecord = SVTestUtils.newNamedDeletionRecordWithAttributesAndGenotypes("eval", Collections.singletonList(builder.make()), Collections.emptyMap());
         final SVCallRecord truthRecord = SVTestUtils.newNamedDeletionRecordWithAttributesAndGenotypes("truth", Collections.singletonList(builder.make()), Collections.emptyMap());
-        final ClosestSVFinder.ClosestPair pair = new ClosestSVFinder.ClosestPair(evalRecord, truthRecord);
+        final ClosestSVFinder.ClosestPair pair = new ClosestSVFinder.ClosestPair(0L, evalRecord, truthRecord);
         final SVCallRecord result = new SVConcordanceAnnotator().annotate(pair);
         Assert.assertTrue(result.getAttributes().containsKey(GATKSVVCFConstants.TRUTH_ALLELE_NUMBER_INFO));
         Assert.assertTrue(result.getAttributes().containsKey(GATKSVVCFConstants.TRUTH_ALLELE_COUNT_INFO));
@@ -403,7 +403,7 @@ public class SVConcordanceAnnotatorTest {
         final GenotypeBuilder builder = new GenotypeBuilder().alleles(Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL));
         final SVCallRecord evalRecord = SVTestUtils.newNamedDeletionRecordWithAttributesAndGenotypes("eval", Collections.singletonList(builder.make()), Collections.emptyMap());
         final SVCallRecord truthRecord = SVTestUtils.newNamedDeletionRecordWithAttributesAndGenotypes("truth", Collections.singletonList(builder.make()), Collections.emptyMap());
-        final ClosestSVFinder.ClosestPair pair = new ClosestSVFinder.ClosestPair(evalRecord, truthRecord);
+        final ClosestSVFinder.ClosestPair pair = new ClosestSVFinder.ClosestPair(0L, evalRecord, truthRecord);
         final SVCallRecord result = new SVConcordanceAnnotator().annotate(pair);
         Assert.assertTrue(result.getAttributes().containsKey(GATKSVVCFConstants.TRUTH_ALLELE_NUMBER_INFO));
         Assert.assertTrue(result.getAttributes().containsKey(GATKSVVCFConstants.TRUTH_ALLELE_COUNT_INFO));
