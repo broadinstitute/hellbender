@@ -142,7 +142,7 @@ public class MendelianViolationEvaluator extends VariantEvaluator {
             HomVarHet_inheritedRef += mv.getParentsVarHetInheritedRef();
             HomVarHet_inheritedVar += mv.getParentsVarHetInheritedVar();
 
-            if(mv.getFamilyCalledCount()>0 || mv.getFamilyLowQualsCount()>0 || mv.getFamilyCalledCount()>0){
+            if(mv.getFamilyCalledCount()>0 || mv.getFamilyLowQualsCount()>0 || mv.getFamilyNoCallCount()>0){
                 nVariants++;
                 nFamCalled += mv.getFamilyCalledCount();
                 nLowQual += mv.getFamilyLowQualsCount();
@@ -155,7 +155,7 @@ public class MendelianViolationEvaluator extends VariantEvaluator {
         }
     }
 
-    private class ExtendedMendelianViolation extends MendelianViolation
+    private static class ExtendedMendelianViolation extends MendelianViolation
     {
         public ExtendedMendelianViolation(double threshold)
         {
