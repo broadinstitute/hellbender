@@ -62,7 +62,19 @@ import java.util.stream.Collectors;
  * of the specific fields. For multi-allelic CNVs, only a copy state concordance metric is
  * annotated. Allele frequencies will be recalculated automatically if unavailable in the provided VCFs.
  *
- * For large inputs, users may enable the --do-not-sort flag to reduce memory usage.
+ * This tool also allows supports stratification of SVs into groups with specified matching criteria including SV type,
+ * size range, and interval overlap. Please see the {@link GroupedSVCluster} tool documentation for further details
+ * on how to specify stratification groups.
+ *
+ * Note that unlike {@link GroupedSVCluster}, this tool allows any variant to
+ * match more than one stratification group. If this occurs, groups will be prioritized by their ordering in the input
+ * stratification table, with groups appearing first receiving higher priority. While all matching groups will
+ * be listed in the STRAT INFO field, the variant ID pertaining to the highest-priority group will be populated in
+ * the TRUTH_VID field (groups with no matching variant are ignored). It is therefore recommended that the groups with
+ * the most specific clustering criteria be listed as higher priority.
+ *
+ * The "default" stratification group, with clustering parameters specified directly through the clustering program
+ * arguments (e.g. --depth-breakend-window, --pesr-interval-overlap, etc.), is always present and given lowest priority.
  *
  * <h3>Inputs</h3>
  *
