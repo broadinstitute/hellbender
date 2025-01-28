@@ -256,7 +256,7 @@ public class StratifiedConcordanceEngineTest extends BaseTest {
             for (int[] c : combinations) {
                 final StratifiedConcordanceEngine.ItemTracker itemTracker = new StratifiedConcordanceEngine.ItemTracker(groups);
                 Assert.assertEquals(itemTracker.getGroups().size(), groups.size());
-                Assert.assertTrue(new HashSet(groups).containsAll(itemTracker.getGroups()));
+                Assert.assertTrue(new HashSet<>(groups).containsAll(itemTracker.getGroups()));
                 Assert.assertNull(itemTracker.getOutput());
                 final Set<Integer> combinationSet = Arrays.stream(c).boxed().collect(Collectors.toUnmodifiableSet());
                 for (int i = 0; i < groups.size(); i++) {
