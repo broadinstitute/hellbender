@@ -116,8 +116,6 @@ import java.util.stream.Collectors;
 @DocumentedFeature
 public final class SVConcordance extends AbstractConcordanceWalker {
 
-    public static final String UNSORTED_OUTPUT_LONG_NAME = "do-not-sort";
-
     @Argument(
             doc = "Output VCF",
             fullName = StandardArgumentDefinitions.OUTPUT_LONG_NAME,
