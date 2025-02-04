@@ -77,13 +77,13 @@ public class BinnedCNVDefragmenterTest {
     @Test(dataProvider = "clusterTogetherInputsDefault")
     public void testClusterTogetherDefault(final SVCallRecord call1, final SVCallRecord call2,
                                            final boolean expectedResult, final String name) {
-        Assert.assertEquals(defaultDefragmenter.getLinkage().areClusterable(call1, call2), expectedResult, name);
+        Assert.assertEquals(defaultDefragmenter.getLinkage().areClusterable(call1, call2).getResult(), expectedResult, name);
     }
 
     @Test(dataProvider = "clusterTogetherInputsSingleSample")
     public void testClusterTogetherSingleSample(final SVCallRecord call1, final SVCallRecord call2,
                                                 final boolean expectedResult, final String name) {
-        Assert.assertEquals(binnedDefragmenter.getLinkage().areClusterable(call1, call2), expectedResult, name);
+        Assert.assertEquals(binnedDefragmenter.getLinkage().areClusterable(call1, call2).getResult(), expectedResult, name);
     }
 
     @Test

@@ -138,7 +138,7 @@ public class SVClusterEngine {
         final Set<Integer> linkedItems = idToClusterMap.values().stream().map(Cluster::getItemIds)
                 .flatMap(List::stream)
                 .distinct()
-                .filter(other -> !other.equals(itemId) && linkage.areClusterable(item, getItem(other)))
+                .filter(other -> !other.equals(itemId) && linkage.areClusterable(item, getItem(other)).getResult())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         // Find clusters to which this item belongs, and which active clusters we're definitely done with

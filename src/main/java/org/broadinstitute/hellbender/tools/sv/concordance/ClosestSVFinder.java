@@ -156,7 +156,7 @@ public class ClosestSVFinder {
             Utils.validateArg(!truthIdToItemMap.containsKey(id), "ID already in use: " + id);
             truthIdToItemMap.put(id, item);
             idToClusterMap.values().stream()
-                .filter(other -> linkage.areClusterable(other.getItem(), item))
+                .filter(other -> linkage.areClusterable(other.getItem(), item).getResult())
                 .forEach(cluster -> cluster.update(id, item));
         } else {
             final int maxStart = linkage.getMaxClusterableStartingPosition(item);
@@ -180,7 +180,7 @@ public class ClosestSVFinder {
         final Comparator<Map.Entry<Long, SVCallRecord>> idEqualComparator = Comparator.comparing(o -> !o.getValue().getId().equals(evalRecord.getId()));
         final Comparator<Map.Entry<Long, SVCallRecord>> idOrderComparator = Comparator.comparing(o -> o.getValue().getId());
         final Optional<Map.Entry<Long, SVCallRecord>> result = candidates.stream()
-                .filter(other -> linkage.areClusterable(evalRecord, other.getValue()))
+                .filter(other -> linkage.areClusterable(evalRecord, other.getValue()).getResult())
                 .min(distanceComparator.thenComparing(minDistanceComparator).thenComparing(genotypeDistanceComparator)
                         .thenComparing(idEqualComparator).thenComparing(idOrderComparator));
         return result.orElseGet(() -> null);

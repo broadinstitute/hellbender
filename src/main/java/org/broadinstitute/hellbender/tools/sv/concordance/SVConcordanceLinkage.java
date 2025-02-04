@@ -12,12 +12,12 @@ public class SVConcordanceLinkage extends CanonicalSVLinkage<SVCallRecord> {
     }
 
     @Override
-    public boolean areClusterable(final SVCallRecord a, final SVCallRecord b) {
+    public CanonicalLinkageResult areClusterable(final SVCallRecord a, final SVCallRecord b) {
         final GATKSVVCFConstants.StructuralVariantAnnotationType aType = a.getType();
         final GATKSVVCFConstants.StructuralVariantAnnotationType bType = b.getType();
         // Don't allow CNV/DEL or CNV/DUP matching, which is problematic for concordance calculations
         if ((aType == GATKSVVCFConstants.StructuralVariantAnnotationType.CNV || bType != GATKSVVCFConstants.StructuralVariantAnnotationType.CNV) && aType != bType) {
-            return false;
+            return new CanonicalLinkageResult(false);
         }
         return super.areClusterable(a, b);
     }

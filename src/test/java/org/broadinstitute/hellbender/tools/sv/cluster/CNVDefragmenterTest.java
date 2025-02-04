@@ -28,43 +28,43 @@ public class CNVDefragmenterTest {
                 1000, Collections.emptyList(), Collections.singletonList(GATKSVVCFConstants.DEPTH_ALGORITHM),
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DUP),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, dictionary);
-        Assert.assertFalse(defragmenter.areClusterable(deletion, duplication), "Different sv types should not cluster");
+        Assert.assertFalse(defragmenter.areClusterable(deletion, duplication).getResult(), "Different sv types should not cluster");
 
         final SVCallRecord duplicationNonDepthOnly = new SVCallRecord("test_dup", "chr1", 1000, false, "chr1", 1999, true, GATKSVVCFConstants.StructuralVariantAnnotationType.DUP, null, Collections.emptyList(),
                 1000, Collections.emptyList(), Lists.newArrayList(GATKSVVCFConstants.DEPTH_ALGORITHM, SVTestUtils.PESR_ALGORITHM),
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DUP),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, dictionary);
-        Assert.assertFalse(defragmenter.areClusterable(duplication, duplicationNonDepthOnly), "Clustered records must be depth-only");
+        Assert.assertFalse(defragmenter.areClusterable(duplication, duplicationNonDepthOnly).getResult(), "Clustered records must be depth-only");
 
         final SVCallRecord cnv = new SVCallRecord("test_cnv", "chr1", 1000, null, "chr1", 1999, null, GATKSVVCFConstants.StructuralVariantAnnotationType.CNV, null, Collections.emptyList(),
                 1000, Collections.emptyList(), Collections.singletonList(GATKSVVCFConstants.DEPTH_ALGORITHM),
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL, Allele.SV_SIMPLE_DUP),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, dictionary);
-        Assert.assertFalse(defragmenter.areClusterable(deletion, cnv), "Different sv types should not cluster");
+        Assert.assertFalse(defragmenter.areClusterable(deletion, cnv).getResult(), "Different sv types should not cluster");
 
         final SVCallRecord insertion = new SVCallRecord("test_ins", "chr1", 1000, true, "chr1", 1001, false, GATKSVVCFConstants.StructuralVariantAnnotationType.INS, null, Collections.emptyList(),
                 1000, Collections.emptyList(), SVTestUtils.PESR_ONLY_ALGORITHM_LIST,
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_INS),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, dictionary);
-        Assert.assertFalse(defragmenter.areClusterable(insertion, insertion), "Only CNVs should be valid");
+        Assert.assertFalse(defragmenter.areClusterable(insertion, insertion).getResult(), "Only CNVs should be valid");
 
         final SVCallRecord deletion2 = new SVCallRecord("test_del2", "chr1", 1000, true, "chr1", 1999, false, GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, null, Collections.emptyList(),
                 1000, Collections.emptyList(), Collections.singletonList(GATKSVVCFConstants.DEPTH_ALGORITHM),
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, dictionary);
-        Assert.assertTrue(defragmenter.areClusterable(deletion, deletion2), "Valid identical records should cluster");
+        Assert.assertTrue(defragmenter.areClusterable(deletion, deletion2).getResult(), "Valid identical records should cluster");
 
         final SVCallRecord deletion3 = new SVCallRecord("test_del3", "chr1", 2999, true, "chr1", 3998, false, GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, null, Collections.emptyList(),
                 1000, Collections.emptyList(), Collections.singletonList(GATKSVVCFConstants.DEPTH_ALGORITHM),
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, dictionary);
-        Assert.assertTrue(defragmenter.areClusterable(deletion, deletion3), "Should cluster due to overlap");
+        Assert.assertTrue(defragmenter.areClusterable(deletion, deletion3).getResult(), "Should cluster due to overlap");
 
         final SVCallRecord deletion4 = new SVCallRecord("test_del3", "chr1", 3000, true, "chr1", 3999, false, GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, null, Collections.emptyList(),
                 1000, Collections.emptyList(), Collections.singletonList(GATKSVVCFConstants.DEPTH_ALGORITHM),
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, dictionary);
-        Assert.assertFalse(defragmenter.areClusterable(deletion, deletion4), "Should barely not cluster");
+        Assert.assertFalse(defragmenter.areClusterable(deletion, deletion4).getResult(), "Should barely not cluster");
     }
 
     @DataProvider(name = "testOverlapBuilders")
@@ -165,16 +165,16 @@ public class CNVDefragmenterTest {
                         new GenotypeBuilder(altGenotypeMaker1.name("sample2").make()),
                         new GenotypeBuilder(altGenotypeMaker1.name("sample3").make())
                 ));
-        Assert.assertFalse(defragmenter.areClusterable(deletionARR1, deletionARR2));
-        Assert.assertFalse(defragmenter.areClusterable(deletionARR1, deletionRAR));
-        Assert.assertFalse(defragmenter.areClusterable(deletionARR1, deletionAAR));
-        Assert.assertFalse(defragmenter.areClusterable(deletionARR1, deletionAAA));
-        Assert.assertFalse(defragmenter.areClusterable(deletionRAR, deletionAAR));
-        Assert.assertFalse(defragmenter.areClusterable(deletionRAR, deletionAAA));
+        Assert.assertFalse(defragmenter.areClusterable(deletionARR1, deletionARR2).getResult());
+        Assert.assertFalse(defragmenter.areClusterable(deletionARR1, deletionRAR).getResult());
+        Assert.assertFalse(defragmenter.areClusterable(deletionARR1, deletionAAR).getResult());
+        Assert.assertFalse(defragmenter.areClusterable(deletionARR1, deletionAAA).getResult());
+        Assert.assertFalse(defragmenter.areClusterable(deletionRAR, deletionAAR).getResult());
+        Assert.assertFalse(defragmenter.areClusterable(deletionRAR, deletionAAA).getResult());
 
-        Assert.assertTrue(defragmenter.areClusterable(deletionARR1, deletionARR1Copy));
-        Assert.assertTrue(defragmenter.areClusterable(deletionAAR, deletionAAA));
-        Assert.assertTrue(defragmenter.areClusterable(deletionAAR, deletionAAR2));
+        Assert.assertTrue(defragmenter.areClusterable(deletionARR1, deletionARR1Copy).getResult());
+        Assert.assertTrue(defragmenter.areClusterable(deletionAAR, deletionAAA).getResult());
+        Assert.assertTrue(defragmenter.areClusterable(deletionAAR, deletionAAR2).getResult());
     }
 
     @DataProvider(name = "maxPositionIntervals")
@@ -201,7 +201,7 @@ public class CNVDefragmenterTest {
                 call2End - call2Start + 1, Collections.emptyList(), Collections.singletonList(GATKSVVCFConstants.DEPTH_ALGORITHM),
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, dictionary);
-        Assert.assertTrue(defragmenter.areClusterable(call1, call2));
+        Assert.assertTrue(defragmenter.areClusterable(call1, call2).getResult());
 
         final int call3Start = maxClusterableStart + 1;
         final int call3End = dictionary.getSequence(call1.getContigA()).getSequenceLength();
@@ -209,6 +209,6 @@ public class CNVDefragmenterTest {
                 call3End - call3Start + 1, Collections.emptyList(), Collections.singletonList(GATKSVVCFConstants.DEPTH_ALGORITHM),
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, dictionary);
-        Assert.assertFalse(defragmenter.areClusterable(call1, call3));
+        Assert.assertFalse(defragmenter.areClusterable(call1, call3).getResult());
     }
 }

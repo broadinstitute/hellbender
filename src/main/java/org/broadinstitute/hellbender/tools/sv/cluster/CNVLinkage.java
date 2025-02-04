@@ -19,6 +19,8 @@ import static org.broadinstitute.hellbender.tools.spark.sv.utils.GATKSVVCFConsta
  * {@link org.broadinstitute.hellbender.tools.copynumber.GermlineCNVCaller GermlineCNVCaller}. Each variant is first padded by a fraction
  * of its length and then merged with any other overlapping variants that meet the minimum sample overlap. Additionally,
  * singleton variants (with only one carrier sample) will only be linked with variants of the same copy number.
+ *
+ * This class does not return any metadata via {@link org.broadinstitute.hellbender.tools.sv.cluster.CanonicalSVLinkage.CanonicalLinkageResult}.
  */
 public class CNVLinkage extends SVClusterLinkage<SVCallRecord> {
 
@@ -38,15 +40,15 @@ public class CNVLinkage extends SVClusterLinkage<SVCallRecord> {
     }
 
     @Override
-    public boolean areClusterable(final SVCallRecord a, final SVCallRecord b) {
+    public LinkageResult areClusterable(final SVCallRecord a, final SVCallRecord b) {
         // Only do clustering on depth-only CNVs
-        if (!a.isDepthOnly() || !b.isDepthOnly()) return false;
-        if (!a.isSimpleCNV() || !b.isSimpleCNV()) return false;
+        if (!a.isDepthOnly() || !b.isDepthOnly()) return new LinkageResult(false);
+        if (!a.isSimpleCNV() || !b.isSimpleCNV()) return new LinkageResult(false);
         Utils.validate(a.getContigA().equals(a.getContigB()), "Variant A is a CNV but interchromosomal");
         Utils.validate(b.getContigA().equals(b.getContigB()), "Variant B is a CNV but interchromosomal");
 
         // Types match
-        if (a.getType() != b.getType()) return false;
+        if (a.getType() != b.getType()) return new LinkageResult(false);
 
         // Interval overlap
         // Positions should be validated already by the SVCallRecord class - these checks are for thoroughness
@@ -56,11 +58,14 @@ public class CNVLinkage extends SVClusterLinkage<SVCallRecord> {
         final SimpleInterval intervalB = getPaddedRecordInterval(b.getContigA(), b.getPositionA(), b.getPositionB());
         Utils.nonNull(intervalB, "Invalid interval " + new SimpleInterval(b.getContigA(), b.getPositionA(),
                 b.getPositionB()) + " for record " + b.getId());
-        if (!intervalA.overlaps(intervalB)) return false;
+        if (!intervalA.overlaps(intervalB)) return new LinkageResult(false);
 
         // Sample overlap
-        if (!hasSampleOverlap(a, b, minSampleOverlap)) {
-            return false;
+        if (minSampleOverlap > 0) {
+            final double sampleOverlap = computeSampleOverlap(a, b);
+            if (!testSampleOverlap(sampleOverlap, minSampleOverlap)) {
+                return new LinkageResult(false);
+            }
         }
 
         // In the single-sample case, match copy number strictly if we're looking at the same sample
@@ -76,17 +81,17 @@ public class CNVLinkage extends SVClusterLinkage<SVCallRecord> {
                 final int copyNumberDeltaA = genotypeA.getPloidy() - copyNumberA;
                 final int copyNumberDeltaB = genotypeB.getPloidy() - copyNumberB;
                 if (copyNumberDeltaA != copyNumberDeltaB) {
-                    return false;
+                    return new LinkageResult(false);
                 }
             } else {
                 final List<Allele> sortedAllelesA = SVCallRecordUtils.sortAlleles(genotypeA.getAlleles());
                 final List<Allele> sortedAllelesB = SVCallRecordUtils.sortAlleles(genotypeB.getAlleles());
                 if (!sortedAllelesA.equals(sortedAllelesB)) {
-                    return false;
+                    return new LinkageResult(false);
                 }
             }
         }
-        return true;
+        return new LinkageResult(true);
     }
 
     /**

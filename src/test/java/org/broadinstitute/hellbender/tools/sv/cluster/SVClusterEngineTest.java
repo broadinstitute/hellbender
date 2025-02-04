@@ -100,10 +100,10 @@ public class SVClusterEngineTest {
 
     @Test
     public void testClusterTogether() {
-        Assert.assertTrue(engine.getLinkage().areClusterable(SVTestUtils.depthOnly, SVTestUtils.depthAndStuff));
-        Assert.assertFalse(engine.getLinkage().areClusterable(SVTestUtils.depthOnly, SVTestUtils.inversion));
-        Assert.assertFalse(engine.getLinkage().areClusterable(SVTestUtils.call1, SVTestUtils.call2));
-        Assert.assertTrue(engine.getLinkage().areClusterable(SVTestUtils.call1, SVTestUtils.overlapsCall1));
+        Assert.assertTrue(engine.getLinkage().areClusterable(SVTestUtils.depthOnly, SVTestUtils.depthAndStuff).getResult());
+        Assert.assertFalse(engine.getLinkage().areClusterable(SVTestUtils.depthOnly, SVTestUtils.inversion).getResult());
+        Assert.assertFalse(engine.getLinkage().areClusterable(SVTestUtils.call1, SVTestUtils.call2).getResult());
+        Assert.assertTrue(engine.getLinkage().areClusterable(SVTestUtils.call1, SVTestUtils.overlapsCall1).getResult());
     }
 
     @DataProvider(name = "testClusterTogetherWithSizeSimilarityDataProvider")
@@ -128,14 +128,14 @@ public class SVClusterEngineTest {
         // PESR
         final SVCallRecord record1 = SVTestUtils.newPESRCallRecordWithIntervalAndType(start1, end1, svtype);
         final SVCallRecord record2 = SVTestUtils.newPESRCallRecordWithIntervalAndType(start2, end2, svtype);
-        Assert.assertEquals(engineSizeSimilarity.getLinkage().areClusterable(record1, record2), expectedResult);
-        Assert.assertEquals(engineSizeSimilarity.getLinkage().areClusterable(record2, record1), expectedResult);
+        Assert.assertEquals(engineSizeSimilarity.getLinkage().areClusterable(record1, record2).getResult(), expectedResult);
+        Assert.assertEquals(engineSizeSimilarity.getLinkage().areClusterable(record2, record1).getResult(), expectedResult);
 
         // Depth only
         final SVCallRecord record3 = SVTestUtils.newDepthCallRecordWithIntervalAndType(start1, end1, svtype);
         final SVCallRecord record4 = SVTestUtils.newDepthCallRecordWithIntervalAndType(start2, end2, svtype);
-        Assert.assertEquals(engineSizeSimilarity.getLinkage().areClusterable(record3, record4), expectedResult);
-        Assert.assertEquals(engineSizeSimilarity.getLinkage().areClusterable(record4, record3), expectedResult);
+        Assert.assertEquals(engineSizeSimilarity.getLinkage().areClusterable(record3, record4).getResult(), expectedResult);
+        Assert.assertEquals(engineSizeSimilarity.getLinkage().areClusterable(record4, record3).getResult(), expectedResult);
     }
 
     @DataProvider(name = "testClusterTogetherWithSizeSimilarityInsertionsDataProvider")
@@ -161,8 +161,8 @@ public class SVClusterEngineTest {
                                                                 final boolean expectedResult) {
         final SVCallRecord record1 = SVTestUtils.newInsertionWithPositionAndLength(start1, length1);
         final SVCallRecord record2 = SVTestUtils.newInsertionWithPositionAndLength(start2, length2);
-        Assert.assertEquals(engineSizeSimilarity.getLinkage().areClusterable(record1, record2), expectedResult);
-        Assert.assertEquals(engineSizeSimilarity.getLinkage().areClusterable(record2, record1), expectedResult);
+        Assert.assertEquals(engineSizeSimilarity.getLinkage().areClusterable(record1, record2).getResult(), expectedResult);
+        Assert.assertEquals(engineSizeSimilarity.getLinkage().areClusterable(record2, record1).getResult(), expectedResult);
     }
 
     @Test(expectedExceptions = { IllegalArgumentException.class })
@@ -223,7 +223,7 @@ public class SVClusterEngineTest {
                 call1.getLength(), Collections.emptyList(), SVTestUtils.PESR_ONLY_ALGORITHM_LIST,
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
-        Assert.assertTrue(engine.getLinkage().areClusterable(call1, call2Depth) || engine.getLinkage().areClusterable(call1, call2Pesr));
+        Assert.assertTrue(engine.getLinkage().areClusterable(call1, call2Depth).getResult() || engine.getLinkage().areClusterable(call1, call2Pesr).getResult());
 
         final int call3Start = maxClusterableStart + 1;
         final SVCallRecord call3Depth = new SVCallRecord("call2", "chr1", call3Start, true, "chr1", call3Start + call1.getLength() - 1, false, GATKSVVCFConstants.StructuralVariantAnnotationType.DEL,
@@ -236,7 +236,7 @@ public class SVClusterEngineTest {
                 call1.getLength(), Collections.emptyList(), SVTestUtils.PESR_ONLY_ALGORITHM_LIST,
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
-        Assert.assertFalse(engine.getLinkage().areClusterable(call1, call3Depth) || engine.getLinkage().areClusterable(call1, call3Pesr));
+        Assert.assertFalse(engine.getLinkage().areClusterable(call1, call3Depth).getResult() || engine.getLinkage().areClusterable(call1, call3Pesr).getResult());
     }
 
     @Test
@@ -297,7 +297,7 @@ public class SVClusterEngineTest {
                 GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, null, Collections.emptyList(), end2 - start2 + 1, Collections.emptyList(), Lists.newArrayList(GATKSVVCFConstants.DEPTH_ALGORITHM),
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL, Allele.SV_SIMPLE_DUP),
                 SVTestUtils.threeGenotypes, Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
-        Assert.assertEquals(engine.getLinkage().areClusterable(call1, call2), result);
+        Assert.assertEquals(engine.getLinkage().areClusterable(call1, call2).getResult(), result);
     }
 
     @Test
@@ -316,9 +316,9 @@ public class SVClusterEngineTest {
                 // Should only cluster together if same type, except CNVs
                 if ((type1 == GATKSVVCFConstants.StructuralVariantAnnotationType.CNV && call2.isSimpleCNV()) ||
                         (type2 == GATKSVVCFConstants.StructuralVariantAnnotationType.CNV && call1.isSimpleCNV())) {
-                    Assert.assertTrue(engine.getLinkage().areClusterable(call1, call2));
+                    Assert.assertTrue(engine.getLinkage().areClusterable(call1, call2).getResult());
                 } else {
-                    Assert.assertEquals(engine.getLinkage().areClusterable(call1, call2), type1 == type2);
+                    Assert.assertEquals(engine.getLinkage().areClusterable(call1, call2).getResult(), type1 == type2);
                 }
             }
         }
@@ -340,7 +340,7 @@ public class SVClusterEngineTest {
                                 null, Collections.emptyList(), Lists.newArrayList(GATKSVVCFConstants.DEPTH_ALGORITHM),
                                 Collections.emptyList(), Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
                         // Should only cluster if strands match
-                        Assert.assertEquals(engine.getLinkage().areClusterable(call1, call2), strand1A == strand2A && strand1B == strand2B);
+                        Assert.assertEquals(engine.getLinkage().areClusterable(call1, call2).getResult(), strand1A == strand2A && strand1B == strand2B);
                     }
                 }
             }
@@ -367,7 +367,7 @@ public class SVClusterEngineTest {
                                 null, Collections.emptyList(), SVTestUtils.PESR_ONLY_ALGORITHM_LIST,
                                 Collections.emptyList(), Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
                         // Should only cluster if contigs match
-                        Assert.assertEquals(engine.getLinkage().areClusterable(call1, call2), contig1A.equals(contig2A) && contig1B.equals(contig2B));
+                        Assert.assertEquals(engine.getLinkage().areClusterable(call1, call2).getResult(), contig1A.equals(contig2A) && contig1B.equals(contig2B));
                     }
                 }
             }
@@ -390,7 +390,7 @@ public class SVClusterEngineTest {
                         "chr1", 2001, false, GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, null, Collections.emptyList(),
                         1002, Collections.emptyList(), algorithms2, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
                 // All combinations should cluster
-                Assert.assertTrue(engine.getLinkage().areClusterable(call1, call2));
+                Assert.assertTrue(engine.getLinkage().areClusterable(call1, call2).getResult());
             }
         }
     }
@@ -421,10 +421,10 @@ public class SVClusterEngineTest {
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DUP),
                 Collections.emptyList());
 
-        Assert.assertTrue(engine.getLinkage().areClusterable(cnv1, cnv2));
-        Assert.assertTrue(engine.getLinkage().areClusterable(cnv1, del1));
-        Assert.assertTrue(engine.getLinkage().areClusterable(cnv1, dup1));
-        Assert.assertFalse(engine.getLinkage().areClusterable(del1, dup1));
+        Assert.assertTrue(engine.getLinkage().areClusterable(cnv1, cnv2).getResult());
+        Assert.assertTrue(engine.getLinkage().areClusterable(cnv1, del1).getResult());
+        Assert.assertTrue(engine.getLinkage().areClusterable(cnv1, dup1).getResult());
+        Assert.assertFalse(engine.getLinkage().areClusterable(del1, dup1).getResult());
     }
 
     @DataProvider(name = "testMatchCNVNoGTData")
@@ -464,11 +464,11 @@ public class SVClusterEngineTest {
         final CanonicalSVLinkage<SVCallRecord> linkage = new CanonicalSVLinkage<>(SVTestUtils.hg38Dict, false);
         linkage.setDepthOnlyParams(depthOnlyParams);
 
-        Assert.assertEquals(linkage.areClusterable(recordCN1, recordCN2), expected);
+        Assert.assertEquals(linkage.areClusterable(recordCN1, recordCN2).getResult(), expected);
 
         final SVCallRecord recordRDCN1 = getCNVRecordWithCN(ploidy, alleles, svtype, copyNumbers1, GATKSVVCFConstants.DEPTH_GENOTYPE_COPY_NUMBER_FORMAT);
         final SVCallRecord recordRDCN2 = getCNVRecordWithCN(ploidy, alleles, svtype, copyNumbers2, GATKSVVCFConstants.DEPTH_GENOTYPE_COPY_NUMBER_FORMAT);
-        Assert.assertEquals(linkage.areClusterable(recordRDCN1, recordRDCN2), expected);
+        Assert.assertEquals(linkage.areClusterable(recordRDCN1, recordRDCN2).getResult(), expected);
     }
 
     @DataProvider(name = "testClusterTogetherIntervaledComplexData")
@@ -569,7 +569,7 @@ public class SVClusterEngineTest {
                 length2, Collections.emptyList(), Collections.singletonList(SVTestUtils.PESR_ALGORITHM),
                 Lists.newArrayList(Allele.REF_N, SVTestUtils.CPX_ALLELE),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
-        Assert.assertEquals(engine.getLinkage().areClusterable(cpx1, cpx2), expected);
+        Assert.assertEquals(engine.getLinkage().areClusterable(cpx1, cpx2).getResult(), expected);
     }
 
     @DataProvider(name = "testClusterTogetherInsertedComplexData")
@@ -647,7 +647,7 @@ public class SVClusterEngineTest {
                 length2, Collections.emptyList(), Collections.singletonList(SVTestUtils.PESR_ALGORITHM),
                 Lists.newArrayList(Allele.REF_N, SVTestUtils.CPX_ALLELE),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
-        Assert.assertEquals(engine.getLinkage().areClusterable(cpx1, cpx2), expected);
+        Assert.assertEquals(engine.getLinkage().areClusterable(cpx1, cpx2).getResult(), expected);
     }
 
     @Test
@@ -660,12 +660,12 @@ public class SVClusterEngineTest {
                 "chr1", 2101, false, GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, null, Collections.emptyList(),
                 1002, Collections.emptyList(), Collections.singletonList(GATKSVVCFConstants.DEPTH_ALGORITHM), Collections.emptyList(), Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
         // Cluster with default parameters
-        Assert.assertTrue(testEngine1.getLinkage().areClusterable(call1, call2));
+        Assert.assertTrue(testEngine1.getLinkage().areClusterable(call1, call2).getResult());
         final ClusteringParameters exactMatchParameters = ClusteringParameters.createDepthParameters(1.0, 0, 0, 1.0);
         final CanonicalSVLinkage<SVCallRecord> exactMatchLinkage = SVTestUtils.getNewDefaultLinkage();
         exactMatchLinkage.setDepthOnlyParams(exactMatchParameters);
         // Do not cluster requiring exact overlap
-        Assert.assertFalse(exactMatchLinkage.areClusterable(call1, call2));
+        Assert.assertFalse(exactMatchLinkage.areClusterable(call1, call2).getResult());
     }
 
 
