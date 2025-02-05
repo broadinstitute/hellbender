@@ -43,6 +43,7 @@ public class SVTestUtils {
     public static final List<String> DEPTH_ONLY_ALGORITHM_LIST = Collections.singletonList(GATKSVVCFConstants.DEPTH_ALGORITHM);
     public static final List<String> PESR_ONLY_ALGORITHM_LIST = Collections.singletonList(PESR_ALGORITHM);
     public static final Allele CPX_ALLELE = Allele.create(SimpleSVType.createBracketedSymbAlleleString(CPX_SV_SYB_ALT_ALLELE_STR));
+    public static final Allele BND_ALLELE = Allele.create(SimpleSVType.createBracketedSymbAlleleString(GATKSVVCFConstants.BREAKEND_STR));
 
     public static CanonicalSVLinkage<SVCallRecord> getNewDefaultLinkage() {
         final CanonicalSVLinkage<SVCallRecord> linkage = new CanonicalSVLinkage<>(SVTestUtils.hg38Dict, false);
@@ -168,6 +169,41 @@ public class SVTestUtils {
         builder.alleles(alleles);
         builder.attribute(GATKSVVCFConstants.EXPECTED_COPY_NUMBER_FORMAT, alleles.size());
         return builder.make();
+    }
+
+    public static final SVCallRecord makeRecordWithCarriers(final List<String> allSamples, final Set<String> carrierSamples) {
+        final List<GenotypeBuilder> genotypes = makeDeletionGenotypesWithCarriers(allSamples, carrierSamples, Allele.SV_SIMPLE_DEL);
+        return makeRecord("", "chr1", 100, Boolean.TRUE, "chr1", 200, Boolean.FALSE,
+                GATKSVVCFConstants.StructuralVariantAnnotationType.DEL, null, Collections.emptyList(),
+                List.of(Allele.REF_N, Allele.SV_SIMPLE_DEL), genotypes);
+    }
+
+    public static final SVCallRecord makeComplexRecordWithCarriers(final List<String> allSamples, final Set<String> carrierSamples) {
+        final List<Genotype> genotypes = makeDeletionGenotypesWithCarriers(allSamples, carrierSamples, SVTestUtils.CPX_ALLELE)
+                .stream().map(GenotypeBuilder::make).collect(Collectors.toUnmodifiableList());
+        return new SVCallRecord("cpx1", "chr1", 1000, null,
+                "chr1", 2000, null,
+                GATKSVVCFConstants.StructuralVariantAnnotationType.CPX,
+                GATKSVVCFConstants.ComplexVariantSubtype.delINV,
+                Arrays.asList(SVCallRecord.ComplexEventInterval.decode("DEL_chr1:1100-1500", SVTestUtils.hg38Dict), SVCallRecord.ComplexEventInterval.decode("INV_chr1:1600-1900", SVTestUtils.hg38Dict)),
+                1000, Collections.emptyList(), Collections.singletonList(SVTestUtils.PESR_ALGORITHM),
+                Lists.newArrayList(Allele.REF_N, SVTestUtils.CPX_ALLELE),
+                genotypes, Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
+    }
+
+    private static List<GenotypeBuilder> makeDeletionGenotypesWithCarriers(final List<String> allSamples, final Set<String> carrierSamples, final Allele altAllele) {
+        final List<GenotypeBuilder> genotypes = new ArrayList<>(allSamples.size());
+        for (final String sample : allSamples) {
+            final GenotypeBuilder builder = new GenotypeBuilder(sample);
+            if (carrierSamples.contains(sample)) {
+                builder.alleles(List.of(Allele.REF_N, altAllele));
+            } else {
+                builder.alleles(List.of(Allele.REF_N, Allele.REF_N));
+            }
+            builder.attribute(GATKSVVCFConstants.EXPECTED_COPY_NUMBER_FORMAT, 2);
+            genotypes.add(builder);
+        }
+        return genotypes;
     }
 
     public final static SVCallRecord rightEdgeCall = makeRecord("rightEdgeCall", "chr1", chr1Length - 99, null,

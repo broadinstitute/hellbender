@@ -29,6 +29,11 @@ public class SVClusterEngineTest {
 
     private final SVClusterEngine engine = SVTestUtils.defaultSingleLinkageEngine;
 
+    private static final String SAMPLE_1_NAME = "sample1";
+    private static final String SAMPLE_2_NAME = "sample2";
+    private static final String SAMPLE_3_NAME = "sample3";
+    private static final String SAMPLE_4_NAME = "sample4";
+
     private static final ClusteringParameters depthOnlyParametersSizeSimilarity = ClusteringParameters.createDepthParameters(0.1, 0.5, 10000000, 0);
     private static final ClusteringParameters mixedParametersSizeSimilarity = ClusteringParameters.createMixedParameters(0.1, 0.5, 5000, 0);
     private static final ClusteringParameters evidenceParametersSizeSimilarity = ClusteringParameters.createPesrParameters(0.1, 0.5, 5000, 0);
@@ -298,6 +303,98 @@ public class SVClusterEngineTest {
                 Lists.newArrayList(Allele.REF_N, Allele.SV_SIMPLE_DEL, Allele.SV_SIMPLE_DUP),
                 SVTestUtils.threeGenotypes, Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
         Assert.assertEquals(engine.getLinkage().areClusterable(call1, call2).getResult(), result);
+    }
+
+    @DataProvider(name = "testClusterTogetherVaryPositionsBNDData")
+    public Object[][] testClusterTogetherVaryPositionsBNDData() {
+        return new Object[][]{
+                // length 0 edge case
+                {
+                        "chr1", 100, "chr1", 100,
+                        "chr1", 100, "chr1", 100,
+                        0.5, 0.5, 100,
+                        true
+                },
+                // simple interchromosomal
+                {
+                        "chr1", 100, "chr2", 100,
+                        "chr1", 100, "chr2", 100,
+                        0.5, 0.5, 0,
+                        true
+                },
+                {
+                        "chr1", 100, "chr2", 101,
+                        "chr1", 100, "chr2", 100,
+                        0.5, 0.5, 0,
+                        false
+                },
+                {
+                        "chr1", 101, "chr2", 100,
+                        "chr1", 100, "chr2", 100,
+                        0.5, 0.5, 0,
+                        false
+                },
+                // reciprocal overlap for intrachromosomal records
+                {
+                        "chr1", 100, "chr1", 200,
+                        "chr1", 150, "chr1", 250,
+                        0.5, 0.5, 50,
+                        true
+                },
+                // fails window
+                {
+                        "chr1", 100, "chr1", 200,
+                        "chr1", 150, "chr1", 250,
+                        0.5, 0.5, 49,
+                        false
+                },
+                {
+                        "chr1", 100, "chr1", 200,
+                        "chr1", 100, "chr1", 250,
+                        0.5, 0.5, 49,
+                        false
+                },
+                {
+                        "chr1", 100, "chr1", 200,
+                        "chr1", 150, "chr1", 200,
+                        0.5, 0.5, 49,
+                        false
+                },
+                // fails reciprocal overlap
+                {
+                        "chr1", 100, "chr1", 200,
+                        "chr1", 150, "chr1", 250,
+                        0.51, 0.5, 50,
+                        false
+                },
+                // fails size similarity
+                {
+                        "chr1", 100, "chr1", 200,
+                        "chr1", 150, "chr1", 200,
+                        0.5, 0.51, 50,
+                        false
+                }
+        };
+    }
+
+    @Test(dataProvider= "testClusterTogetherVaryPositionsBNDData")
+    public void testClusterTogetherVaryPositionsBND(final String chrom1A, final int start1, final String chrom1B, final int end1,
+                                                    final String chrom2A, final int start2, final String chrom2B, final int end2,
+                                                    final double reciprocalOverlap, final double sizeSimilarity, final int window,
+                                                    final boolean result) {
+        final SVCallRecord call1 = new SVCallRecord("call1", chrom1A, start1, true,
+                chrom1B, end1, false,
+                GATKSVVCFConstants.StructuralVariantAnnotationType.BND, null, Collections.emptyList(), null, Collections.emptyList(), SVTestUtils.PESR_ONLY_ALGORITHM_LIST,
+                Lists.newArrayList(Allele.REF_N, SVTestUtils.BND_ALLELE),
+                Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
+        final SVCallRecord call2 = new SVCallRecord("call2", chrom2A, start2, true,
+                chrom2B, end2, false,
+                GATKSVVCFConstants.StructuralVariantAnnotationType.BND, null, Collections.emptyList(), null, Collections.emptyList(), SVTestUtils.PESR_ONLY_ALGORITHM_LIST,
+                Lists.newArrayList(Allele.REF_N, SVTestUtils.BND_ALLELE),
+                Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
+        final CanonicalSVLinkage linkage = new CanonicalSVLinkage(SVTestUtils.hg38Dict, false);
+        linkage.setEvidenceParams(ClusteringParameters.createPesrParameters(reciprocalOverlap, sizeSimilarity, window, 0));
+        Assert.assertEquals(linkage.areClusterable(call1, call2).getResult(), result);
     }
 
     @Test
@@ -891,4 +988,45 @@ public class SVClusterEngineTest {
         output.addAll(engine.flush());
         Assert.assertEquals(output.size(), 2926);
     }
+
+    @DataProvider(name = "testSampleOverlapData")
+    public Object[][] testSampleOverlapData() {
+        return new Object[][]{
+                {new String[]{}, new String[]{}, 0, true},
+                {new String[]{}, new String[]{}, 1, true},
+                {new String[]{SAMPLE_1_NAME}, new String[]{}, 0, true},
+                {new String[]{SAMPLE_1_NAME}, new String[]{}, 0.1, false},
+                {new String[]{SAMPLE_1_NAME}, new String[]{SAMPLE_1_NAME}, 1, true},
+                {new String[]{SAMPLE_1_NAME, SAMPLE_2_NAME}, new String[]{SAMPLE_1_NAME}, 0, true},
+                {new String[]{SAMPLE_1_NAME, SAMPLE_2_NAME}, new String[]{SAMPLE_3_NAME}, 0, true},
+                {new String[]{SAMPLE_1_NAME, SAMPLE_2_NAME}, new String[]{SAMPLE_1_NAME}, 0.5, true},
+                {new String[]{SAMPLE_1_NAME, SAMPLE_2_NAME}, new String[]{SAMPLE_2_NAME}, 0.5, true},
+                {new String[]{SAMPLE_1_NAME, SAMPLE_2_NAME}, new String[]{SAMPLE_3_NAME}, 0.5, false},
+                {new String[]{SAMPLE_1_NAME, SAMPLE_2_NAME}, new String[]{SAMPLE_1_NAME}, 1, false},
+                {new String[]{SAMPLE_1_NAME, SAMPLE_2_NAME}, new String[]{SAMPLE_1_NAME, SAMPLE_2_NAME}, 1, true},
+                {new String[]{SAMPLE_1_NAME, SAMPLE_2_NAME}, new String[]{SAMPLE_3_NAME, SAMPLE_4_NAME}, 0.1, false},
+                {new String[]{SAMPLE_1_NAME, SAMPLE_2_NAME, SAMPLE_3_NAME}, new String[]{SAMPLE_1_NAME, SAMPLE_3_NAME, SAMPLE_4_NAME}, 0.5, true},
+                {new String[]{SAMPLE_1_NAME, SAMPLE_2_NAME, SAMPLE_3_NAME}, new String[]{SAMPLE_1_NAME, SAMPLE_3_NAME, SAMPLE_4_NAME}, 1, false},
+        };
+    }
+
+    @Test(dataProvider= "testSampleOverlapData")
+    public void testSampleOverlap(final String[] samplesA, final String[] samplesB, final double threshold, final boolean expected) {
+        final Set<String> setA = Stream.of(samplesA).collect(Collectors.toUnmodifiableSet());
+        final Set<String> setB = Stream.of(samplesB).collect(Collectors.toUnmodifiableSet());
+        final List<String> allSamples = List.of(SAMPLE_1_NAME, SAMPLE_2_NAME, SAMPLE_3_NAME, SAMPLE_4_NAME);
+        final SVCallRecord recordA = SVTestUtils.makeRecordWithCarriers(allSamples, setA);
+        final SVCallRecord recordB = SVTestUtils.makeRecordWithCarriers(allSamples, setB);
+        final CanonicalSVLinkage linkage = SVTestUtils.getNewDefaultLinkage();
+        linkage.setEvidenceParams(ClusteringParameters.createPesrParameters(0.5, 0.5, 100, threshold));
+        Assert.assertEquals(linkage.areClusterable(recordA, recordB).getResult(), expected);
+        Assert.assertEquals(linkage.areClusterable(recordB, recordA).getResult(), expected);
+
+        // Test complex event code path
+        final SVCallRecord complexA = SVTestUtils.makeComplexRecordWithCarriers(allSamples, setA);
+        final SVCallRecord complexB = SVTestUtils.makeComplexRecordWithCarriers(allSamples, setB);
+        Assert.assertEquals(linkage.areClusterable(complexA, complexB).getResult(), expected);
+        Assert.assertEquals(linkage.areClusterable(complexB, complexA).getResult(), expected);
+    }
+
 }

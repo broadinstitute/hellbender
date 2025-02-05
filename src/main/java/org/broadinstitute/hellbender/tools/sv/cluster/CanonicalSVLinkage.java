@@ -112,11 +112,11 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
         }
         // Checks appropriate parameter set
         if (evidenceParams.isValidPair(a, b)) {
-            return clusterTogetherWithParams(a, b, evidenceParams, computeLinkageMetrics, dictionary);
+            return clusterTogetherWithParams(a, b, evidenceParams, computeLinkageMetrics);
         } else if (mixedParams.isValidPair(a, b)) {
-            return clusterTogetherWithParams(a, b, mixedParams, computeLinkageMetrics, dictionary);
+            return clusterTogetherWithParams(a, b, mixedParams, computeLinkageMetrics);
         } else if (depthOnlyParams.isValidPair(a, b)) {
-            return clusterTogetherWithParams(a, b, depthOnlyParams, computeLinkageMetrics, dictionary);
+            return clusterTogetherWithParams(a, b, depthOnlyParams, computeLinkageMetrics);
         } else {
             return new CanonicalLinkageResult(false);
         }
@@ -156,9 +156,7 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
      */
     private static CanonicalLinkageResult clusterTogetherWithParams(final SVCallRecord a, final SVCallRecord b,
                                                                     final ClusteringParameters params,
-                                                                    final boolean computeMetrics,
-                                                                    final SAMSequenceDictionary dictionary) {
-
+                                                                    final boolean computeMetrics) {
         // Contigs match
         if (!(a.getContigA().equals(b.getContigA()) && a.getContigB().equals(b.getContigB()))) {
             return new CanonicalLinkageResult(false);
@@ -167,14 +165,15 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
         // If complex, test complex intervals
         if (a.getType() == GATKSVVCFConstants.StructuralVariantAnnotationType.CPX
                 && b.getType() == GATKSVVCFConstants.StructuralVariantAnnotationType.CPX) {
-            return testComplexIntervals(a, b, params.getReciprocalOverlap(), params.getSizeSimilarity(), params.getWindow(), dictionary);
+            return testComplexIntervals(a, b, params.getReciprocalOverlap(), params.getSizeSimilarity(), params.getWindow(), params.getSampleOverlap());
         }
 
         final Integer breakpointDistance1 = getFirstBreakpointProximity(a, b);
         final Integer breakpointDistance2 = getSecondBreakpointProximity(a, b);
         final Double reciprocalOverlap = computeReciprocalOverlap(a, b);
         final Double sizeSimliarity = computeSizeSimilarity(a, b);
-        final Double sampleOverlap = computeSampleOverlap(a, b);
+        // Don't do expensive overlap calculation when threshold is 0
+        final Double sampleOverlap = params.getSampleOverlap() > 0 ? computeSampleOverlap(a, b) : Double.valueOf(1.);
 
         final boolean hasBreakendProximity = testBreakendProximity(breakpointDistance1, breakpointDistance2, params.getWindow());
         final boolean hasReciprocalOverlap = testReciprocalOverlap(reciprocalOverlap, params.getReciprocalOverlap());
@@ -197,7 +196,7 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
      */
     private static CanonicalLinkageResult testComplexIntervals(final SVCallRecord a, final SVCallRecord b, final double overlapThreshold,
                                                                final double sizeSimilarityThreshold, final int window,
-                                                               final SAMSequenceDictionary dictionary) {
+                                                               final double sampleOverlapThreshold) {
         final List<SVCallRecord.ComplexEventInterval> intervalsA = a.getComplexEventIntervals();
         final List<SVCallRecord.ComplexEventInterval> intervalsB = b.getComplexEventIntervals();
         if (intervalsA.size() != intervalsB.size()) {
@@ -223,7 +222,9 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
                 return new CanonicalLinkageResult(false);
             }
         }
-        return new CanonicalLinkageResult(true);
+        // Don't do expensive overlap calculation if threshold is not set
+        final Double sampleOverlap = sampleOverlapThreshold > 0 ? computeSampleOverlap(a, b) : Double.valueOf(1.);
+        return new CanonicalLinkageResult(testSampleOverlap(sampleOverlap, sampleOverlapThreshold));
     }
 
     private static Double computeReciprocalOverlap(final SVCallRecord a, final SVCallRecord b) {
@@ -233,7 +234,6 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
             final SimpleInterval intervalA = new SimpleInterval(a.getContigA(), a.getPositionA(), a.getPositionA() + lengthA - 1);
             final SimpleInterval intervalB = new SimpleInterval(b.getContigA(), b.getPositionA(), b.getPositionA() + lengthB - 1);
             return computeReciprocalOverlap(intervalA, intervalB);
-
         } else {
             return null;
         }
@@ -292,8 +292,13 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
      * Gets event length
      */
     private static int getLength(final SVCallRecord record, final int lengthIfMissing) {
-        // TODO lengths less than 1 shouldn't be valid
-        return Math.max(record.getLength() == null ? lengthIfMissing : record.getLength(), 1);
+        if (record.getType() == GATKSVVCFConstants.StructuralVariantAnnotationType.BND && record.isIntrachromosomal()) {
+            // Correct for 0-length case, which is valid for BNDs
+            return Math.max(record.getPositionB() - record.getPositionA(), 1);
+        } else {
+            // TODO lengths less than 1 shouldn't be valid
+            return Math.max(record.getLength() == null ? lengthIfMissing : record.getLength(), 1);
+        }
     }
 
     @Override
