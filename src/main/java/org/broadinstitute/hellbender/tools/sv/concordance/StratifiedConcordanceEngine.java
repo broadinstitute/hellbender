@@ -110,7 +110,7 @@ public class StratifiedConcordanceEngine {
     }
 
     protected void flushEngineToBuffer(final ClosestSVFinder engine, final boolean force, final String name) {
-        for (final ClosestSVFinder.ConcordanceRecord record: engine.flush(force)) {
+        for (final ClosestSVFinder.LinkageConcordanceRecord record: engine.flush(force)) {
             final ItemTracker tracker = variantStatusMap.get(record.id());
             Utils.validate(tracker != null, "Unregistered variant id: " + record.id());
             tracker.eject(name, record.record());

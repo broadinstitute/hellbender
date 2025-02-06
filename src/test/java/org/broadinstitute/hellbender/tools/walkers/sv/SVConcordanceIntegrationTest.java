@@ -18,6 +18,7 @@ import org.broadinstitute.hellbender.tools.spark.sv.utils.GATKSVVCFConstants;
 import org.broadinstitute.hellbender.tools.sv.SVCallRecord;
 import org.broadinstitute.hellbender.tools.sv.SVCallRecordUtils;
 import org.broadinstitute.hellbender.tools.sv.SVTestUtils;
+import org.broadinstitute.hellbender.tools.sv.cluster.CanonicalSVLinkage;
 import org.broadinstitute.hellbender.tools.sv.cluster.ClusteringParameters;
 import org.broadinstitute.hellbender.tools.sv.cluster.SVClusterEngineArgumentsCollection;
 import org.broadinstitute.hellbender.tools.sv.concordance.ClosestSVFinder;
@@ -87,16 +88,16 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
 
         final ClosestSVFinder finder = new ClosestSVFinder(linkage, annotator::annotate, dictionary);
         final List<SVCallRecord> expectedRecords = new ArrayList<>(inputEvalVariants.size());
-        final Set<Map.Entry<Long, SVCallRecord>> truthRecords = new HashSet<>();
+        final Map<Long, SVCallRecord> truthRecords = new HashMap<>();
         Long itemId = 0L;
         for (final SVCallRecord record : inputTruthVariants) {
-            truthRecords.add(new AbstractMap.SimpleImmutableEntry<>(itemId++, record));
+            truthRecords.put(itemId++, record);
         }
         Long nextId = 0L;
         for (final SVCallRecord evalRecord : inputEvalVariants) {
-            final Map.Entry<Long, SVCallRecord> closestRecord = finder.getClosestItem(evalRecord, truthRecords);
+            final ClosestSVFinder.LinkageConcordanceRecord closestRecord = finder.getClosestItem(evalRecord, truthRecords);
             final ClosestSVFinder.ClosestPair cluster =
-                    new ClosestSVFinder.ClosestPair(nextId++, evalRecord, closestRecord == null ? null : closestRecord.getValue());
+                    new ClosestSVFinder.ClosestPair(nextId++, evalRecord, closestRecord == null ? null : closestRecord.record(), new CanonicalSVLinkage.CanonicalLinkageResult(true, null, null, null, null));
             expectedRecords.add(annotator.annotate(cluster));
         }
 

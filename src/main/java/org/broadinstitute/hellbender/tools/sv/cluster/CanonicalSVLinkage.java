@@ -112,11 +112,11 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
         }
         // Checks appropriate parameter set
         if (evidenceParams.isValidPair(a, b)) {
-            return clusterTogetherWithParams(a, b, evidenceParams, computeLinkageMetrics);
+            return clusterTogetherWithParams(a, b, evidenceParams);
         } else if (mixedParams.isValidPair(a, b)) {
-            return clusterTogetherWithParams(a, b, mixedParams, computeLinkageMetrics);
+            return clusterTogetherWithParams(a, b, mixedParams);
         } else if (depthOnlyParams.isValidPair(a, b)) {
-            return clusterTogetherWithParams(a, b, depthOnlyParams, computeLinkageMetrics);
+            return clusterTogetherWithParams(a, b, depthOnlyParams);
         } else {
             return new CanonicalLinkageResult(false);
         }
@@ -155,8 +155,7 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
      * Note that the records have already been subjected to the checks in {@link #areClusterable(SVCallRecord, SVCallRecord)}.
      */
     private static CanonicalLinkageResult clusterTogetherWithParams(final SVCallRecord a, final SVCallRecord b,
-                                                                    final ClusteringParameters params,
-                                                                    final boolean computeMetrics) {
+                                                                    final ClusteringParameters params) {
         // Contigs match
         if (!(a.getContigA().equals(b.getContigA()) && a.getContigB().equals(b.getContigB()))) {
             return new CanonicalLinkageResult(false);
@@ -172,22 +171,21 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
         final Integer breakpointDistance2 = getSecondBreakpointProximity(a, b);
         final Double reciprocalOverlap = computeReciprocalOverlap(a, b);
         final Double sizeSimliarity = computeSizeSimilarity(a, b);
-        // Don't do expensive overlap calculation when threshold is 0
-        final Double sampleOverlap = params.getSampleOverlap() > 0 ? computeSampleOverlap(a, b) : Double.valueOf(1.);
 
         final boolean hasBreakendProximity = testBreakendProximity(breakpointDistance1, breakpointDistance2, params.getWindow());
         final boolean hasReciprocalOverlap = testReciprocalOverlap(reciprocalOverlap, params.getReciprocalOverlap());
         final boolean hasSizeSimilarity = testSizeSimilarity(sizeSimliarity, params.getSizeSimilarity());
-        final boolean hasSampleOverlap = testSampleOverlap(sampleOverlap, params.getSampleOverlap());
-
         final boolean passesOverlapAndProximity = params.requiresOverlapAndProximity() ? (hasBreakendProximity && hasReciprocalOverlap) : (hasBreakendProximity || hasReciprocalOverlap);
-        final boolean result = passesOverlapAndProximity && hasSizeSimilarity && hasSampleOverlap;
 
-        if (computeMetrics) {
-            return new CanonicalLinkageResult(result, reciprocalOverlap, sizeSimliarity, sampleOverlap, breakpointDistance1, breakpointDistance2);
+        // Don't do expensive overlap calculation if it fails other checks or the threshold is 0
+        final boolean result;
+        if (passesOverlapAndProximity && hasSizeSimilarity && params.getSampleOverlap() > 0) {
+            final Double sampleOverlap =  computeSampleOverlap(a, b);
+            result = testSampleOverlap(sampleOverlap, params.getSampleOverlap());
         } else {
-            return new CanonicalLinkageResult(result);
+            result = passesOverlapAndProximity && hasSizeSimilarity;
         }
+        return new CanonicalLinkageResult(result, reciprocalOverlap, sizeSimliarity, breakpointDistance1, breakpointDistance2);
     }
 
     /**
@@ -222,7 +220,7 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
                 return new CanonicalLinkageResult(false);
             }
         }
-        // Don't do expensive overlap calculation if threshold is not set
+        // Don't do expensive overlap calculation if threshold is 0
         final Double sampleOverlap = sampleOverlapThreshold > 0 ? computeSampleOverlap(a, b) : Double.valueOf(1.);
         return new CanonicalLinkageResult(testSampleOverlap(sampleOverlap, sampleOverlapThreshold));
     }
@@ -361,7 +359,6 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
     public static class CanonicalLinkageResult extends SVClusterLinkage.LinkageResult {
         private final Double reciprocalOverlap;
         private final Double sizeSimilarity;
-        private final Double sampleOverlap;
         private final Integer breakpointDistance1;
         private final Integer breakpointDistance2;
 
@@ -369,18 +366,16 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
             super(result);
             this.reciprocalOverlap = null;
             this.sizeSimilarity = null;
-            this.sampleOverlap = null;
             this.breakpointDistance1 = null;
             this.breakpointDistance2 = null;
         }
 
         public CanonicalLinkageResult(final boolean result, final Double reciprocalOverlap, final Double sizeSimilarity,
-                                      final Double sampleOverlap, final Integer breakpointDistance1,
+                                      final Integer breakpointDistance1,
                                       final Integer breakpointDistance2) {
             super(result);
             this.reciprocalOverlap = reciprocalOverlap;
             this.sizeSimilarity = sizeSimilarity;
-            this.sampleOverlap = sampleOverlap;
             this.breakpointDistance1 = breakpointDistance1;
             this.breakpointDistance2 = breakpointDistance2;
         }
@@ -391,10 +386,6 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
 
         public Double getSizeSimilarity() {
             return sizeSimilarity;
-        }
-
-        public Double getSampleOverlap() {
-            return sampleOverlap;
         }
 
         public Integer getBreakpointDistance1() {

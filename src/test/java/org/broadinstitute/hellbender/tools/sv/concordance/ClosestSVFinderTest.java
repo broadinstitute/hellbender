@@ -86,11 +86,11 @@ public class ClosestSVFinderTest {
         engine.add(truth1, 1L, true);
         Assert.assertEquals(engine.flush(false).size(), 0);
         engine.add(truth2, 2L, true);
-        final List<ClosestSVFinder.ConcordanceRecord> out1 = engine.flush(false);
+        final List<ClosestSVFinder.LinkageConcordanceRecord> out1 = engine.flush(false);
         Assert.assertEquals(engine.flush(true).size(), 0);
 
         Assert.assertEquals(out1.size(), 1);
-        final ClosestSVFinder.ConcordanceRecord outEval1 = out1.get(0);
+        final ClosestSVFinder.LinkageConcordanceRecord outEval1 = out1.get(0);
         Assert.assertEquals(outEval1.record().getId(), eval1.getId());
         Assert.assertEquals(outEval1.id(), 0L);
         assertConcordanceMembers(outEval1.record(), truth1.getId());
@@ -134,11 +134,11 @@ public class ClosestSVFinderTest {
 
         engine.add(eval2, 3L, false);
         engine.add(truth3, 4L, true);
-        final List<ClosestSVFinder.ConcordanceRecord> out2 = engine.flush(true);
+        final List<ClosestSVFinder.LinkageConcordanceRecord> out2 = engine.flush(true);
 
         Assert.assertEquals(out2.size(), 1);
 
-        final ClosestSVFinder.ConcordanceRecord outEval2 = out2.get(0);
+        final ClosestSVFinder.LinkageConcordanceRecord outEval2 = out2.get(0);
         Assert.assertEquals(outEval2.record().getId(), eval2.getId());
         Assert.assertEquals(outEval2.id(), 3L);
         assertConcordanceMembers(outEval2.record(), null);
@@ -270,9 +270,9 @@ public class ClosestSVFinderTest {
         engine.add(eval2, 4L, false);
         engine.add(truth4, 5L, true);
         engine.add(eval3, 6L, false);
-        final List<SVCallRecord> softFlush1 = engine.flush(false).stream().map(ClosestSVFinder.ConcordanceRecord::record).collect(Collectors.toUnmodifiableList());
-        final List<SVCallRecord> softFlush2 = engine.flush(false).stream().map(ClosestSVFinder.ConcordanceRecord::record).collect(Collectors.toUnmodifiableList());
-        final List<SVCallRecord> hardFlush = engine.flush(true).stream().map(ClosestSVFinder.ConcordanceRecord::record).collect(Collectors.toUnmodifiableList());
+        final List<SVCallRecord> softFlush1 = engine.flush(false).stream().map(ClosestSVFinder.LinkageConcordanceRecord::record).collect(Collectors.toUnmodifiableList());
+        final List<SVCallRecord> softFlush2 = engine.flush(false).stream().map(ClosestSVFinder.LinkageConcordanceRecord::record).collect(Collectors.toUnmodifiableList());
+        final List<SVCallRecord> hardFlush = engine.flush(true).stream().map(ClosestSVFinder.LinkageConcordanceRecord::record).collect(Collectors.toUnmodifiableList());
 
         // Expect eval1 to cluster with truth1 and truth2, and eval2 and eval3 do not cluster
         Assert.assertEquals(softFlush1.size(), 2);
@@ -354,7 +354,7 @@ public class ClosestSVFinderTest {
         engine.add(eval, 0L, false);
         engine.add(truth, 1L, true);
 
-        final List<SVCallRecord> out = engine.flush(true).stream().map(ClosestSVFinder.ConcordanceRecord::record).collect(Collectors.toUnmodifiableList());
+        final List<SVCallRecord> out = engine.flush(true).stream().map(ClosestSVFinder.LinkageConcordanceRecord::record).collect(Collectors.toUnmodifiableList());
         Assert.assertEquals(out.size(), 1);
         final SVCallRecord outEval = out.get(0);
         Assert.assertEquals(outEval.getId(), eval.getId());
