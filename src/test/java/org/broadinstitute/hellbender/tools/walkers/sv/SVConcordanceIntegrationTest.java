@@ -138,13 +138,13 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
             }
             if (outputVariant.getID().equals("ref_panel_1kg.chr22.final_cleanup_DEL_chr22_1")) {
                 checkVariant(outputVariant, expectedVariant, "ref_panel_1kg_raw_00000062",
-                        268./312, 66./312, checkedVariantsSet);
+                        268./312, 66./312, 0.760, 0.760, 44001, 99, checkedVariantsSet);
             } else if (outputVariant.getID().equals("ref_panel_1kg.chr22.final_cleanup_DEL_chr22_140")) {
                 checkVariant(outputVariant, expectedVariant, "ref_panel_1kg_raw_000017fc",
-                        310./312, 3./312, checkedVariantsSet);
+                        310./312, 3./312, 1., 1., 0, 0, checkedVariantsSet);
             } else if (outputVariant.getID().equals("ref_panel_1kg.chr22.final_cleanup_INS_chr22_100")) {
                 checkVariant(outputVariant, expectedVariant, "ref_panel_1kg_raw_00001b78",
-                        1., 1./312, checkedVariantsSet);
+                        1., 1./312, 1., 1., 0, 0, checkedVariantsSet);
             }
         }
         Assert.assertEquals(numTP, 1104);
@@ -226,9 +226,11 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
             if (outputVariant.getID().equals("ref_panel_1kg.chr22.final_cleanup_DEL_chr22_12")) {
                 Assert.assertEquals(outputVariant.getAttributeAsStringList(GATKSVVCFConstants.STRATUM_INFO_KEY, ""),  Lists.newArrayList("DEL_50_5k_SD_RM", SVStratify.DEFAULT_STRATUM));
                 checkedVariantsSet.add(outputVariant.getID());
+                checkVariantOverlapMetrics(outputVariant, 0.659, 0.889, 46, 31);
             } else if (outputVariant.getID().equals("ref_panel_1kg.chr22.final_cleanup_INS_chr22_36")) {
                 Assert.assertEquals(outputVariant.getAttributeAsStringList(GATKSVVCFConstants.STRATUM_INFO_KEY, ""), Lists.newArrayList("INS_small_SD", SVStratify.DEFAULT_STRATUM));
                 checkedVariantsSet.add(outputVariant.getID());
+                checkVariantOverlapMetrics(outputVariant, null, null, null, null);
             }
         }
         Assert.assertEquals(checkedVariantsSet.size(), 2);
@@ -248,7 +250,7 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
 
     private static void checkVariant(final VariantContext actual, final VariantContext expected,
                                      final String expectedTruthId, final double expectedGenotypeConcordance,
-                                     final double expectedAF,
+                                     final double expectedAF, final double reciprocalOverlap, final double sizeSimliarity, final int startDist, final int endDist,
                                      final Set<String> checkedVariantsSet) {
         Assert.assertFalse(checkedVariantsSet.contains(actual.getID()));
         checkedVariantsSet.add(actual.getID());
@@ -259,7 +261,34 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
         MathUtilsUnitTest.assertEqualsDoubleSmart(actual.getAttributeAsDouble(GATKSVVCFConstants.GENOTYPE_CONCORDANCE_INFO, -1.), expected.getAttributeAsDouble(GATKSVVCFConstants.GENOTYPE_CONCORDANCE_INFO, -1.), TOLERANCE);
         MathUtilsUnitTest.assertEqualsDoubleSmart(expected.getAttributeAsDouble(GATKSVVCFConstants.GENOTYPE_CONCORDANCE_INFO, -1.), expected.getAttributeAsDouble(GATKSVVCFConstants.GENOTYPE_CONCORDANCE_INFO, -1.), TOLERANCE);
         MathUtilsUnitTest.assertEqualsDoubleSmart(actual.getAttributeAsDouble(VCFConstants.ALLELE_FREQUENCY_KEY, -1.), expectedAF, TOLERANCE);
+        checkVariantOverlapMetrics(actual, reciprocalOverlap, sizeSimliarity, startDist, endDist);
         MathUtilsUnitTest.assertEqualsDoubleSmart(expected.getAttributeAsDoubleList(VCFConstants.ALLELE_FREQUENCY_KEY, -1.).get(0).doubleValue(), expectedAF, TOLERANCE);
+    }
+
+    private static void checkVariantOverlapMetrics(final VariantContext actual, final Double reciprocalOverlap, final Double sizeSimliarity, final Integer startDist, final Integer endDist) {
+        checkDoubleAttributeMaybeNull(actual, GATKSVVCFConstants.TRUTH_RECIPROCAL_OVERLAP_INFO, reciprocalOverlap);
+        checkDoubleAttributeMaybeNull(actual, GATKSVVCFConstants.TRUTH_SIZE_SIMILARITY_INFO, sizeSimliarity);
+        checkIntegerAttributeMaybeNull(actual, GATKSVVCFConstants.TRUTH_DISTANCE_START_INFO, startDist);
+        checkIntegerAttributeMaybeNull(actual, GATKSVVCFConstants.TRUTH_DISTANCE_END_INFO, endDist);
+    }
+
+    private static void checkDoubleAttributeMaybeNull(final VariantContext actualVariant, final String key, final Double expectedValue) {
+        final Object actual = actualVariant.getAttribute(key);
+        if (expectedValue == null) {
+            Assert.assertNull(actual);
+        } else if (actual == null) {
+            Assert.assertNull(expectedValue);
+        } else {
+            MathUtilsUnitTest.assertEqualsDoubleSmart(Double.valueOf((String)actual), expectedValue, TOLERANCE);
+        }
+    }
+
+    private static void checkIntegerAttributeMaybeNull(final VariantContext actualVariant, final String key, final Integer expectedValue) {
+        if (expectedValue == null) {
+            Assert.assertNull(actualVariant.getAttribute(key));
+        } else {
+            Assert.assertEquals(actualVariant.getAttributeAsInt(key, -1), expectedValue.intValue());
+        }
     }
 
     @Test
@@ -324,6 +353,17 @@ public class SVConcordanceIntegrationTest extends CommandLineProgramTest {
             // check the variant matched itself with perfect concordance
             Assert.assertEquals(outputVariant.getAttributeAsString(Concordance.TRUTH_STATUS_VCF_ATTRIBUTE, "test_default"), ConcordanceState.TRUE_POSITIVE.getAbbreviation());
             Assert.assertEquals(outputVariant.getAttributeAsString(GATKSVVCFConstants.TRUTH_VARIANT_ID_INFO, ""), outputVariant.getID());
+            if (svtype.equals(GATKSVVCFConstants.StructuralVariantAnnotationType.BND.name()) && !outputVariant.getContig().equals(outputVariant.getAttribute(GATKSVVCFConstants.CONTIG2_ATTRIBUTE))) {
+                // interchromosomal BNDs do not have reciprocal overlap or size similarity
+                checkVariantOverlapMetrics(outputVariant, null, null, 0, 0);
+            } else if (svtype.equals(GATKSVVCFConstants.StructuralVariantAnnotationType.CPX.name())) {
+                // Unassigned for CPX types
+                checkVariantOverlapMetrics(outputVariant, null, null, null, null);
+            } else {
+                // otherwise we expect a perfect match
+                checkVariantOverlapMetrics(outputVariant, 1., 1., 0, 0);
+
+            }
             if (svtype.equals(GATKSVVCFConstants.StructuralVariantAnnotationType.CNV.toString())) {
                 MathUtilsUnitTest.assertEqualsDoubleSmart(outputVariant.getAttributeAsDouble(GATKSVVCFConstants.COPY_NUMBER_CONCORDANCE_INFO, -1.), 1.0, TOLERANCE);
             } else {
