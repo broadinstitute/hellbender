@@ -189,6 +189,11 @@ public final class GATKSVVCFConstants {
     public static final String TRUTH_ALLELE_NUMBER_INFO = "TRUTH_AN";
     public static final String TRUTH_ALLELE_FREQUENCY_INFO = "TRUTH_AF";
 
+    public static final String TRUTH_RECIPROCAL_OVERLAP_INFO = "TRUTH_RECIPROCAL_OVERLAP";
+    public static final String TRUTH_SIZE_SIMILARITY_INFO = "TRUTH_SIZE_SIMILARITY";
+    public static final String TRUTH_DISTANCE_START_INFO = "TRUTH_DISTANCE_START";
+    public static final String TRUTH_DISTANCE_END_INFO = "TRUTH_DISTANCE_END";
+
     // stratification
     public static final String STRATUM_INFO_KEY = "STRAT";
 

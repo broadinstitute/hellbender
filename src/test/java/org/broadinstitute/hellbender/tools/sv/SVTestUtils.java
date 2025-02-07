@@ -22,6 +22,7 @@ import org.testng.TestException;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.broadinstitute.hellbender.tools.spark.sv.utils.GATKSVVCFConstants.CPX_SV_SYB_ALT_ALLELE_STR;
 
@@ -685,5 +686,21 @@ public class SVTestUtils {
             map.put(keys[i], values[i]);
         }
         return map;
+    }
+
+    public static SVCallRecord getCNVRecordWithCN(final int ploidy, List<Allele> alleles, final GATKSVVCFConstants.StructuralVariantAnnotationType svtype,
+                                           final int[] copyNumbers, final String cnField) {
+        // Create genotypes with copy number attribute (and no GT)
+        final List<Genotype> genotypesWithCopyNumber = IntStream.range(0, copyNumbers.length)
+                .mapToObj(i -> new GenotypeBuilder(String.valueOf(i))
+                        .attribute(cnField, copyNumbers[i])
+                        .attribute(GATKSVVCFConstants.EXPECTED_COPY_NUMBER_FORMAT, ploidy)
+                        .alleles(SVTestUtils.buildHomAlleleListWithPloidy(Allele.NO_CALL, ploidy))
+                        .make())
+                .collect(Collectors.toList());
+        return new SVCallRecord("", "chr1", 1000, SVTestUtils.getValidTestStrandA(svtype),
+                "chr1", 1999, SVTestUtils.getValidTestStrandB(svtype), svtype, null, Collections.emptyList(),
+                1000, Collections.emptyList(), Collections.singletonList(GATKSVVCFConstants.DEPTH_ALGORITHM),
+                alleles, GenotypesContext.copy(genotypesWithCopyNumber), Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
     }
 }

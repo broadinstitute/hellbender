@@ -96,6 +96,11 @@ public class ClosestSVFinderTest {
         assertConcordanceMembers(outEval1.record(), truth1.getId());
         // Would be 1 if missing samples were treated as hom-ref
         Assert.assertEquals(outEval1.record().getAttributes().get(GATKSVVCFConstants.GENOTYPE_CONCORDANCE_INFO), 0.5);
+        Assert.assertTrue(outEval1.linkage().getResult());
+        Assert.assertEquals(outEval1.linkage().getReciprocalOverlap(), 0.99);
+        Assert.assertEquals(outEval1.linkage().getSizeSimilarity(), 1.0);
+        Assert.assertEquals(outEval1.linkage().getBreakpointDistance1(), 10);
+        Assert.assertEquals(outEval1.linkage().getBreakpointDistance2(), 10);
 
         final SVCallRecord eval2 = SVTestUtils.makeRecord(
                 "eval2",
@@ -146,6 +151,7 @@ public class ClosestSVFinderTest {
         final Map<String, Object> outEval2Attr = outEval2.record().getAttributes();
         Assert.assertEquals(outEval2Attr.get(Concordance.TRUTH_STATUS_VCF_ATTRIBUTE), ConcordanceState.FALSE_POSITIVE.getAbbreviation());
         Assert.assertEquals(outEval2Attr.get(GATKSVVCFConstants.GENOTYPE_CONCORDANCE_INFO), null);
+        Assert.assertEquals(outEval2.linkage(), null);
     }
 
     @Test

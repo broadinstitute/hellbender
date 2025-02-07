@@ -9,16 +9,14 @@ import org.broadinstitute.hellbender.tools.spark.sv.utils.GATKSVVCFConstants;
 import org.broadinstitute.hellbender.tools.sv.SVAlleleCounter;
 import org.broadinstitute.hellbender.tools.sv.SVCallRecord;
 import org.broadinstitute.hellbender.tools.sv.SVCallRecordUtils;
+import org.broadinstitute.hellbender.tools.sv.cluster.CanonicalSVLinkage;
 import org.broadinstitute.hellbender.tools.walkers.validation.Concordance;
 import org.broadinstitute.hellbender.tools.walkers.validation.ConcordanceState;
-import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.variant.VariantContextGetters;
 import picard.vcf.*;
 
 import java.util.*;
-
-import static org.broadinstitute.hellbender.tools.sv.cluster.CanonicalSVLinkage.getIntervalForReciprocalOverlap;
 
 /**
  * Generates SV records annotated with concordance metrics given a pair of "evaluation" and "truth" SVs.
@@ -27,16 +25,10 @@ import static org.broadinstitute.hellbender.tools.sv.cluster.CanonicalSVLinkage.
  */
 public class SVConcordanceAnnotator {
 
-    public static final String BREAKPOINT_DISTANCE_1_INFO_KEY = "CONC_DIST_1";
-    public static final String BREAKPOINT_DISTANCE_2_INFO_KEY = "CONC_DIST_2";
-    public static final String SIZE_SIILARITY_INFO_KEY = "CONC_SIZE_SIM";
-    public static final String RECIPROCAL_OVERLAP_INFO_KEY = "CONC_RECIP_OVERLAP";
-
     protected final Logger logger = LogManager.getLogger(this.getClass());
 
     private final GenotypeConcordanceScheme scheme;
     private final Set<String> samples;
-    private final boolean annotateOverlapMetrics;
 
     /**
      * Default constructor where all eval record samples will be used for concordance.
@@ -46,20 +38,11 @@ public class SVConcordanceAnnotator {
     }
 
     /**
-     * Annotator restricted to specific samples.
-     * @param samples samples to include for concordance computations. If null, all samples in eval records will be used.
-     */
-    public SVConcordanceAnnotator(final Set<String> samples) {
-        this(samples, false);
-    }
-
-    /**
      * Option to enable annotating variants with overlap metrics.
      */
-    public SVConcordanceAnnotator(final Set<String> samples, final boolean annotateOverlapMetrics) {
+    public SVConcordanceAnnotator(final Set<String> samples) {
         this.samples = samples;
         this.scheme = new SVGenotypeConcordanceScheme();
-        this.annotateOverlapMetrics = annotateOverlapMetrics;
     }
 
     /**
@@ -94,11 +77,6 @@ public class SVConcordanceAnnotator {
                             scheme.getContingencyStateString(states.truthState, states.callState));
                 }
             }
-            if (annotateOverlapMetrics && truthRecord != null) {
-                if (evalRecord.isIntrachromosomal() && truthRecord.isIntrachromosomal()) {
-                    builder.attribute(RECIPROCAL_OVERLAP_INFO_KEY, getReciprocalOverlap(evalRecord, truthRecord));
-                }
-            }
             newGenotypes.add(builder.make());
         }
         final SVCallRecord recordWithGenotypes = SVCallRecordUtils.copyCallWithNewGenotypes(evalRecord, GenotypesContext.create(newGenotypes));
@@ -122,6 +100,13 @@ public class SVConcordanceAnnotator {
             attributes.put(GATKSVVCFConstants.VAR_PPV_INFO, Double.isNaN(metrics.VAR_PPV) ? null : metrics.VAR_PPV);
             attributes.put(GATKSVVCFConstants.VAR_SENSITIVITY_INFO, Double.isNaN(metrics.VAR_SENSITIVITY) ? null : metrics.VAR_SENSITIVITY);
             attributes.put(GATKSVVCFConstants.VAR_SPECIFICITY_INFO, Double.isNaN(metrics.VAR_SPECIFICITY) ? null : metrics.VAR_SPECIFICITY);
+        }
+        if (truthRecord != null) {
+            final CanonicalSVLinkage.CanonicalLinkageResult linkageResult = pair.getLinkage();
+            attributes.put(GATKSVVCFConstants.TRUTH_RECIPROCAL_OVERLAP_INFO, linkageResult.getReciprocalOverlap());
+            attributes.put(GATKSVVCFConstants.TRUTH_SIZE_SIMILARITY_INFO, linkageResult.getSizeSimilarity());
+            attributes.put(GATKSVVCFConstants.TRUTH_DISTANCE_START_INFO, linkageResult.getBreakpointDistance1());
+            attributes.put(GATKSVVCFConstants.TRUTH_DISTANCE_END_INFO, linkageResult.getBreakpointDistance2());
         }
 
         if (evalRecord.getType() != GATKSVVCFConstants.StructuralVariantAnnotationType.CNV) {
@@ -159,17 +144,6 @@ public class SVConcordanceAnnotator {
         }
 
         return SVCallRecordUtils.copyCallWithNewAttributes(recordWithGenotypes, attributes);
-    }
-
-    protected double getReciprocalOverlap(final SVCallRecord a, final SVCallRecord b) {
-        Utils.nonNull(a);
-        Utils.nonNull(b);
-        Utils.validateArg(a.isIntrachromosomal(), "First record is not intrachromosomal");
-        Utils.validateArg(b.isIntrachromosomal(), "Second record is not intrachromosomal");
-        final SimpleInterval evalInterval = getIntervalForReciprocalOverlap(a);
-        final SimpleInterval truthInterval = getIntervalForReciprocalOverlap(b);
-        return evalInterval.intersect(truthInterval).size() / Math.max(evalInterval.size(), truthInterval.size());
-
     }
 
     private boolean hasAlleleFrequencyAnnotations(final SVCallRecord record) {

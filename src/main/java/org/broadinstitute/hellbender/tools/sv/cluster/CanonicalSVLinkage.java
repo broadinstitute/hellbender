@@ -248,22 +248,22 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
         return reciprocalOverlap == null || reciprocalOverlap >= threshold;
     }
 
-    public static SimpleInterval getIntervalForReciprocalOverlap(final SVCallRecord record) {
-        return new SimpleInterval(record.getContigA(), record.getPositionA(), record.getPositionA() + getLength(record, INSERTION_ASSUMED_LENGTH_FOR_OVERLAP) - 1);
-    }
-
-    private static double computeSizeSimilarity(final SVCallRecord a, final SVCallRecord b) {
-        final int lengthA = getLength(a, INSERTION_ASSUMED_LENGTH_FOR_SIZE_SIMILARITY);
-        final int lengthB = getLength(b, INSERTION_ASSUMED_LENGTH_FOR_SIZE_SIMILARITY);
-        return computeSizeSimilarity(lengthA, lengthB);
+    private static Double computeSizeSimilarity(final SVCallRecord a, final SVCallRecord b) {
+        if (a.isIntrachromosomal() && b.isIntrachromosomal()) {
+            final int lengthA = getLength(a, INSERTION_ASSUMED_LENGTH_FOR_SIZE_SIMILARITY);
+            final int lengthB = getLength(b, INSERTION_ASSUMED_LENGTH_FOR_SIZE_SIMILARITY);
+            return computeSizeSimilarity(lengthA, lengthB);
+        } else {
+            return null;
+        }
     }
 
     private static double computeSizeSimilarity(final int lengthA, final int lengthB) {
         return Math.min(lengthA, lengthB) / (double) Math.max(lengthA, lengthB);
     }
 
-    private static boolean testSizeSimilarity(final double sizeSimilarity, final double threshold) {
-        return sizeSimilarity >= threshold;
+    private static boolean testSizeSimilarity(final Double sizeSimilarity, final double threshold) {
+        return sizeSimilarity == null || sizeSimilarity >= threshold;
     }
 
     private static boolean testBreakendProximity(final Integer distance1, final Integer distance2, final int window) {
@@ -290,9 +290,13 @@ public class CanonicalSVLinkage<T extends SVCallRecord> extends SVClusterLinkage
      * Gets event length
      */
     private static int getLength(final SVCallRecord record, final int lengthIfMissing) {
-        if (record.getType() == GATKSVVCFConstants.StructuralVariantAnnotationType.BND && record.isIntrachromosomal()) {
-            // Correct for 0-length case, which is valid for BNDs
-            return Math.max(record.getPositionB() - record.getPositionA(), 1);
+        if (record.getType() == GATKSVVCFConstants.StructuralVariantAnnotationType.BND) {
+            if (record.isIntrachromosomal()) {
+                // Correct for 0-length case, which is valid for BNDs
+                return Math.max(record.getPositionB() - record.getPositionA(), 1);
+            } else {
+                return 0;
+            }
         } else {
             // TODO lengths less than 1 shouldn't be valid
             return Math.max(record.getLength() == null ? lengthIfMissing : record.getLength(), 1);
