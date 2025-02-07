@@ -89,7 +89,7 @@ workflow GvsImportGenomes {
   Int effective_load_data_batch_size = if (defined(load_data_scatter_width)) then num_samples / select_first([load_data_scatter_width])
                                        else if num_samples < max_scatter_for_user then 1
                                          else if is_wgs then num_samples / max_scatter_for_user
-                                           else if num_samples < 5001 then (num_samples / (max_scatter_for_user * 2))
+                                           else if num_samples < 5001 then 20
                                              else if num_samples < 20001 then 100
                                                else if num_samples < 50001 then 500
                                                  else 1000
