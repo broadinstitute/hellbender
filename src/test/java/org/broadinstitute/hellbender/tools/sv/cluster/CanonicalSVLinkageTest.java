@@ -3,7 +3,6 @@ package org.broadinstitute.hellbender.tools.sv.cluster;
 import com.google.common.collect.Lists;
 import htsjdk.variant.variantcontext.Allele;
 import org.broadinstitute.hellbender.GATKBaseTest;
-import org.broadinstitute.hellbender.testutils.BaseTest;
 import org.broadinstitute.hellbender.tools.spark.sv.utils.GATKSVVCFConstants;
 import org.broadinstitute.hellbender.tools.sv.SVCallRecord;
 import org.broadinstitute.hellbender.tools.sv.SVTestUtils;
@@ -17,8 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import static org.testng.Assert.*;
 
 public class CanonicalSVLinkageTest extends GATKBaseTest {
 
@@ -347,7 +344,7 @@ public class CanonicalSVLinkageTest extends GATKBaseTest {
                 GATKSVVCFConstants.StructuralVariantAnnotationType.BND, null, Collections.emptyList(), null, Collections.emptyList(), SVTestUtils.PESR_ONLY_ALGORITHM_LIST,
                 Lists.newArrayList(Allele.REF_N, SVTestUtils.BND_ALLELE),
                 Collections.emptyList(), Collections.emptyMap(), Collections.emptySet(), null, SVTestUtils.hg38Dict);
-        final CanonicalSVLinkage linkage = new CanonicalSVLinkage(SVTestUtils.hg38Dict, false);
+        final CanonicalSVLinkage<SVCallRecord> linkage = new CanonicalSVLinkage<>(SVTestUtils.hg38Dict, false);
         linkage.setEvidenceParams(ClusteringParameters.createPesrParameters(reciprocalOverlapThresh, sizeSimilarityThresh, window, 0));
         final CanonicalSVLinkage.CanonicalLinkageResult linkageResult = linkage.areClusterable(call1, call2);
         Assert.assertEquals(linkageResult.getResult(), result);
