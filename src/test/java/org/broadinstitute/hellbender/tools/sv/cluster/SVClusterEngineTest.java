@@ -321,7 +321,7 @@ public class SVClusterEngineTest {
         final List<String> allSamples = List.of(SAMPLE_1_NAME, SAMPLE_2_NAME, SAMPLE_3_NAME, SAMPLE_4_NAME);
         final SVCallRecord recordA = SVTestUtils.makeRecordWithCarriers(allSamples, setA);
         final SVCallRecord recordB = SVTestUtils.makeRecordWithCarriers(allSamples, setB);
-        final CanonicalSVLinkage linkage = SVTestUtils.getNewDefaultLinkage();
+        final CanonicalSVLinkage<SVCallRecord> linkage = SVTestUtils.getNewDefaultLinkage();
         linkage.setEvidenceParams(ClusteringParameters.createPesrParameters(0.5, 0.5, 100, threshold));
         Assert.assertEquals(linkage.areClusterable(recordA, recordB).getResult(), expected);
         Assert.assertEquals(linkage.areClusterable(recordB, recordA).getResult(), expected);
