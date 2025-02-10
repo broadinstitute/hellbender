@@ -118,6 +118,9 @@ jobs:
         if: needs.check-secrets.outputs.google-credentials == 'true'
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: 'Install Samtools'
+        run: scripts/install-samtools.sh
+
       - name: pull lfs files
         run: git lfs pull
 
@@ -189,6 +192,9 @@ jobs:
       - name: 'Set up Cloud SDK'
         if: needs.check-secrets.outputs.google-credentials == 'true'
         uses: google-github-actions/setup-gcloud@v2
+
+      - name: 'Install Samtools'
+        run: scripts/install-samtools.sh
 
       - name: build test jars
         run: ./gradlew clean shadowTestClassJar shadowTestJar
