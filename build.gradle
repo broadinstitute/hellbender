@@ -59,7 +59,7 @@ repositories {
     mavenLocal()
 }
 
-final htsjdkVersion = System.getProperty('htsjdk.version','4.1.3')
+final htsjdkVersion = System.getProperty('htsjdk.version','4.1.3-48-gd9901aa-SNAPSHOT')
 final picardVersion = System.getProperty('picard.version','3.3.0')
 final barclayVersion = System.getProperty('barclay.version','5.0.0')
 final sparkVersion = System.getProperty('spark.version', '3.5.0')
