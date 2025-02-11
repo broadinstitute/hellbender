@@ -47,9 +47,10 @@ public final class CRAMSupportIntegrationTest extends CommandLineProgramTest {
                 // converted, we can use full read equality when roundtripping through cram, so we don't need to
                 // be lenient
                 {NA12878_20_21_WGS_cram, b37_reference_20_21, false, false},
-                // roundtrip a v2.1 file
-                { largeFileTestDir + "CEUTrio.HiSeq.WGS.b37.NA12878.20.21.v3.0.samtools.cram",
-                        b37_reference_20_21, false, false },
+                // roundtrip a v3.0 file
+                { NA12878_20_21_WGS_cram, b37_reference_20_21, false, false },
+                // roundtrip a v3.1 file
+                { NA12878_20_21_WGS_cram_31, b37_reference_20_21, false, false },
         };
     }
 
