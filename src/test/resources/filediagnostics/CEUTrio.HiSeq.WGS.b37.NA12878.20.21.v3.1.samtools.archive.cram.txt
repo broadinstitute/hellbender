@@ -1,0 +1,802 @@
+
+CRAM File: src/test/resources/large/CEUTrio.HiSeq.WGS.b37.NA12878.20.21.v3.1.samtools.archive.cram
+CRAM Version: 3.1
+CRAM ID Contents: c3JjL3Rlc3QvcmVzb3VyY2VzL2w=
+
+SAMFileHeader{VN=1.5, GO=none, SO=coordinate}
+SAMSequenceDictionary:( sequences:2 length:111155415  md5:6105eaf82ce1eebc05f2d1d4f54c059c)
+SAMSequenceRecord(name=20,length=63025520,dict_index=0,assembly=null,alternate_names=[])
+SAMSequenceRecord(name=21,length=48129895,dict_index=1,assembly=null,alternate_names=[])
+
+***Container #:1 sequenceId=SINGLE_REFERENCE: 0, start=9999902, span=111467, nRecords=100000, nBlocks=39, nBases=10100000, globalCounter=0 byteOffset=2127
+Requires reference (true); Preserved read names (true); APDelta (true)
+
+Data Series Encodings:
+
+DataSeries (BF/BF_BitFlags)                        EXTERNAL (Content ID: 15)
+DataSeries (CF/CF_CompressionBitFlags)             HUFFMAN (Symbols: 3 BitLengths 0)
+DataSeries (RI/RI_RefId)                           HUFFMAN (Symbols: 0 BitLengths 0)
+DataSeries (RL/RL_ReadLength)                      HUFFMAN (Symbols: 101 BitLengths 0)
+DataSeries (AP/AP_AlignmentPositionOffset)         EXTERNAL (Content ID: 17)
+DataSeries (RG/RG_ReadGroup)                       EXTERNAL (Content ID: 18)
+DataSeries (RN/RN_ReadName)                        BYTE_ARRAY_STOP (Content ID: 11 StopByte: 0)
+DataSeries (NF/NF_RecordsToNextFragment)           not present
+DataSeries (MF/MF_MateBitFlags)                    EXTERNAL (Content ID: 21)
+DataSeries (NS/NS_NextFragmentReferenceSequenceID) EXTERNAL (Content ID: 20)
+DataSeries (NP/NP_NextFragmentAlignmentStart)      EXTERNAL (Content ID: 23)
+DataSeries (TS/TS_InsertSize)                      EXTERNAL (Content ID: 22)
+DataSeries (TL/TL_TagIdList)                       EXTERNAL (Content ID: 32)
+DataSeries (TC/TC_TagCount)                        not present
+DataSeries (TN/TN_TagNameAndType)                  not present
+DataSeries (MQ/MQ_MappingQualityScore)             EXTERNAL (Content ID: 19)
+DataSeries (FN/FN_NumberOfReadFeatures)            EXTERNAL (Content ID: 26)
+DataSeries (FP/FP_FeaturePosition)                 EXTERNAL (Content ID: 28)
+DataSeries (FC/FC_FeatureCode)                     EXTERNAL (Content ID: 27)
+DataSeries (BB/BB_Bases)                           BYTE_ARRAY_LEN (LenEncoding: Content ID: 42 ByteEncoding: Content ID: 37)
+DataSeries (QQ/QQ_scores)                          not present
+DataSeries (BA/BA_Base)                            EXTERNAL (Content ID: 30)
+DataSeries (QS/QS_QualityScore)                    EXTERNAL (Content ID: 12)
+DataSeries (BS/BS_BaseSubstitutionCode)            EXTERNAL (Content ID: 31)
+DataSeries (IN/IN_Insertion)                       BYTE_ARRAY_STOP (Content ID: 13 StopByte: 0)
+DataSeries (DL/DL_DeletionLength)                  EXTERNAL (Content ID: 29)
+DataSeries (RS/RS_RefSkip)                         not present
+DataSeries (SC/SC_SoftClip)                        BYTE_ARRAY_STOP (Content ID: 14 StopByte: 0)
+DataSeries (PD/PD_padding)                         not present
+DataSeries (HC/HC_HardClip)                        not present
+DataSeries (TM/TM_TestMark)                        not present
+DataSeries (TV/TV_TestMark)                        not present
+
+Tag Encodings:
+Content ID/Tag (4279619/AM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 4279619)
+Content ID/Tag (4346202/BQ:Z)                      BYTE_ARRAY_STOP (Content ID: 4346202 StopByte: 9)
+Content ID/Tag (5067075/MQ:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5067075)
+Content ID/Tag (5194586/OC:Z)                      BYTE_ARRAY_STOP (Content ID: 5194586 StopByte: 9)
+Content ID/Tag (5197897/OP:I)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 4 BitLengths 0 ByteEncoding: Content ID: 5197897)
+Content ID/Tag (5198170/OQ:Z)                      BYTE_ARRAY_STOP (Content ID: 5198170 StopByte: 9)
+Content ID/Tag (5459267/SM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5459267)
+Content ID/Tag (5779523/X0:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779523)
+Content ID/Tag (5779539/X0:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779539)
+Content ID/Tag (5779779/X1:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779779)
+Content ID/Tag (5779795/X1:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779795)
+Content ID/Tag (5783898/XA:Z)                      BYTE_ARRAY_STOP (Content ID: 5783898 StopByte: 9)
+Content ID/Tag (5784387/XC:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5784387)
+Content ID/Tag (5785411/XG:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5785411)
+Content ID/Tag (5786947/XM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5786947)
+Content ID/Tag (5787459/XO:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5787459)
+Content ID/Tag (5788737/XT:A)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5788737)
+
+******Slice #: 1 slice: sequenceId=SINGLE_REFERENCE: 0, start=9999902, span=111467 globalRecordCounter=0, nRecords=100000, sliceHeaderOffset=2423, sizeOfBlocks=7233197, landmark=0, mapped/unmapped/unplaced: 0/0/0, md5=5d2ed8e8d32d706ed4298c8ddf0f795a
+Header block                                       method=RAW, type=MAPPED_SLICE, id=0, raw size=122, compressed size=122
+Core block                                         method=RAW, type=CORE, id=0, raw size=0, compressed size=0
+External Block (RN):                               method=NAME_TOKENISER, type=EXTERNAL, id=11, raw size=3277222, compressed size=335857
+External Block (QS):                               method=FQZCOMP, type=EXTERNAL, id=12, raw size=10100000, compressed size=3375687
+External Block (IN):                               method=GZIP, type=EXTERNAL, id=13, raw size=3148, compressed size=216
+External Block (SC):                               method=GZIP, type=EXTERNAL, id=14, raw size=611359, compressed size=147905
+External Block (BF):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=15, raw size=156710, compressed size=34594
+External Block (AP):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=17, raw size=100000, compressed size=26024
+External Block (RG):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=18, raw size=100000, compressed size=49229
+External Block (MQ):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=19, raw size=98876, compressed size=7649
+External Block (NS):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=20, raw size=100000, compressed size=19
+External Block (MF):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=21, raw size=100000, compressed size=13349
+External Block (TS):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=22, raw size=344291, compressed size=106406
+External Block (NP):                               method=RANSNx16, type=EXTERNAL, id=23, raw size=400000, compressed size=131555
+External Block (FN):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=26, raw size=98876, compressed size=17257
+External Block (FC):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=27, raw size=58469, compressed size=7974
+External Block (FP):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=28, raw size=58469, compressed size=41948
+External Block (DL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=29, raw size=1310, compressed size=172
+External Block (BA):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=30, raw size=114171, compressed size=15826
+External Block (BS):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=31, raw size=36184, compressed size=6899
+External Block (TL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=32, raw size=100000, compressed size=19298
+External Block (4279619):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=4279619, raw size=98876, compressed size=8058
+External Block (4346202):                          method=RANSNx16, type=EXTERNAL, id=4346202, raw size=8819169, compressed size=321136
+External Block (5067075):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5067075, raw size=97743, compressed size=6643
+External Block (5194586):                          method=BZIP2, type=EXTERNAL, id=5194586, raw size=3272, compressed size=692
+External Block (5197897):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5197897, raw size=704, compressed size=314
+External Block (5198170):                          method=GZIP, type=EXTERNAL, id=5198170, raw size=10300000, compressed size=2514194
+External Block (5459267):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5459267, raw size=98876, compressed size=5998
+External Block (5779523):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779523, raw size=96378, compressed size=903
+External Block (5779539):                          method=RAW, type=EXTERNAL, id=5779539, raw size=40, compressed size=40
+External Block (5779779):                          method=GZIP, type=EXTERNAL, id=5779779, raw size=96251, compressed size=1834
+External Block (5779795):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779795, raw size=122, compressed size=113
+External Block (5783898):                          method=GZIP, type=EXTERNAL, id=5783898, raw size=23103, compressed size=5513
+External Block (5784387):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5784387, raw size=20005, compressed size=12404
+External Block (5785411):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5785411, raw size=98876, compressed size=1203
+External Block (5786947):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5786947, raw size=98876, compressed size=12193
+External Block (5787459):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5787459, raw size=98876, compressed size=892
+External Block (5788737):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5788737, raw size=98876, compressed size=2572
+
+***Container #:2 sequenceId=SINGLE_REFERENCE: 0, start=10111269, span=111706, nRecords=100000, nBlocks=39, nBases=10100000, globalCounter=100000 byteOffset=7237775
+Requires reference (true); Preserved read names (true); APDelta (true)
+
+Data Series Encodings:
+
+DataSeries (BF/BF_BitFlags)                        EXTERNAL (Content ID: 15)
+DataSeries (CF/CF_CompressionBitFlags)             HUFFMAN (Symbols: 3 BitLengths 0)
+DataSeries (RI/RI_RefId)                           HUFFMAN (Symbols: 0 BitLengths 0)
+DataSeries (RL/RL_ReadLength)                      HUFFMAN (Symbols: 101 BitLengths 0)
+DataSeries (AP/AP_AlignmentPositionOffset)         EXTERNAL (Content ID: 17)
+DataSeries (RG/RG_ReadGroup)                       EXTERNAL (Content ID: 18)
+DataSeries (RN/RN_ReadName)                        BYTE_ARRAY_STOP (Content ID: 11 StopByte: 0)
+DataSeries (NF/NF_RecordsToNextFragment)           not present
+DataSeries (MF/MF_MateBitFlags)                    EXTERNAL (Content ID: 21)
+DataSeries (NS/NS_NextFragmentReferenceSequenceID) EXTERNAL (Content ID: 20)
+DataSeries (NP/NP_NextFragmentAlignmentStart)      EXTERNAL (Content ID: 23)
+DataSeries (TS/TS_InsertSize)                      EXTERNAL (Content ID: 22)
+DataSeries (TL/TL_TagIdList)                       EXTERNAL (Content ID: 32)
+DataSeries (TC/TC_TagCount)                        not present
+DataSeries (TN/TN_TagNameAndType)                  not present
+DataSeries (MQ/MQ_MappingQualityScore)             EXTERNAL (Content ID: 19)
+DataSeries (FN/FN_NumberOfReadFeatures)            EXTERNAL (Content ID: 26)
+DataSeries (FP/FP_FeaturePosition)                 EXTERNAL (Content ID: 28)
+DataSeries (FC/FC_FeatureCode)                     EXTERNAL (Content ID: 27)
+DataSeries (BB/BB_Bases)                           BYTE_ARRAY_LEN (LenEncoding: Content ID: 42 ByteEncoding: Content ID: 37)
+DataSeries (QQ/QQ_scores)                          not present
+DataSeries (BA/BA_Base)                            EXTERNAL (Content ID: 30)
+DataSeries (QS/QS_QualityScore)                    EXTERNAL (Content ID: 12)
+DataSeries (BS/BS_BaseSubstitutionCode)            EXTERNAL (Content ID: 31)
+DataSeries (IN/IN_Insertion)                       BYTE_ARRAY_STOP (Content ID: 13 StopByte: 0)
+DataSeries (DL/DL_DeletionLength)                  EXTERNAL (Content ID: 29)
+DataSeries (RS/RS_RefSkip)                         not present
+DataSeries (SC/SC_SoftClip)                        BYTE_ARRAY_STOP (Content ID: 14 StopByte: 0)
+DataSeries (PD/PD_padding)                         not present
+DataSeries (HC/HC_HardClip)                        not present
+DataSeries (TM/TM_TestMark)                        not present
+DataSeries (TV/TV_TestMark)                        not present
+
+Tag Encodings:
+Content ID/Tag (4279619/AM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 4279619)
+Content ID/Tag (4346202/BQ:Z)                      BYTE_ARRAY_STOP (Content ID: 4346202 StopByte: 9)
+Content ID/Tag (5067075/MQ:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5067075)
+Content ID/Tag (5194586/OC:Z)                      BYTE_ARRAY_STOP (Content ID: 5194586 StopByte: 9)
+Content ID/Tag (5197897/OP:I)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 4 BitLengths 0 ByteEncoding: Content ID: 5197897)
+Content ID/Tag (5198170/OQ:Z)                      BYTE_ARRAY_STOP (Content ID: 5198170 StopByte: 9)
+Content ID/Tag (5459267/SM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5459267)
+Content ID/Tag (5779523/X0:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779523)
+Content ID/Tag (5779539/X0:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779539)
+Content ID/Tag (5779779/X1:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779779)
+Content ID/Tag (5779795/X1:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779795)
+Content ID/Tag (5783898/XA:Z)                      BYTE_ARRAY_STOP (Content ID: 5783898 StopByte: 9)
+Content ID/Tag (5784387/XC:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5784387)
+Content ID/Tag (5785411/XG:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5785411)
+Content ID/Tag (5786947/XM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5786947)
+Content ID/Tag (5787459/XO:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5787459)
+Content ID/Tag (5788737/XT:A)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5788737)
+
+******Slice #: 1 slice: sequenceId=SINGLE_REFERENCE: 0, start=10111269, span=111706 globalRecordCounter=100000, nRecords=100000, sliceHeaderOffset=2587, sizeOfBlocks=6808074, landmark=0, mapped/unmapped/unplaced: 0/0/0, md5=01b0e2997fd8c05ffb5c565330ff7659
+Header block                                       method=RAW, type=MAPPED_SLICE, id=0, raw size=124, compressed size=124
+Core block                                         method=RAW, type=CORE, id=0, raw size=0, compressed size=0
+External Block (RN):                               method=NAME_TOKENISER, type=EXTERNAL, id=11, raw size=3277325, compressed size=327954
+External Block (QS):                               method=FQZCOMP, type=EXTERNAL, id=12, raw size=10100000, compressed size=3384648
+External Block (IN):                               method=GZIP, type=EXTERNAL, id=13, raw size=1087, compressed size=139
+External Block (SC):                               method=GZIP, type=EXTERNAL, id=14, raw size=674139, compressed size=162764
+External Block (BF):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=15, raw size=156395, compressed size=34380
+External Block (AP):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=17, raw size=100000, compressed size=26024
+External Block (RG):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=18, raw size=100000, compressed size=49281
+External Block (MQ):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=19, raw size=98875, compressed size=7854
+External Block (NS):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=20, raw size=100000, compressed size=14
+External Block (MF):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=21, raw size=100000, compressed size=13363
+External Block (TS):                               method=RANSNx16, type=EXTERNAL, id=22, raw size=344340, compressed size=105990
+External Block (NP):                               method=RANSNx16, type=EXTERNAL, id=23, raw size=400000, compressed size=131488
+External Block (FN):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=26, raw size=98875, compressed size=16865
+External Block (FC):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=27, raw size=52609, compressed size=7222
+External Block (FP):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=28, raw size=52609, compressed size=36927
+External Block (DL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=29, raw size=882, compressed size=110
+External Block (BA):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=30, raw size=114074, compressed size=15985
+External Block (BS):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=31, raw size=30092, compressed size=6094
+External Block (TL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=32, raw size=100000, compressed size=19333
+External Block (4279619):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=4279619, raw size=98875, compressed size=8251
+External Block (4346202):                          method=RANSNx16, type=EXTERNAL, id=4346202, raw size=8885913, compressed size=332189
+External Block (5067075):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5067075, raw size=97745, compressed size=6767
+External Block (5194586):                          method=BZIP2, type=EXTERNAL, id=5194586, raw size=1270, compressed size=352
+External Block (5197897):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5197897, raw size=436, compressed size=215
+External Block (5198170):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5198170, raw size=10300000, compressed size=2069892
+External Block (5459267):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5459267, raw size=98875, compressed size=5949
+External Block (5779523):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779523, raw size=96502, compressed size=922
+External Block (5779539):                          method=RAW, type=EXTERNAL, id=5779539, raw size=104, compressed size=104
+External Block (5779779):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779779, raw size=96296, compressed size=1432
+External Block (5779795):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779795, raw size=210, compressed size=186
+External Block (5783898):                          method=GZIP, type=EXTERNAL, id=5783898, raw size=28542, compressed size=5788
+External Block (5784387):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5784387, raw size=21434, compressed size=13321
+External Block (5785411):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5785411, raw size=98875, compressed size=930
+External Block (5786947):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5786947, raw size=98875, compressed size=11449
+External Block (5787459):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5787459, raw size=98875, compressed size=721
+External Block (5788737):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5788737, raw size=98875, compressed size=2538
+
+***Container #:3 sequenceId=SINGLE_REFERENCE: 0, start=10222875, span=27226, nRecords=25089, nBlocks=39, nBases=2533989, globalCounter=200000 byteOffset=14048466
+Requires reference (true); Preserved read names (true); APDelta (true)
+
+Data Series Encodings:
+
+DataSeries (BF/BF_BitFlags)                        EXTERNAL (Content ID: 15)
+DataSeries (CF/CF_CompressionBitFlags)             HUFFMAN (Symbols: 3 BitLengths 0)
+DataSeries (RI/RI_RefId)                           HUFFMAN (Symbols: 0 BitLengths 0)
+DataSeries (RL/RL_ReadLength)                      HUFFMAN (Symbols: 101 BitLengths 0)
+DataSeries (AP/AP_AlignmentPositionOffset)         EXTERNAL (Content ID: 17)
+DataSeries (RG/RG_ReadGroup)                       EXTERNAL (Content ID: 18)
+DataSeries (RN/RN_ReadName)                        BYTE_ARRAY_STOP (Content ID: 11 StopByte: 0)
+DataSeries (NF/NF_RecordsToNextFragment)           not present
+DataSeries (MF/MF_MateBitFlags)                    EXTERNAL (Content ID: 21)
+DataSeries (NS/NS_NextFragmentReferenceSequenceID) EXTERNAL (Content ID: 20)
+DataSeries (NP/NP_NextFragmentAlignmentStart)      EXTERNAL (Content ID: 23)
+DataSeries (TS/TS_InsertSize)                      EXTERNAL (Content ID: 22)
+DataSeries (TL/TL_TagIdList)                       EXTERNAL (Content ID: 32)
+DataSeries (TC/TC_TagCount)                        not present
+DataSeries (TN/TN_TagNameAndType)                  not present
+DataSeries (MQ/MQ_MappingQualityScore)             EXTERNAL (Content ID: 19)
+DataSeries (FN/FN_NumberOfReadFeatures)            EXTERNAL (Content ID: 26)
+DataSeries (FP/FP_FeaturePosition)                 EXTERNAL (Content ID: 28)
+DataSeries (FC/FC_FeatureCode)                     EXTERNAL (Content ID: 27)
+DataSeries (BB/BB_Bases)                           BYTE_ARRAY_LEN (LenEncoding: Content ID: 42 ByteEncoding: Content ID: 37)
+DataSeries (QQ/QQ_scores)                          not present
+DataSeries (BA/BA_Base)                            EXTERNAL (Content ID: 30)
+DataSeries (QS/QS_QualityScore)                    EXTERNAL (Content ID: 12)
+DataSeries (BS/BS_BaseSubstitutionCode)            EXTERNAL (Content ID: 31)
+DataSeries (IN/IN_Insertion)                       BYTE_ARRAY_STOP (Content ID: 13 StopByte: 0)
+DataSeries (DL/DL_DeletionLength)                  EXTERNAL (Content ID: 29)
+DataSeries (RS/RS_RefSkip)                         not present
+DataSeries (SC/SC_SoftClip)                        BYTE_ARRAY_STOP (Content ID: 14 StopByte: 0)
+DataSeries (PD/PD_padding)                         not present
+DataSeries (HC/HC_HardClip)                        not present
+DataSeries (TM/TM_TestMark)                        not present
+DataSeries (TV/TV_TestMark)                        not present
+
+Tag Encodings:
+Content ID/Tag (4279619/AM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 4279619)
+Content ID/Tag (4346202/BQ:Z)                      BYTE_ARRAY_STOP (Content ID: 4346202 StopByte: 9)
+Content ID/Tag (5067075/MQ:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5067075)
+Content ID/Tag (5194586/OC:Z)                      BYTE_ARRAY_STOP (Content ID: 5194586 StopByte: 9)
+Content ID/Tag (5197897/OP:I)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 4 BitLengths 0 ByteEncoding: Content ID: 5197897)
+Content ID/Tag (5198170/OQ:Z)                      BYTE_ARRAY_STOP (Content ID: 5198170 StopByte: 9)
+Content ID/Tag (5459267/SM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5459267)
+Content ID/Tag (5779523/X0:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779523)
+Content ID/Tag (5779539/X0:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779539)
+Content ID/Tag (5779779/X1:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779779)
+Content ID/Tag (5779795/X1:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779795)
+Content ID/Tag (5783898/XA:Z)                      BYTE_ARRAY_STOP (Content ID: 5783898 StopByte: 9)
+Content ID/Tag (5784387/XC:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5784387)
+Content ID/Tag (5785411/XG:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5785411)
+Content ID/Tag (5786947/XM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5786947)
+Content ID/Tag (5787459/XO:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5787459)
+Content ID/Tag (5788737/XT:A)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5788737)
+
+******Slice #: 1 slice: sequenceId=SINGLE_REFERENCE: 0, start=10222875, span=27226 globalRecordCounter=200000, nRecords=25089, sliceHeaderOffset=1849, sizeOfBlocks=1748888, landmark=0, mapped/unmapped/unplaced: 0/0/0, md5=6b82d5b28e4401e9338ceb3108a784ea
+Header block                                       method=RAW, type=MAPPED_SLICE, id=0, raw size=124, compressed size=124
+Core block                                         method=RAW, type=CORE, id=0, raw size=0, compressed size=0
+External Block (RN):                               method=NAME_TOKENISER, type=EXTERNAL, id=11, raw size=821977, compressed size=83262
+External Block (QS):                               method=FQZCOMP, type=EXTERNAL, id=12, raw size=2533989, compressed size=880466
+External Block (IN):                               method=RAW, type=EXTERNAL, id=13, raw size=18, compressed size=18
+External Block (SC):                               method=GZIP, type=EXTERNAL, id=14, raw size=165887, compressed size=39924
+External Block (BF):                               method=RANSNx16, type=EXTERNAL, id=15, raw size=39229, compressed size=8881
+External Block (AP):                               method=RANSNx16, type=EXTERNAL, id=17, raw size=25089, compressed size=6445
+External Block (RG):                               method=RANSNx16, type=EXTERNAL, id=18, raw size=25089, compressed size=12590
+External Block (MQ):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=19, raw size=24792, compressed size=1807
+External Block (NS):                               method=RANSNx16, type=EXTERNAL, id=20, raw size=25089, compressed size=16
+External Block (MF):                               method=RANSNx16, type=EXTERNAL, id=21, raw size=25089, compressed size=3403
+External Block (TS):                               method=RANSNx16, type=EXTERNAL, id=22, raw size=86303, compressed size=27800
+External Block (NP):                               method=RANSNx16, type=EXTERNAL, id=23, raw size=100356, compressed size=33499
+External Block (FN):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=26, raw size=24792, compressed size=4333
+External Block (FC):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=27, raw size=13756, compressed size=1948
+External Block (FP):                               method=RANSNx16, type=EXTERNAL, id=28, raw size=13756, compressed size=9834
+External Block (DL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=29, raw size=314, compressed size=58
+External Block (BA):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=30, raw size=30082, compressed size=3829
+External Block (BS):                               method=RANSNx16, type=EXTERNAL, id=31, raw size=8150, compressed size=1653
+External Block (TL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=32, raw size=25089, compressed size=4868
+External Block (4279619):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=4279619, raw size=24792, compressed size=1923
+External Block (4346202):                          method=RANSNx16, type=EXTERNAL, id=4346202, raw size=2229950, compressed size=86251
+External Block (5067075):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5067075, raw size=24494, compressed size=1536
+External Block (5194586):                          method=BZIP2, type=EXTERNAL, id=5194586, raw size=391, compressed size=167
+External Block (5197897):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5197897, raw size=84, compressed size=58
+External Block (5198170):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5198170, raw size=2584167, compressed size=523323
+External Block (5459267):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5459267, raw size=24792, compressed size=1442
+External Block (5779523):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779523, raw size=24189, compressed size=192
+External Block (5779539):                          method=RAW, type=EXTERNAL, id=5779539, raw size=42, compressed size=42
+External Block (5779779):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779779, raw size=24150, compressed size=240
+External Block (5779795):                          method=RAW, type=EXTERNAL, id=5779795, raw size=42, compressed size=42
+External Block (5783898):                          method=GZIP, type=EXTERNAL, id=5783898, raw size=2817, compressed size=874
+External Block (5784387):                          method=RANSNx16, type=EXTERNAL, id=5784387, raw size=5352, compressed size=3380
+External Block (5785411):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5785411, raw size=24792, compressed size=305
+External Block (5786947):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5786947, raw size=24792, compressed size=2970
+External Block (5787459):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5787459, raw size=24792, compressed size=241
+External Block (5788737):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5788737, raw size=24792, compressed size=654
+
+***Container #:4 sequenceId=SINGLE_REFERENCE: 1, start=9999901, span=97910, nRecords=100000, nBlocks=42, nBases=10100000, globalCounter=225089 byteOffset=15799233
+Requires reference (true); Preserved read names (true); APDelta (true)
+
+Data Series Encodings:
+
+DataSeries (BF/BF_BitFlags)                        EXTERNAL (Content ID: 15)
+DataSeries (CF/CF_CompressionBitFlags)             HUFFMAN (Symbols: 3 BitLengths 0)
+DataSeries (RI/RI_RefId)                           HUFFMAN (Symbols: 1 BitLengths 0)
+DataSeries (RL/RL_ReadLength)                      HUFFMAN (Symbols: 101 BitLengths 0)
+DataSeries (AP/AP_AlignmentPositionOffset)         EXTERNAL (Content ID: 17)
+DataSeries (RG/RG_ReadGroup)                       EXTERNAL (Content ID: 18)
+DataSeries (RN/RN_ReadName)                        BYTE_ARRAY_STOP (Content ID: 11 StopByte: 0)
+DataSeries (NF/NF_RecordsToNextFragment)           not present
+DataSeries (MF/MF_MateBitFlags)                    EXTERNAL (Content ID: 21)
+DataSeries (NS/NS_NextFragmentReferenceSequenceID) EXTERNAL (Content ID: 20)
+DataSeries (NP/NP_NextFragmentAlignmentStart)      EXTERNAL (Content ID: 23)
+DataSeries (TS/TS_InsertSize)                      EXTERNAL (Content ID: 22)
+DataSeries (TL/TL_TagIdList)                       EXTERNAL (Content ID: 32)
+DataSeries (TC/TC_TagCount)                        not present
+DataSeries (TN/TN_TagNameAndType)                  not present
+DataSeries (MQ/MQ_MappingQualityScore)             EXTERNAL (Content ID: 19)
+DataSeries (FN/FN_NumberOfReadFeatures)            EXTERNAL (Content ID: 26)
+DataSeries (FP/FP_FeaturePosition)                 EXTERNAL (Content ID: 28)
+DataSeries (FC/FC_FeatureCode)                     EXTERNAL (Content ID: 27)
+DataSeries (BB/BB_Bases)                           BYTE_ARRAY_LEN (LenEncoding: Content ID: 42 ByteEncoding: Content ID: 37)
+DataSeries (QQ/QQ_scores)                          not present
+DataSeries (BA/BA_Base)                            EXTERNAL (Content ID: 30)
+DataSeries (QS/QS_QualityScore)                    EXTERNAL (Content ID: 12)
+DataSeries (BS/BS_BaseSubstitutionCode)            EXTERNAL (Content ID: 31)
+DataSeries (IN/IN_Insertion)                       BYTE_ARRAY_STOP (Content ID: 13 StopByte: 0)
+DataSeries (DL/DL_DeletionLength)                  EXTERNAL (Content ID: 29)
+DataSeries (RS/RS_RefSkip)                         not present
+DataSeries (SC/SC_SoftClip)                        BYTE_ARRAY_STOP (Content ID: 14 StopByte: 0)
+DataSeries (PD/PD_padding)                         not present
+DataSeries (HC/HC_HardClip)                        not present
+DataSeries (TM/TM_TestMark)                        not present
+DataSeries (TV/TV_TestMark)                        not present
+
+Tag Encodings:
+Content ID/Tag (4279619/AM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 4279619)
+Content ID/Tag (4346202/BQ:Z)                      BYTE_ARRAY_STOP (Content ID: 4346202 StopByte: 9)
+Content ID/Tag (5063770/MD:Z)                      BYTE_ARRAY_STOP (Content ID: 5063770 StopByte: 9)
+Content ID/Tag (5067075/MQ:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5067075)
+Content ID/Tag (5131587/NM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5131587)
+Content ID/Tag (5194586/OC:Z)                      BYTE_ARRAY_STOP (Content ID: 5194586 StopByte: 9)
+Content ID/Tag (5197897/OP:I)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 4 BitLengths 0 ByteEncoding: Content ID: 5197897)
+Content ID/Tag (5198170/OQ:Z)                      BYTE_ARRAY_STOP (Content ID: 5198170 StopByte: 9)
+Content ID/Tag (5459267/SM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5459267)
+Content ID/Tag (5779523/X0:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779523)
+Content ID/Tag (5779539/X0:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779539)
+Content ID/Tag (5779779/X1:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779779)
+Content ID/Tag (5779795/X1:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779795)
+Content ID/Tag (5783898/XA:Z)                      BYTE_ARRAY_STOP (Content ID: 5783898 StopByte: 9)
+Content ID/Tag (5784387/XC:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5784387)
+Content ID/Tag (5785411/XG:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5785411)
+Content ID/Tag (5786947/XM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5786947)
+Content ID/Tag (5787203/XN:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5787203)
+Content ID/Tag (5787459/XO:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5787459)
+Content ID/Tag (5788737/XT:A)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5788737)
+
+******Slice #: 1 slice: sequenceId=SINGLE_REFERENCE: 1, start=9999901, span=97910 globalRecordCounter=225089, nRecords=100000, sliceHeaderOffset=3496, sizeOfBlocks=7310512, landmark=0, mapped/unmapped/unplaced: 0/0/0, md5=5d6b2908359250c89cf395650c8164ce
+Header block                                       method=RAW, type=MAPPED_SLICE, id=0, raw size=136, compressed size=136
+Core block                                         method=RAW, type=CORE, id=0, raw size=0, compressed size=0
+External Block (RN):                               method=NAME_TOKENISER, type=EXTERNAL, id=11, raw size=3276865, compressed size=337995
+External Block (QS):                               method=FQZCOMP, type=EXTERNAL, id=12, raw size=10100000, compressed size=3345335
+External Block (IN):                               method=GZIP, type=EXTERNAL, id=13, raw size=8126, compressed size=922
+External Block (SC):                               method=GZIP, type=EXTERNAL, id=14, raw size=568107, compressed size=125106
+External Block (BF):                               method=RANSNx16, type=EXTERNAL, id=15, raw size=157312, compressed size=39691
+External Block (AP):                               method=RANSNx16, type=EXTERNAL, id=17, raw size=100002, compressed size=16723
+External Block (RG):                               method=RANSNx16, type=EXTERNAL, id=18, raw size=100000, compressed size=46955
+External Block (MQ):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=19, raw size=93675, compressed size=20293
+External Block (NS):                               method=RANSNx16, type=EXTERNAL, id=20, raw size=100000, compressed size=112
+External Block (MF):                               method=RANSNx16, type=EXTERNAL, id=21, raw size=100000, compressed size=15887
+External Block (TS):                               method=RANSNx16, type=EXTERNAL, id=22, raw size=317839, compressed size=103894
+External Block (NP):                               method=RANSNx16, type=EXTERNAL, id=23, raw size=400000, compressed size=130135
+External Block (FN):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=26, raw size=93675, compressed size=24990
+External Block (FC):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=27, raw size=124284, compressed size=13588
+External Block (FP):                               method=RANSNx16, type=EXTERNAL, id=28, raw size=124284, compressed size=91670
+External Block (DL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=29, raw size=3042, compressed size=618
+External Block (BA):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=30, raw size=639575, compressed size=129980
+External Block (BS):                               method=RANSNx16, type=EXTERNAL, id=31, raw size=100137, compressed size=19004
+External Block (TL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=32, raw size=100000, compressed size=31591
+External Block (4279619):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=4279619, raw size=93675, compressed size=7349
+External Block (4346202):                          method=RANSNx16, type=EXTERNAL, id=4346202, raw size=8205083, compressed size=341361
+External Block (5063770):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5063770, raw size=116, compressed size=64
+External Block (5067075):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5067075, raw size=87074, compressed size=19473
+External Block (5131587):                          method=RAW, type=EXTERNAL, id=5131587, raw size=6, compressed size=6
+External Block (5194586):                          method=BZIP2, type=EXTERNAL, id=5194586, raw size=4108, compressed size=823
+External Block (5197897):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5197897, raw size=1196, compressed size=352
+External Block (5198170):                          method=RANSNx16, type=EXTERNAL, id=5198170, raw size=10300000, compressed size=2051993
+External Block (5459267):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5459267, raw size=93675, compressed size=9290
+External Block (5779523):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779523, raw size=89545, compressed size=16271
+External Block (5779539):                          method=RAW, type=EXTERNAL, id=5779539, raw size=506, compressed size=506
+External Block (5779779):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779779, raw size=88021, compressed size=19094
+External Block (5779795):                          method=RANSNx16, type=EXTERNAL, id=5779795, raw size=1802, compressed size=1680
+External Block (5783898):                          method=GZIP, type=EXTERNAL, id=5783898, raw size=2634702, compressed size=300521
+External Block (5784387):                          method=RANSNx16, type=EXTERNAL, id=5784387, raw size=20585, compressed size=12292
+External Block (5785411):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5785411, raw size=93675, compressed size=3164
+External Block (5786947):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5786947, raw size=93675, compressed size=22242
+External Block (5787203):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5787203, raw size=12, compressed size=11
+External Block (5787459):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5787459, raw size=93675, compressed size=2533
+External Block (5788737):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5788737, raw size=93675, compressed size=6304
+
+***Container #:5 sequenceId=SINGLE_REFERENCE: 1, start=10097710, span=43222, nRecords=100000, nBlocks=39, nBases=10100000, globalCounter=325089 byteOffset=23113271
+Requires reference (true); Preserved read names (true); APDelta (true)
+
+Data Series Encodings:
+
+DataSeries (BF/BF_BitFlags)                        EXTERNAL (Content ID: 15)
+DataSeries (CF/CF_CompressionBitFlags)             HUFFMAN (Symbols: 3 BitLengths 0)
+DataSeries (RI/RI_RefId)                           HUFFMAN (Symbols: 1 BitLengths 0)
+DataSeries (RL/RL_ReadLength)                      HUFFMAN (Symbols: 101 BitLengths 0)
+DataSeries (AP/AP_AlignmentPositionOffset)         EXTERNAL (Content ID: 17)
+DataSeries (RG/RG_ReadGroup)                       EXTERNAL (Content ID: 18)
+DataSeries (RN/RN_ReadName)                        BYTE_ARRAY_STOP (Content ID: 11 StopByte: 0)
+DataSeries (NF/NF_RecordsToNextFragment)           not present
+DataSeries (MF/MF_MateBitFlags)                    EXTERNAL (Content ID: 21)
+DataSeries (NS/NS_NextFragmentReferenceSequenceID) EXTERNAL (Content ID: 20)
+DataSeries (NP/NP_NextFragmentAlignmentStart)      EXTERNAL (Content ID: 23)
+DataSeries (TS/TS_InsertSize)                      EXTERNAL (Content ID: 22)
+DataSeries (TL/TL_TagIdList)                       EXTERNAL (Content ID: 32)
+DataSeries (TC/TC_TagCount)                        not present
+DataSeries (TN/TN_TagNameAndType)                  not present
+DataSeries (MQ/MQ_MappingQualityScore)             EXTERNAL (Content ID: 19)
+DataSeries (FN/FN_NumberOfReadFeatures)            EXTERNAL (Content ID: 26)
+DataSeries (FP/FP_FeaturePosition)                 EXTERNAL (Content ID: 28)
+DataSeries (FC/FC_FeatureCode)                     EXTERNAL (Content ID: 27)
+DataSeries (BB/BB_Bases)                           BYTE_ARRAY_LEN (LenEncoding: Content ID: 42 ByteEncoding: Content ID: 37)
+DataSeries (QQ/QQ_scores)                          not present
+DataSeries (BA/BA_Base)                            EXTERNAL (Content ID: 30)
+DataSeries (QS/QS_QualityScore)                    EXTERNAL (Content ID: 12)
+DataSeries (BS/BS_BaseSubstitutionCode)            EXTERNAL (Content ID: 31)
+DataSeries (IN/IN_Insertion)                       BYTE_ARRAY_STOP (Content ID: 13 StopByte: 0)
+DataSeries (DL/DL_DeletionLength)                  EXTERNAL (Content ID: 29)
+DataSeries (RS/RS_RefSkip)                         not present
+DataSeries (SC/SC_SoftClip)                        BYTE_ARRAY_STOP (Content ID: 14 StopByte: 0)
+DataSeries (PD/PD_padding)                         not present
+DataSeries (HC/HC_HardClip)                        not present
+DataSeries (TM/TM_TestMark)                        not present
+DataSeries (TV/TV_TestMark)                        not present
+
+Tag Encodings:
+Content ID/Tag (4279619/AM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 4279619)
+Content ID/Tag (4346202/BQ:Z)                      BYTE_ARRAY_STOP (Content ID: 4346202 StopByte: 9)
+Content ID/Tag (5067075/MQ:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5067075)
+Content ID/Tag (5194586/OC:Z)                      BYTE_ARRAY_STOP (Content ID: 5194586 StopByte: 9)
+Content ID/Tag (5197897/OP:I)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 4 BitLengths 0 ByteEncoding: Content ID: 5197897)
+Content ID/Tag (5198170/OQ:Z)                      BYTE_ARRAY_STOP (Content ID: 5198170 StopByte: 9)
+Content ID/Tag (5459267/SM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5459267)
+Content ID/Tag (5779523/X0:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779523)
+Content ID/Tag (5779539/X0:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779539)
+Content ID/Tag (5779779/X1:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779779)
+Content ID/Tag (5779795/X1:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779795)
+Content ID/Tag (5783898/XA:Z)                      BYTE_ARRAY_STOP (Content ID: 5783898 StopByte: 9)
+Content ID/Tag (5784387/XC:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5784387)
+Content ID/Tag (5785411/XG:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5785411)
+Content ID/Tag (5786947/XM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5786947)
+Content ID/Tag (5787459/XO:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5787459)
+Content ID/Tag (5788737/XT:A)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5788737)
+
+******Slice #: 1 slice: sequenceId=SINGLE_REFERENCE: 1, start=10097710, span=43222 globalRecordCounter=325089, nRecords=100000, sliceHeaderOffset=2320, sizeOfBlocks=7057160, landmark=0, mapped/unmapped/unplaced: 0/0/0, md5=019cb8181c74c18652c822a1ac89a7bd
+Header block                                       method=RAW, type=MAPPED_SLICE, id=0, raw size=124, compressed size=124
+Core block                                         method=RAW, type=CORE, id=0, raw size=0, compressed size=0
+External Block (RN):                               method=NAME_TOKENISER, type=EXTERNAL, id=11, raw size=3278009, compressed size=341824
+External Block (QS):                               method=FQZCOMP, type=EXTERNAL, id=12, raw size=10100000, compressed size=3361200
+External Block (IN):                               method=GZIP, type=EXTERNAL, id=13, raw size=400, compressed size=96
+External Block (SC):                               method=GZIP, type=EXTERNAL, id=14, raw size=432723, compressed size=97182
+External Block (BF):                               method=RANSNx16, type=EXTERNAL, id=15, raw size=156719, compressed size=38269
+External Block (AP):                               method=RANSNx16, type=EXTERNAL, id=17, raw size=100000, compressed size=15537
+External Block (RG):                               method=RANSNx16, type=EXTERNAL, id=18, raw size=100000, compressed size=47403
+External Block (MQ):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=19, raw size=95307, compressed size=8615
+External Block (NS):                               method=RANSNx16, type=EXTERNAL, id=20, raw size=100000, compressed size=44
+External Block (MF):                               method=RANSNx16, type=EXTERNAL, id=21, raw size=100000, compressed size=15079
+External Block (TS):                               method=RANSNx16, type=EXTERNAL, id=22, raw size=326210, compressed size=102096
+External Block (NP):                               method=RANSNx16, type=EXTERNAL, id=23, raw size=399999, compressed size=148836
+External Block (FN):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=26, raw size=95307, compressed size=24032
+External Block (FC):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=27, raw size=98170, compressed size=10371
+External Block (FP):                               method=RANSNx16, type=EXTERNAL, id=28, raw size=98170, compressed size=76129
+External Block (DL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=29, raw size=2466, compressed size=235
+External Block (BA):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=30, raw size=474975, compressed size=102709
+External Block (BS):                               method=RANSNx16, type=EXTERNAL, id=31, raw size=79717, compressed size=14766
+External Block (TL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=32, raw size=100000, compressed size=27052
+External Block (4279619):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=4279619, raw size=95307, compressed size=1698
+External Block (4346202):                          method=RANSNx16, type=EXTERNAL, id=4346202, raw size=8471544, compressed size=312850
+External Block (5067075):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5067075, raw size=90284, compressed size=8927
+External Block (5194586):                          method=BZIP2, type=EXTERNAL, id=5194586, raw size=238, compressed size=88
+External Block (5197897):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5197897, raw size=68, compressed size=49
+External Block (5198170):                          method=RANSNx16, type=EXTERNAL, id=5198170, raw size=10300000, compressed size=2005934
+External Block (5459267):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5459267, raw size=95307, compressed size=3067
+External Block (5779523):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779523, raw size=94159, compressed size=17556
+External Block (5779539):                          method=RAW, type=EXTERNAL, id=5779539, raw size=338, compressed size=338
+External Block (5779779):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779779, raw size=93437, compressed size=21659
+External Block (5779795):                          method=RAW, type=EXTERNAL, id=5779795, raw size=892, compressed size=892
+External Block (5783898):                          method=GZIP, type=EXTERNAL, id=5783898, raw size=1823660, compressed size=211565
+External Block (5784387):                          method=RANSNx16, type=EXTERNAL, id=5784387, raw size=17423, compressed size=10668
+External Block (5785411):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5785411, raw size=95307, compressed size=2347
+External Block (5786947):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5786947, raw size=95307, compressed size=21484
+External Block (5787459):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5787459, raw size=95307, compressed size=2035
+External Block (5788737):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5788737, raw size=95307, compressed size=3892
+
+***Container #:6 sequenceId=SINGLE_REFERENCE: 1, start=10140831, span=39125, nRecords=100000, nBlocks=40, nBases=10100000, globalCounter=425089 byteOffset=30172781
+Requires reference (true); Preserved read names (true); APDelta (true)
+
+Data Series Encodings:
+
+DataSeries (BF/BF_BitFlags)                        EXTERNAL (Content ID: 15)
+DataSeries (CF/CF_CompressionBitFlags)             HUFFMAN (Symbols: 3 BitLengths 0)
+DataSeries (RI/RI_RefId)                           HUFFMAN (Symbols: 1 BitLengths 0)
+DataSeries (RL/RL_ReadLength)                      HUFFMAN (Symbols: 101 BitLengths 0)
+DataSeries (AP/AP_AlignmentPositionOffset)         EXTERNAL (Content ID: 17)
+DataSeries (RG/RG_ReadGroup)                       EXTERNAL (Content ID: 18)
+DataSeries (RN/RN_ReadName)                        BYTE_ARRAY_STOP (Content ID: 11 StopByte: 0)
+DataSeries (NF/NF_RecordsToNextFragment)           not present
+DataSeries (MF/MF_MateBitFlags)                    EXTERNAL (Content ID: 21)
+DataSeries (NS/NS_NextFragmentReferenceSequenceID) EXTERNAL (Content ID: 20)
+DataSeries (NP/NP_NextFragmentAlignmentStart)      EXTERNAL (Content ID: 23)
+DataSeries (TS/TS_InsertSize)                      EXTERNAL (Content ID: 22)
+DataSeries (TL/TL_TagIdList)                       EXTERNAL (Content ID: 32)
+DataSeries (TC/TC_TagCount)                        not present
+DataSeries (TN/TN_TagNameAndType)                  not present
+DataSeries (MQ/MQ_MappingQualityScore)             EXTERNAL (Content ID: 19)
+DataSeries (FN/FN_NumberOfReadFeatures)            EXTERNAL (Content ID: 26)
+DataSeries (FP/FP_FeaturePosition)                 EXTERNAL (Content ID: 28)
+DataSeries (FC/FC_FeatureCode)                     EXTERNAL (Content ID: 27)
+DataSeries (BB/BB_Bases)                           BYTE_ARRAY_LEN (LenEncoding: Content ID: 42 ByteEncoding: Content ID: 37)
+DataSeries (QQ/QQ_scores)                          not present
+DataSeries (BA/BA_Base)                            EXTERNAL (Content ID: 30)
+DataSeries (QS/QS_QualityScore)                    EXTERNAL (Content ID: 12)
+DataSeries (BS/BS_BaseSubstitutionCode)            EXTERNAL (Content ID: 31)
+DataSeries (IN/IN_Insertion)                       BYTE_ARRAY_STOP (Content ID: 13 StopByte: 0)
+DataSeries (DL/DL_DeletionLength)                  EXTERNAL (Content ID: 29)
+DataSeries (RS/RS_RefSkip)                         not present
+DataSeries (SC/SC_SoftClip)                        BYTE_ARRAY_STOP (Content ID: 14 StopByte: 0)
+DataSeries (PD/PD_padding)                         not present
+DataSeries (HC/HC_HardClip)                        not present
+DataSeries (TM/TM_TestMark)                        not present
+DataSeries (TV/TV_TestMark)                        not present
+
+Tag Encodings:
+Content ID/Tag (4279619/AM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 4279619)
+Content ID/Tag (4346202/BQ:Z)                      BYTE_ARRAY_STOP (Content ID: 4346202 StopByte: 9)
+Content ID/Tag (5067075/MQ:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5067075)
+Content ID/Tag (5194586/OC:Z)                      BYTE_ARRAY_STOP (Content ID: 5194586 StopByte: 9)
+Content ID/Tag (5197897/OP:I)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 4 BitLengths 0 ByteEncoding: Content ID: 5197897)
+Content ID/Tag (5198170/OQ:Z)                      BYTE_ARRAY_STOP (Content ID: 5198170 StopByte: 9)
+Content ID/Tag (5459267/SM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5459267)
+Content ID/Tag (5779523/X0:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779523)
+Content ID/Tag (5779529/X0:I)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 4 BitLengths 0 ByteEncoding: Content ID: 5779529)
+Content ID/Tag (5779539/X0:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779539)
+Content ID/Tag (5779779/X1:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779779)
+Content ID/Tag (5779795/X1:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779795)
+Content ID/Tag (5783898/XA:Z)                      BYTE_ARRAY_STOP (Content ID: 5783898 StopByte: 9)
+Content ID/Tag (5784387/XC:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5784387)
+Content ID/Tag (5785411/XG:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5785411)
+Content ID/Tag (5786947/XM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5786947)
+Content ID/Tag (5787459/XO:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5787459)
+Content ID/Tag (5788737/XT:A)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5788737)
+
+******Slice #: 1 slice: sequenceId=SINGLE_REFERENCE: 1, start=10140831, span=39125 globalRecordCounter=425089, nRecords=100000, sliceHeaderOffset=2462, sizeOfBlocks=7385999, landmark=0, mapped/unmapped/unplaced: 0/0/0, md5=5a638d4d77ea5ca5387b1624967e8cad
+Header block                                       method=RAW, type=MAPPED_SLICE, id=0, raw size=128, compressed size=128
+Core block                                         method=RAW, type=CORE, id=0, raw size=0, compressed size=0
+External Block (RN):                               method=NAME_TOKENISER, type=EXTERNAL, id=11, raw size=3277051, compressed size=346637
+External Block (QS):                               method=FQZCOMP, type=EXTERNAL, id=12, raw size=10100000, compressed size=3423848
+External Block (IN):                               method=GZIP, type=EXTERNAL, id=13, raw size=499, compressed size=114
+External Block (SC):                               method=GZIP, type=EXTERNAL, id=14, raw size=522799, compressed size=116409
+External Block (BF):                               method=RANSNx16, type=EXTERNAL, id=15, raw size=155804, compressed size=36791
+External Block (AP):                               method=RANSNx16, type=EXTERNAL, id=17, raw size=100000, compressed size=14612
+External Block (RG):                               method=RANSNx16, type=EXTERNAL, id=18, raw size=100000, compressed size=47585
+External Block (MQ):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=19, raw size=95934, compressed size=9849
+External Block (NS):                               method=RANSNx16, type=EXTERNAL, id=20, raw size=100000, compressed size=108
+External Block (MF):                               method=RANSNx16, type=EXTERNAL, id=21, raw size=100000, compressed size=14697
+External Block (TS):                               method=RANSNx16, type=EXTERNAL, id=22, raw size=330684, compressed size=102426
+External Block (NP):                               method=RANSNx16, type=EXTERNAL, id=23, raw size=399999, compressed size=143892
+External Block (FN):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=26, raw size=95934, compressed size=23157
+External Block (FC):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=27, raw size=88919, compressed size=9937
+External Block (FP):                               method=RANSNx16, type=EXTERNAL, id=28, raw size=88919, compressed size=68331
+External Block (DL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=29, raw size=1536, compressed size=128
+External Block (BA):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=30, raw size=411331, compressed size=88332
+External Block (BS):                               method=RANSNx16, type=EXTERNAL, id=31, raw size=68792, compressed size=13086
+External Block (TL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=32, raw size=100000, compressed size=27039
+External Block (4279619):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=4279619, raw size=95934, compressed size=1779
+External Block (4346202):                          method=RANSNx16, type=EXTERNAL, id=4346202, raw size=8732031, compressed size=352206
+External Block (5067075):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5067075, raw size=91701, compressed size=10086
+External Block (5194586):                          method=BZIP2, type=EXTERNAL, id=5194586, raw size=208, compressed size=100
+External Block (5197897):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5197897, raw size=68, compressed size=53
+External Block (5198170):                          method=RANSNx16, type=EXTERNAL, id=5198170, raw size=10300000, compressed size=2099422
+External Block (5459267):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5459267, raw size=95934, compressed size=3370
+External Block (5779523):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779523, raw size=94403, compressed size=15981
+External Block (5779529):                          method=RAW, type=EXTERNAL, id=5779529, raw size=4, compressed size=4
+External Block (5779539):                          method=RANSNx16, type=EXTERNAL, id=5779539, raw size=1744, compressed size=1737
+External Block (5779779):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779779, raw size=91519, compressed size=20455
+External Block (5779795):                          method=RANSNx16, type=EXTERNAL, id=5779795, raw size=4290, compressed size=3678
+External Block (5783898):                          method=GZIP, type=EXTERNAL, id=5783898, raw size=3063315, compressed size=349703
+External Block (5784387):                          method=RANSNx16, type=EXTERNAL, id=5784387, raw size=20399, compressed size=12863
+External Block (5785411):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5785411, raw size=95934, compressed size=1754
+External Block (5786947):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5786947, raw size=95934, compressed size=20163
+External Block (5787459):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5787459, raw size=95934, compressed size=1510
+External Block (5788737):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5788737, raw size=95934, compressed size=3502
+
+***Container #:7 sequenceId=SINGLE_REFERENCE: 1, start=10179857, span=36116, nRecords=79521, nBlocks=39, nBases=8031621, globalCounter=525089 byteOffset=37561272
+Requires reference (true); Preserved read names (true); APDelta (true)
+
+Data Series Encodings:
+
+DataSeries (BF/BF_BitFlags)                        EXTERNAL (Content ID: 15)
+DataSeries (CF/CF_CompressionBitFlags)             HUFFMAN (Symbols: 3 BitLengths 0)
+DataSeries (RI/RI_RefId)                           HUFFMAN (Symbols: 1 BitLengths 0)
+DataSeries (RL/RL_ReadLength)                      HUFFMAN (Symbols: 101 BitLengths 0)
+DataSeries (AP/AP_AlignmentPositionOffset)         EXTERNAL (Content ID: 17)
+DataSeries (RG/RG_ReadGroup)                       EXTERNAL (Content ID: 18)
+DataSeries (RN/RN_ReadName)                        BYTE_ARRAY_STOP (Content ID: 11 StopByte: 0)
+DataSeries (NF/NF_RecordsToNextFragment)           not present
+DataSeries (MF/MF_MateBitFlags)                    EXTERNAL (Content ID: 21)
+DataSeries (NS/NS_NextFragmentReferenceSequenceID) EXTERNAL (Content ID: 20)
+DataSeries (NP/NP_NextFragmentAlignmentStart)      EXTERNAL (Content ID: 23)
+DataSeries (TS/TS_InsertSize)                      EXTERNAL (Content ID: 22)
+DataSeries (TL/TL_TagIdList)                       EXTERNAL (Content ID: 32)
+DataSeries (TC/TC_TagCount)                        not present
+DataSeries (TN/TN_TagNameAndType)                  not present
+DataSeries (MQ/MQ_MappingQualityScore)             EXTERNAL (Content ID: 19)
+DataSeries (FN/FN_NumberOfReadFeatures)            EXTERNAL (Content ID: 26)
+DataSeries (FP/FP_FeaturePosition)                 EXTERNAL (Content ID: 28)
+DataSeries (FC/FC_FeatureCode)                     EXTERNAL (Content ID: 27)
+DataSeries (BB/BB_Bases)                           BYTE_ARRAY_LEN (LenEncoding: Content ID: 42 ByteEncoding: Content ID: 37)
+DataSeries (QQ/QQ_scores)                          not present
+DataSeries (BA/BA_Base)                            EXTERNAL (Content ID: 30)
+DataSeries (QS/QS_QualityScore)                    EXTERNAL (Content ID: 12)
+DataSeries (BS/BS_BaseSubstitutionCode)            EXTERNAL (Content ID: 31)
+DataSeries (IN/IN_Insertion)                       BYTE_ARRAY_STOP (Content ID: 13 StopByte: 0)
+DataSeries (DL/DL_DeletionLength)                  EXTERNAL (Content ID: 29)
+DataSeries (RS/RS_RefSkip)                         not present
+DataSeries (SC/SC_SoftClip)                        BYTE_ARRAY_STOP (Content ID: 14 StopByte: 0)
+DataSeries (PD/PD_padding)                         not present
+DataSeries (HC/HC_HardClip)                        not present
+DataSeries (TM/TM_TestMark)                        not present
+DataSeries (TV/TV_TestMark)                        not present
+
+Tag Encodings:
+Content ID/Tag (4279619/AM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 4279619)
+Content ID/Tag (4346202/BQ:Z)                      BYTE_ARRAY_STOP (Content ID: 4346202 StopByte: 9)
+Content ID/Tag (5067075/MQ:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5067075)
+Content ID/Tag (5194586/OC:Z)                      BYTE_ARRAY_STOP (Content ID: 5194586 StopByte: 9)
+Content ID/Tag (5197897/OP:I)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 4 BitLengths 0 ByteEncoding: Content ID: 5197897)
+Content ID/Tag (5198170/OQ:Z)                      BYTE_ARRAY_STOP (Content ID: 5198170 StopByte: 9)
+Content ID/Tag (5459267/SM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5459267)
+Content ID/Tag (5779523/X0:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779523)
+Content ID/Tag (5779539/X0:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779539)
+Content ID/Tag (5779779/X1:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5779779)
+Content ID/Tag (5779795/X1:S)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 2 BitLengths 0 ByteEncoding: Content ID: 5779795)
+Content ID/Tag (5783898/XA:Z)                      BYTE_ARRAY_STOP (Content ID: 5783898 StopByte: 9)
+Content ID/Tag (5784387/XC:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5784387)
+Content ID/Tag (5785411/XG:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5785411)
+Content ID/Tag (5786947/XM:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5786947)
+Content ID/Tag (5787459/XO:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5787459)
+Content ID/Tag (5788737/XT:A)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5788737)
+
+******Slice #: 1 slice: sequenceId=SINGLE_REFERENCE: 1, start=10179857, span=36116 globalRecordCounter=525089, nRecords=79521, sliceHeaderOffset=2034, sizeOfBlocks=5879934, landmark=0, mapped/unmapped/unplaced: 0/0/0, md5=0abc41814673c37b221a66112eb393c1
+Header block                                       method=RAW, type=MAPPED_SLICE, id=0, raw size=124, compressed size=124
+Core block                                         method=RAW, type=CORE, id=0, raw size=0, compressed size=0
+External Block (RN):                               method=NAME_TOKENISER, type=EXTERNAL, id=11, raw size=2605348, compressed size=274019
+External Block (QS):                               method=FQZCOMP, type=EXTERNAL, id=12, raw size=8031621, compressed size=2736001
+External Block (IN):                               method=GZIP, type=EXTERNAL, id=13, raw size=673, compressed size=91
+External Block (SC):                               method=GZIP, type=EXTERNAL, id=14, raw size=501301, compressed size=113439
+External Block (BF):                               method=RANSNx16, type=EXTERNAL, id=15, raw size=123712, compressed size=29119
+External Block (AP):                               method=RANSNx16, type=EXTERNAL, id=17, raw size=79521, compressed size=12754
+External Block (RG):                               method=RANSNx16, type=EXTERNAL, id=18, raw size=79521, compressed size=38349
+External Block (MQ):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=19, raw size=76425, compressed size=10324
+External Block (NS):                               method=RANSNx16, type=EXTERNAL, id=20, raw size=79521, compressed size=33
+External Block (MF):                               method=RANSNx16, type=EXTERNAL, id=21, raw size=79521, compressed size=11777
+External Block (TS):                               method=RANSNx16, type=EXTERNAL, id=22, raw size=263427, compressed size=81928
+External Block (NP):                               method=RANSNx16, type=EXTERNAL, id=23, raw size=318084, compressed size=102794
+External Block (FN):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=26, raw size=76425, compressed size=17090
+External Block (FC):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=27, raw size=60399, compressed size=7765
+External Block (FP):                               method=RANSNx16, type=EXTERNAL, id=28, raw size=60399, compressed size=45915
+External Block (DL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=29, raw size=797, compressed size=73
+External Block (BA):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=30, raw size=313239, compressed size=67690
+External Block (BS):                               method=RANSNx16, type=EXTERNAL, id=31, raw size=42319, compressed size=8162
+External Block (TL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=32, raw size=79521, compressed size=20601
+External Block (4279619):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=4279619, raw size=76425, compressed size=1695
+External Block (4346202):                          method=RANSNx16, type=EXTERNAL, id=4346202, raw size=7007811, compressed size=304463
+External Block (5067075):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5067075, raw size=73238, compressed size=10379
+External Block (5194586):                          method=BZIP2, type=EXTERNAL, id=5194586, raw size=226, compressed size=128
+External Block (5197897):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5197897, raw size=60, compressed size=46
+External Block (5198170):                          method=RANSNx16, type=EXTERNAL, id=5198170, raw size=8190663, compressed size=1704601
+External Block (5459267):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5459267, raw size=76425, compressed size=3573
+External Block (5779523):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779523, raw size=75721, compressed size=13243
+External Block (5779539):                          method=RAW, type=EXTERNAL, id=5779539, raw size=78, compressed size=78
+External Block (5779779):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5779779, raw size=75570, compressed size=16241
+External Block (5779795):                          method=RAW, type=EXTERNAL, id=5779795, raw size=194, compressed size=194
+External Block (5783898):                          method=GZIP, type=EXTERNAL, id=5783898, raw size=1865598, compressed size=215583
+External Block (5784387):                          method=RANSNx16, type=EXTERNAL, id=5784387, raw size=18748, compressed size=11876
+External Block (5785411):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5785411, raw size=76425, compressed size=1279
+External Block (5786947):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5786947, raw size=76425, compressed size=14042
+External Block (5787459):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5787459, raw size=76425, compressed size=1065
+External Block (5788737):                          method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=5788737, raw size=76425, compressed size=2893
+
+***Container #:8 sequenceId=UNMAPPED_UNPLACED, start=0, span=0, nRecords=50000, nBlocks=10, nBases=5050000, globalCounter=604610 byteOffset=43443270
+Requires reference (true); Preserved read names (true); APDelta (true)
+
+Data Series Encodings:
+
+DataSeries (BF/BF_BitFlags)                        EXTERNAL (Content ID: 15)
+DataSeries (CF/CF_CompressionBitFlags)             HUFFMAN (Symbols: 3 BitLengths 0)
+DataSeries (RI/RI_RefId)                           HUFFMAN (Symbols: -1 BitLengths 0)
+DataSeries (RL/RL_ReadLength)                      HUFFMAN (Symbols: 101 BitLengths 0)
+DataSeries (AP/AP_AlignmentPositionOffset)         HUFFMAN (Symbols: 0 BitLengths 0)
+DataSeries (RG/RG_ReadGroup)                       HUFFMAN (Symbols: 0 BitLengths 0)
+DataSeries (RN/RN_ReadName)                        BYTE_ARRAY_STOP (Content ID: 11 StopByte: 0)
+DataSeries (NF/NF_RecordsToNextFragment)           not present
+DataSeries (MF/MF_MateBitFlags)                    HUFFMAN (Symbols: 2 BitLengths 0)
+DataSeries (NS/NS_NextFragmentReferenceSequenceID) HUFFMAN (Symbols: -1 BitLengths 0)
+DataSeries (NP/NP_NextFragmentAlignmentStart)      HUFFMAN (Symbols: 0 BitLengths 0)
+DataSeries (TS/TS_InsertSize)                      HUFFMAN (Symbols: 0 BitLengths 0)
+DataSeries (TL/TL_TagIdList)                       EXTERNAL (Content ID: 32)
+DataSeries (TC/TC_TagCount)                        not present
+DataSeries (TN/TN_TagNameAndType)                  not present
+DataSeries (MQ/MQ_MappingQualityScore)             HUFFMAN (Symbols: 0 BitLengths 0)
+DataSeries (FN/FN_NumberOfReadFeatures)            not present
+DataSeries (FP/FP_FeaturePosition)                 not present
+DataSeries (FC/FC_FeatureCode)                     not present
+DataSeries (BB/BB_Bases)                           BYTE_ARRAY_LEN (LenEncoding: Content ID: 42 ByteEncoding: Content ID: 37)
+DataSeries (QQ/QQ_scores)                          not present
+DataSeries (BA/BA_Base)                            EXTERNAL (Content ID: 30)
+DataSeries (QS/QS_QualityScore)                    EXTERNAL (Content ID: 12)
+DataSeries (BS/BS_BaseSubstitutionCode)            not present
+DataSeries (IN/IN_Insertion)                       BYTE_ARRAY_STOP (Content ID: 13 StopByte: 0)
+DataSeries (DL/DL_DeletionLength)                  not present
+DataSeries (RS/RS_RefSkip)                         not present
+DataSeries (SC/SC_SoftClip)                        BYTE_ARRAY_STOP (Content ID: 14 StopByte: 0)
+DataSeries (PD/PD_padding)                         not present
+DataSeries (HC/HC_HardClip)                        not present
+DataSeries (TM/TM_TestMark)                        not present
+DataSeries (TV/TV_TestMark)                        not present
+
+Tag Encodings:
+Content ID/Tag (5198170/OQ:Z)                      BYTE_ARRAY_STOP (Content ID: 5198170 StopByte: 9)
+Content ID/Tag (5784387/XC:C)                      BYTE_ARRAY_LEN (LenEncoding: Symbols: 1 BitLengths 0 ByteEncoding: Content ID: 5784387)
+
+******Slice #: 1 slice: sequenceId=UNMAPPED_UNPLACED, start=0, span=0 globalRecordCounter=604610, nRecords=50000, sliceHeaderOffset=210, sizeOfBlocks=1200356, landmark=0, mapped/unmapped/unplaced: 0/0/0, md5=00000000000000000000000000000000
+Header block                                       method=RAW, type=MAPPED_SLICE, id=0, raw size=49, compressed size=49
+Core block                                         method=RAW, type=CORE, id=0, raw size=0, compressed size=0
+External Block (RN):                               method=NAME_TOKENISER, type=EXTERNAL, id=11, raw size=1596736, compressed size=52965
+External Block (QS):                               method=FQZCOMP, type=EXTERNAL, id=12, raw size=5050000, compressed size=301597
+External Block (BF):                               method=RANSNx16, type=EXTERNAL, id=15, raw size=75000, compressed size=159
+External Block (BA):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=30, raw size=5050000, compressed size=648690
+External Block (TL):                               method=ADAPTIVE_ARITHMETIC, type=EXTERNAL, id=32, raw size=50000, compressed size=2704
+External Block (5198170):                          method=RANSNx16, type=EXTERNAL, id=5198170, raw size=5150000, compressed size=191706
+External Block (5784387):                          method=RANSNx16, type=EXTERNAL, id=5784387, raw size=43401, compressed size=2371
+
+***Container #:9 sequenceId=UNMAPPED_UNPLACED, start=4542278, span=0, nRecords=0, nBlocks=1, nBases=0, globalCounter=0 byteOffset=44643865
+
+Total Record Count: 654610
+
+Core Block(s) Total: 0
+
+External Data Series Totals (external block resolution - all core data encodings accrue to the core block):
+
+RN_ReadName: 2,100,513
+QS_QualityScore: 20,808,782
+IN_Insertion: 1,596
+SC_SoftClip: 802,729
+BF_BitFlags: 221,884
+AP_AlignmentPositionOffset: 118,119
+RG_ReadGroup: 291,392
+MQ_MappingQualityScore: 66,391
+NS_NextFragmentReferenceSequenceID: 346
+MF_MateBitFlags: 87,555
+TS_InsertSize: 630,540
+NP_NextFragmentAlignmentStart: 822,199
+FN_NumberOfReadFeatures: 127,724
+FC_FeatureCode: 58,805
+FP_FeaturePosition: 370,754
+DL_DeletionLength: 1,394
+BA_Base: 1,073,041
+BS_BaseSubstitutionCode: 69,664
+TL_TagIdList: 152,486
+
+Tag Series Distribution:
+
+4279619 (AM:C): 30,753
+4346202 (BQ:Z): 2,050,456
+5067075 (MQ:C): 63,811
+5194586 (OC:Z): 2,350
+5197897 (OP:I): 1,087
+5198170 (OQ:Z): 13,161,065
+5459267 (SM:C): 32,689
+5779523 (X0:C): 65,068
+5779539 (X0:S): 2,845
+5779779 (X1:C): 80,955
+5779795 (X1:S): 6,785
+5783898 (XA:Z): 1,089,547
+5784387 (XC:C): 79,175
+5785411 (XG:C): 10,982
+5786947 (XM:C): 104,543
+5787459 (XO:C): 8,997
+5788737 (XT:A): 22,355
+5063770 (MD:Z): 64
+5131587 (NM:C): 6
+5787203 (XN:C): 11
+5779529 (X0:I): 4
+
