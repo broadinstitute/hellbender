@@ -10,10 +10,12 @@ import org.broadinstitute.hellbender.engine.ReadWalker;
 import org.broadinstitute.hellbender.engine.ReferenceContext;
 import org.broadinstitute.hellbender.engine.filters.ReadFilter;
 import org.broadinstitute.hellbender.engine.filters.ReadFilterLibrary;
+import org.broadinstitute.hellbender.engine.filters.WellformedReadFilter;
 import org.broadinstitute.hellbender.tools.PrintDistantMates;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.collections.HopscotchSet;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
+import org.broadinstitute.hellbender.utils.read.ReadConstants;
 import picard.cmdline.programgroups.ReadDataManipulationProgramGroup;
 
 import java.util.ArrayList;
@@ -34,16 +36,18 @@ public abstract class PairWalker extends ReadWalker {
 
     @Argument(fullName = "pair-padding", shortName = "pp",
                 doc = "Amount of extra padding (in bp) to add to pick up mates near your intervals.")
-    protected int intervalPadding = 1000;
+    protected int intervalPadding = 1250;
 
     private RegionChecker regionChecker = null;
     private final HopscotchSet<PairBufferEntry> pairBufferSet = new HopscotchSet<>(1000000);
-    private final HopscotchSet<String> distantPairsProcessed = new HopscotchSet<>(1000000);
+    private final HopscotchSet<String> distantPairsApplied = new HopscotchSet<>(1000000);
+    private String curContig;
 
     @Override public List<ReadFilter> getDefaultReadFilters() {
         final List<ReadFilter> readFilters = new ArrayList<>(super.getDefaultReadFilters());
         readFilters.add(ReadFilterLibrary.PRIMARY_LINE);
         readFilters.add(ReadFilterLibrary.NOT_DUPLICATE);
+        readFilters.add(new WellformedReadFilter());
         return readFilters;
     }
 
@@ -63,7 +67,7 @@ public abstract class PairWalker extends ReadWalker {
                 prevInterval = curInterval;
             } else if ( prevInterval.getContig().equals(curInterval.getContig()) &&
                         prevInterval.getStart() <= curInterval.getEnd() + 1 &&
-                        prevInterval.getStart() <= curInterval.getEnd() + 1 ) {
+                        curInterval.getStart() <= prevInterval.getEnd() + 1 ) {
                 prevInterval = prevInterval.mergeWithContiguous(curInterval);
             } else {
                 paddedIntervals.add(prevInterval);
@@ -84,21 +88,42 @@ public abstract class PairWalker extends ReadWalker {
             applyUnpaired(read);
             return;
         }
+
+        final String contig = read.getAssignedContig();
+        if ( contig != null &&
+                !contig.equals(ReadConstants.UNSET_CONTIG) &&
+                !contig.equals(curContig) ) {
+            clearBufferSet();
+            curContig = contig;
+        }
+
         final boolean inInterval = regionChecker == null || regionChecker.isInInterval(read);
         final PairBufferEntry pb = new PairBufferEntry(read, inInterval);
         final PairBufferEntry pbMate = pairBufferSet.find(pb);
         if ( pbMate == null ) {
-            pairBufferSet.add(pb);
-        } else {
+            // If it's in one of our intervals, it's always interesting -- hopefully we'll find the mate.
+            // And if it's the first to arrive of the pair, it just might be interesting, anyway.
+            // (Actually, if it's not definitely the 2nd of the pair, we'll save it. There can be doubt.)
+            // But if it's not in the interval and its mate is upstream, we'd expect the mate to be in
+            //   the buffer set already.  The fact that it's not means that the mate must not have been
+            //   near any of the intervals: so the pair is uninteresting, and we don't add it to the
+            //   buffer set.
+            if ( inInterval || !pb.isDownstreamMate() ) {
+                pairBufferSet.add(pb);
+            }
+        } else if ( pb.getRead().isFirstOfPair() != pbMate.getRead().isFirstOfPair() ) {
+            // above check is necessary because under rare circumstances you might see the
+            //  real read and it's distant-mate shadow before seeing the other read in the pair
+
             if ( pb.isInInterval() || pbMate.isInInterval() ) {
                 if ( !pb.isDistantMate() && !pbMate.isDistantMate() ) {
                     apply(pbMate.getRead(), pb.getRead());
                 } else {
                     final String readName = pb.getRead().getName();
-                    if ( distantPairsProcessed.contains(readName) ) {
-                        distantPairsProcessed.remove(readName);
+                    if ( distantPairsApplied.contains(readName) ) {
+                        distantPairsApplied.remove(readName);
                     } else {
-                        distantPairsProcessed.add(readName);
+                        distantPairsApplied.add(readName);
                         apply(pbMate.getRead(), pb.getRead());
                     }
                 }
@@ -109,19 +134,18 @@ public abstract class PairWalker extends ReadWalker {
 
     @Override
     public Object onTraversalSuccess() {
-        int nUnpaired = 0;
-        for ( final PairBufferEntry pb : pairBufferSet ) {
-            if ( pb.isInInterval() ) {
-                applyUnpaired(pb.getRead());
-                nUnpaired += 1;
-            }
-        }
-        if ( nUnpaired > 0 ) {
-            logger.info("There were " + nUnpaired + " incomplete pairs.");
-        }
+        clearBufferSet();
         return null;
     }
 
+    private void clearBufferSet() {
+        for ( final PairBufferEntry pb : pairBufferSet ) {
+            if ( pb.isInInterval() ) {
+                applyUnpaired(pb.getRead());
+            }
+        }
+        pairBufferSet.clear();
+    }
     /**
      * This method is called once for each pair of reads.
      * The pairs will NOT be in strict coordinate order.
@@ -212,6 +236,13 @@ public abstract class PairWalker extends ReadWalker {
         public GATKRead getRead() { return read; }
         public boolean isInInterval() { return inInterval; }
         public boolean isDistantMate() { return distantMate; }
+        public boolean isDownstreamMate() {
+            if ( distantMate || read.getStart() <= read.getMateStart() ||
+                    read.isUnmapped() || read.mateIsUnmapped() ) {
+                return false;
+            }
+            return read.getContig().equals(read.getMateContig());
+        }
 
         @Override
         public boolean equals( final Object obj ) {

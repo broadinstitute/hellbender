@@ -109,6 +109,9 @@ public class PairWalkerUnitTest {
     public void testPairWalkerInterleavedPair() {
         final List<GATKRead> reads = new ArrayList<>(4);
         reads.addAll(createReadPair(0, 501, 1701));
+        for ( final GATKRead read : reads ) {
+            read.setName("r2");
+        }
         reads.addAll(createReadPair(0, 1501, 2501));
         reads.sort(Comparator.comparingInt(GATKRead::getStart));
         Assert.assertEquals(countValidPairs(reads), 2);
