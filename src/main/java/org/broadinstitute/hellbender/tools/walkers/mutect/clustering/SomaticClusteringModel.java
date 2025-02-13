@@ -237,7 +237,7 @@ public class SomaticClusteringModel {
         for (int n = 0; n < data.size(); n++) {
             cumulativeProb += alleleFractionsAndSomaticProbs.get(n).getRight();
 
-            if (cumulativeProb > quantileProb) {
+            if (cumulativeProb > quantileProb ||  n == data.size()-1) {
                 alleleFractionQuantilesList.add(alleleFractionsAndSomaticProbs.get(n).getLeft());
                 while (cumulativeProb > quantileProb) {
                     quantileProb += quantileStep;
