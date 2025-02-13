@@ -232,7 +232,7 @@ public class Mutect2FilteringEngine {
         // this will not change the status of whether a variant is actually filtered or not
         final double maxErrorProb = siteFiltersWithErrorProb.values().stream().mapToDouble(p->p).max().orElse(1);
         siteFiltersWithErrorProb.entrySet().stream().forEach(entry -> {
-            if (entry.getValue() >= Math.min(maxErrorProb, MIN_REPORTABLE_ERROR_PROBABILITY)) {
+            if (entry.getValue() >= Math.max(maxErrorProb, MIN_REPORTABLE_ERROR_PROBABILITY)) {
                 vcb.filter(entry.getKey());
             }
         });

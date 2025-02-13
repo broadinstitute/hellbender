@@ -31,7 +31,7 @@ public class StrictStrandBiasFilter extends HardAlleleFilter {
             sbs = GATKVariantContextUtils.removeDataForSymbolicAlleles(vc, sbs);
         }
         // skip the reference
-        return sbs.subList(1, sbs.size()).stream().map(altList -> altList.stream().anyMatch(x -> x == 0)).collect(Collectors.toList());
+        return sbs.subList(1, sbs.size()).stream().map(altList -> altList.stream().anyMatch(x -> x <= minReadsOnEachStrand)).collect(Collectors.toList());
     }
 
     @Override
