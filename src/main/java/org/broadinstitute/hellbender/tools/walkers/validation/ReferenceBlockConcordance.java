@@ -143,7 +143,7 @@ public class ReferenceBlockConcordance extends AbstractConcordanceWalker {
     }
 
     @Override
-    protected boolean areVariantsAtSameLocusConcordant(VariantContext truth, VariantContext eval) {
+    protected boolean shouldVariantsBeMatched(VariantContext truth, VariantContext eval) {
         return true;
     }
 

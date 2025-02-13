@@ -1,0 +1,18 @@
+##fileformat=VCFv4.2
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=DS,Number=1,Type=String,Description="Dosage">
+##contig=<ID=chr1,length=1000,assembly=dummy>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE3	SAMPLE4
+chr1	100	.	A	G	.	.	.	GT:DS	0/1	1/1
+chr1	105	.	TC	T	.	.	.	GT:DS	0/1	1/1
+chr1	110	.	GA	G	.	.	.	GT:DS	0/1	0/1
+chr1	176	.	CTT	C	.	.	.	GT:DS	1/1	1/1
+chr1	200	.	C	G	.	.	.	GT:DS	0/1	0/0
+chr1	205	.	T	TG	.	.	.	GT:DS	0/0	0/1
+chr1	270	.	A	T	.	.	.	GT:DS	0/0	0/0
+chr1	315	.	T	G	.	.	.	GT:DS	0/1	1/1
+chr1	370	.	C	G	.	.	.	GT:DS	0/1	0/0
+chr1	415	.	G	T	.	.	.	GT:DS	1/1	0/1
+chr1	415	.	GA	G	.	.	.	GT:DS	0/0	0/0
+chr1	500	.	C	A	.	.	.	GT:DS	0/0	0/0
+chr1	500	.	C	G	.	.	.	GT:DS	0/1	0/1

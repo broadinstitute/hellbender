@@ -1,0 +1,19 @@
+ ## htsjdk.samtools.metrics.StringHeader
+# EvaluateGenotypingPerformance --resource /Users/ckachuli/gatk/src/test/resources/org/broadinstitute/hellbender/tools/EvaluateGenotypingPerformance/af_resource.vcf --output src/test/resources/org/broadinstitute/hellbender/tools/EvaluateGenotypingPerformance/expected_correlations_af_resource.tsv --output-accuracy src/test/resources/org/broadinstitute/hellbender/tools/EvaluateGenotypingPerformance/expected_accuracy_af_resource.tsv --af-annotations SAMPLE1:AF1 --af-annotations SAMPLE2:AF2 --nbins 5 --first-bin-right-edge 0.1 --truth src/test/resources/org/broadinstitute/hellbender/tools/EvaluateGenotypingPerformance/truth.vcf --evaluation src/test/resources/org/broadinstitute/hellbender/tools/EvaluateGenotypingPerformance/eval.vcf --minAfForAccuracyMetrics 0.0 --allowDifferingPloidy false --interval-set-rule UNION --interval-padding 0 --interval-exclusion-padding 0 --interval-merging-rule ALL --read-validation-stringency SILENT --seconds-between-progress-updates 10.0 --disable-sequence-dictionary-validation false --create-output-bam-index true --create-output-bam-md5 false --create-output-variant-index true --create-output-variant-md5 false --lenient false --add-output-sam-program-record true --add-output-vcf-command-line true --cloud-prefetch-buffer 40 --cloud-index-prefetch-buffer -1 --disable-bam-index-caching false --sites-only-vcf-output false --help false --version false --showHidden false --verbosity INFO --QUIET false --use-jdk-deflater false --use-jdk-inflater false --gcs-max-retries 20 --gcs-project-for-requester-pays  --disable-tool-default-read-filters false
+## htsjdk.samtools.metrics.StringHeader
+# Started on: June 11, 2021 10:58:57 AM EDT
+
+## METRICS CLASS	org.broadinstitute.hellbender.tools.walkers.validation.EvaluateGenotypingPerformance$AFCorrelationMetric
+BIN_CENTER	SAMPLE	SNP_CORRELATION	SNP_SITES	INDEL_CORRELATION	INDEL_SITES
+0.05	SAMPLE1	0.83666	7	?	0
+0.133352	SAMPLE1	?	0	0.852803	4
+0.237137	SAMPLE1	?	0	?	0
+0.421697	SAMPLE1	?	0	?	0
+0.749894	SAMPLE1	?	0	?	0
+0.05	SAMPLE2	?	0	?	0
+0.133352	SAMPLE2	0.605406	7	?	0
+0.237137	SAMPLE2	?	0	?	0
+0.421697	SAMPLE2	?	0	0.57735	4
+0.749894	SAMPLE2	?	0	?	0
+
+

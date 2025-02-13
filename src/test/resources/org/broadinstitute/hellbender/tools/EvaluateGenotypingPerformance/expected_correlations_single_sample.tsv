@@ -1,0 +1,7 @@
+## METRICS CLASS	org.broadinstitute.hellbender.tools.walkers.validation.EvaluateGenotypingPerformance$AFCorrelationMetric
+BIN_CENTER	SAMPLE	SNP_CORRELATION	SNP_SITES	INDEL_CORRELATION	INDEL_SITES
+0.05	SAMPLE1	0.57735	4	?	0
+0.133352	SAMPLE1	?	1	0.866025	3
+0.237137	SAMPLE1	?	1	?	1
+0.421697	SAMPLE1	?	1	?	0
+0.749894	SAMPLE1	?	0	?	0

@@ -1,0 +1,18 @@
+##fileformat=VCFv4.2
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=DS,Number=1,Type=String,Description="Dosage">
+##INFO=<ID=AF1,Number=A,Type=Flag,Description="allele frequency in population 1">
+##INFO=<ID=AF2,Number=A,Type=Flag,Description="allele frequency in population 2">
+##contig=<ID=chr1,length=1000,assembly=dummy>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	SAMPLE1
+chr1	100	.	A	G	.	.	AF1=0.05;AF2=0.05	GT:DS	0/1:0.98
+chr1	105	.	TC	T	.	.	AF1=0.12;AF2=0.35	GT:DS	0/0:0.0
+chr1	110	.	GA	G	.	.	AF1=0.11;AF2=0.37	GT:DS	0/1:0.92
+chr1	176	.	CTT	C	.	.	AF1=0.15;AF2=0.33	GT:DS	1/1:1.95
+chr1	200	.	C	G	.	.	AF1=0.35;AF2=0.17	GT:DS	0/1:0.94
+chr1	205	.	T	TG	.	.	AF1=0.26;AF2=0.003	GT:DS	0/0:0.02
+chr1	270	.	A	T	.	.	AF1=0.07;AF2=0.06	GT:DS	0/0:0.1
+chr1	315	.	T	G	.	.	AF1=0.0004;AF2=0.22	GT:DS	0/0:0.0
+chr1	370	.	C	G	.	.	AF1=0.09;AF2=0.03	GT:DS	0/1:0.999
+chr1	415	.	G	T	.	.	AF1=0.14;AF2=0.24	GT:DS	1/1:1.999
+chr1	500	.	C	G	.	.	AF1=0.29;AF2=0.02	GT:DS	0/1:0.97

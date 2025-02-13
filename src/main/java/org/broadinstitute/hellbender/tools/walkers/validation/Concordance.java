@@ -9,10 +9,10 @@ import org.apache.commons.lang3.mutable.MutableLong;
 import org.broadinstitute.barclay.argparser.Argument;
 import org.broadinstitute.barclay.argparser.CommandLineProgramProperties;
 import org.broadinstitute.barclay.help.DocumentedFeature;
-import org.broadinstitute.hellbender.engine.AbstractConcordanceWalker;
 import org.broadinstitute.hellbender.engine.GATKPath;
 import org.broadinstitute.hellbender.engine.ReadsContext;
 import org.broadinstitute.hellbender.engine.ReferenceContext;
+import org.broadinstitute.hellbender.engine.AlleleConcordanceWalker;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.tools.walkers.variantutils.VariantsToTable;
 import org.broadinstitute.hellbender.utils.Utils;
@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
         programGroup = VariantEvaluationProgramGroup.class
 )
 @DocumentedFeature
-public class Concordance extends AbstractConcordanceWalker {
+public class Concordance extends AlleleConcordanceWalker {
 
     static final String USAGE_ONE_LINE_SUMMARY = "Evaluate concordance of an input VCF against a validated truth VCF";
     static final String USAGE_SUMMARY = "This tool evaluates an input VCF against a VCF that has been validated" +
@@ -162,7 +162,7 @@ public class Concordance extends AbstractConcordanceWalker {
     }
 
     @Override
-    protected void apply(final TruthVersusEval truthVersusEval, final ReadsContext readsContext, final ReferenceContext refContext) {
+    protected void apply(final AlleleTruthVersusEval truthVersusEval, final ReadsContext readsContext, final ReferenceContext refContext) {
         final ConcordanceState concordanceState = truthVersusEval.getConcordance();
         if (truthVersusEval.getTruthIfPresentElseEval().isSNP()) {
             snpCounts.get(concordanceState).increment();
@@ -186,6 +186,8 @@ public class Concordance extends AbstractConcordanceWalker {
             case FILTERED_FALSE_NEGATIVE:
                 writeFilteredFalseNegative(truthVersusEval);
                 break;
+            case TRUE_NEGATIVE:
+                break; //don't write out true negatives
             default:
                 throw new IllegalStateException("Unexpected ConcordanceState: " + concordanceState.toString());
         }
@@ -213,33 +215,33 @@ public class Concordance extends AbstractConcordanceWalker {
         }
     }
 
-    private void writeTruePositive(final TruthVersusEval truthVersusEval) {
+    private void writeTruePositive(final AlleleTruthVersusEval truthVersusEval) {
         final ConcordanceState state = truthVersusEval.getConcordance();
         Utils.validateArg(state == ConcordanceState.TRUE_POSITIVE, "This is not a true positive.");
         tryToWrite(truePositivesAndFalseNegativesVcfWriter, annotateWithConcordanceState(truthVersusEval.getTruth(), state));
         tryToWrite(truePositivesAndFalsePositivesVcfWriter, annotateWithConcordanceState(truthVersusEval.getEval(), state));
     }
 
-    private void writeFalsePositive(final TruthVersusEval truthVersusEval) {
+    private void writeFalsePositive(final AlleleTruthVersusEval truthVersusEval) {
         final ConcordanceState state = truthVersusEval.getConcordance();
         Utils.validateArg(state == ConcordanceState.FALSE_POSITIVE, "This is not a false positive.");
         tryToWrite(truePositivesAndFalsePositivesVcfWriter, annotateWithConcordanceState(truthVersusEval.getEval(), state));
     }
 
-    private void writeFalseNegative(final TruthVersusEval truthVersusEval) {
+    private void writeFalseNegative(final AlleleTruthVersusEval truthVersusEval) {
         final ConcordanceState state = truthVersusEval.getConcordance();
         Utils.validateArg(state == ConcordanceState.FALSE_NEGATIVE, "This is not a false negative.");
         tryToWrite(truePositivesAndFalseNegativesVcfWriter, annotateWithConcordanceState(truthVersusEval.getTruth(), state));
     }
 
-    private void writeFilteredFalseNegative(final TruthVersusEval truthVersusEval) {
+    private void writeFilteredFalseNegative(final AlleleTruthVersusEval truthVersusEval) {
         final ConcordanceState state = truthVersusEval.getConcordance();
         Utils.validateArg(state == ConcordanceState.FILTERED_FALSE_NEGATIVE, "This is not a filtered false negative.");
         tryToWrite(truePositivesAndFalseNegativesVcfWriter, annotateWithConcordanceState(truthVersusEval.getTruth(), state));
         tryToWrite(filteredTrueNegativesAndFalseNegativesVcfWriter, annotateWithConcordanceState(truthVersusEval.getEval(), state));
     }
 
-    private void writeFilteredTrueNegative(final TruthVersusEval truthVersusEval) {
+    private void writeFilteredTrueNegative(final AlleleTruthVersusEval truthVersusEval) {
         final ConcordanceState state = truthVersusEval.getConcordance();
         Utils.validateArg(state == ConcordanceState.FILTERED_TRUE_NEGATIVE, "This is not a filtered true negative.");
         tryToWrite(filteredTrueNegativesAndFalseNegativesVcfWriter, annotateWithConcordanceState(truthVersusEval.getEval(), state));
@@ -283,20 +285,6 @@ public class Concordance extends AbstractConcordanceWalker {
         }
 
         return "SUCCESS";
-    }
-
-    @Override
-    protected boolean areVariantsAtSameLocusConcordant(final VariantContext truth, final VariantContext eval) {
-        final boolean sameRefAllele = truth.getReference().equals(eval.getReference());
-
-        // We make sure that the truth has at least one alt allele.
-        // If it does, we pick the first for comparison:
-        final boolean containsAltAllele =
-                (truth.getAlternateAlleles().size() == eval.getAlternateAlleles().size()) &&
-                ((truth.getAlternateAlleles().size() > 0) &&
-                        eval.getAlternateAlleles().contains(truth.getAlternateAllele(0)));
-
-        return sameRefAllele && containsAltAllele;
     }
 
     @Override
