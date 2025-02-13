@@ -143,7 +143,7 @@ public final class CachingIndexedFastaSequenceFile implements ReferenceSequenceF
      * @param preserveIUPAC If true, we will keep the IUPAC bases in the FASTA, otherwise they are converted to Ns
      */
      public CachingIndexedFastaSequenceFile(final Path fasta, final long cacheSize, final boolean preserveCase, final boolean  preserveIUPAC) {
-        // Check the FASTA path:
+        // Check the FASTA path: 
         checkFastaPath(fasta);
         Utils.validate(cacheSize > 0, () -> "Cache size must be > 0 but was " + cacheSize);
 
