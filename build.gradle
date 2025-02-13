@@ -881,19 +881,19 @@ tasks.register('gatkTabComplete', Javadoc) {
 
     options.addStringOption("caller-script-name", "gatk")
 
-    options.addStringOption("caller-pre-legal-args", "--help --list --dry-run --java-options")
-    options.addStringOption("caller-pre-arg-val-types", "null null null String")
-    options.addStringOption("caller-pre-mutex-args", "--help;list,dry-run,java-options --list;help,dry-run,java-options")
+    options.addStringOption("caller-pre-legal-args", "--help --list --dry-run --jdk-path --java-options")
+    options.addStringOption("caller-pre-arg-val-types", "null null null String String")
+    options.addStringOption("caller-pre-mutex-args", "--help;list,dry-run,jdk-path,java-options --list;help,dry-run,jdk-path,java-options")
     options.addStringOption("caller-pre-alias-args", "--help;-h")
-    options.addStringOption("caller-pre-arg-min-occurs", "0 0 0 0")
-    options.addStringOption("caller-pre-arg-max-occurs", "1 1 1 1")
+    options.addStringOption("caller-pre-arg-min-occurs", "0 0 0 0 0")
+    options.addStringOption("caller-pre-arg-max-occurs", "1 1 1 1 1")
 
-    options.addStringOption("caller-post-legal-args", "--spark-runner --spark-master --cluster --dry-run --java-options --conf --driver-memory --driver-cores --executor-memory --executor-cores --num-executors")
-    options.addStringOption("caller-post-arg-val-types", "String String String null String file int int int int int")
+    options.addStringOption("caller-post-legal-args", "--spark-runner --spark-master --cluster --dry-run --jdk-path --java-options --conf --driver-memory --driver-cores --executor-memory --executor-cores --num-executors")
+    options.addStringOption("caller-post-arg-val-types", "String String String null String String file int int int int int")
     options.addStringOption("caller-post-mutex-args", "")
     options.addStringOption("caller-post-alias-args", "")
-    options.addStringOption("caller-post-arg-min-occurs", "0 0 0 0 0 0 0 0 0 0")
-    options.addStringOption("caller-post-arg-max-occurs", "1 1 1 1 1 1 1 1 1 1")
+    options.addStringOption("caller-post-arg-min-occurs", "0 0 0 0 0 0 0 0 0 0 0")
+    options.addStringOption("caller-post-arg-max-occurs", "1 1 1 1 1 1 1 1 1 1 1")
 }
 
 static def getWDLInputJSONTestFileNameFromWDLName(File wdlName) {
