@@ -2,6 +2,7 @@ package org.broadinstitute.hellbender.tools.walkers.variantutils;
 
 import org.broadinstitute.hellbender.CommandLineProgramTest;
 import org.broadinstitute.hellbender.exceptions.UserException;
+import org.broadinstitute.hellbender.testutils.ArgumentsBuilder;
 import org.broadinstitute.hellbender.testutils.IntegrationTestSpec;
 import org.testng.annotations.Test;
 
@@ -272,6 +273,21 @@ public final class VariantsToTableIntegrationTest extends CommandLineProgramTest
 
         final String[] args = new String[] {"--variant", inputFile.getAbsolutePath(),
                 "-O", outputFile.getAbsolutePath()};
+        runCommandLine(args);
+
+        IntegrationTestSpec.assertEqualTextFiles(outputFile, expectedFile);
+    }
+
+    @Test
+    public void testNumericGTFlag() throws IOException {
+        final File inputFile = new File(getToolTestDataDir(), "VCFWithGenotypes_1000G.phase3.snippet.vcf");
+        final File outputFile = createTempFile("numericGT", ".table");
+        final File expectedFile = new File(getToolTestDataDir(), "expected.numericGT.table");
+
+        final ArgumentsBuilder args = new ArgumentsBuilder();
+        args.addVCF(inputFile)
+                        .addOutput(outputFile)
+                        .addFlag(VariantsToTable.NUMERIC_GT_FULLNAME);
         runCommandLine(args);
 
         IntegrationTestSpec.assertEqualTextFiles(outputFile, expectedFile);

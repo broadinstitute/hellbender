@@ -1,6 +1,7 @@
 package org.broadinstitute.hellbender.tools.walkers.variantutils;
 
 import htsjdk.variant.variantcontext.Allele;
+import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.*;
 import org.apache.logging.log4j.LogManager;
@@ -122,6 +123,7 @@ import static org.broadinstitute.hellbender.utils.Utils.split;
 public final class VariantsToTable extends VariantWalker {
     public final static String SPLIT_MULTI_ALLELIC_LONG_NAME = "split-multi-allelic";
     public final static String SPLIT_MULTI_ALLELIC_SHORT_NAME = "SMA";
+    public static final String NUMERIC_GT_FULLNAME = "use-numeric-gt";
 
     static final Logger logger = LogManager.getLogger(VariantsToTable.class);
 
@@ -203,6 +205,11 @@ public final class VariantsToTable extends VariantWalker {
             shortName="EMD",
             doc="Fail on missing data", optional=true)
     public boolean errorIfMissingData = false;
+
+    @Argument(fullName = NUMERIC_GT_FULLNAME,
+              doc = "write the GT field the way it appears in a VCF ( ex. 0/1 instead of A/T )",
+              optional = true)
+    public boolean useNumericGT = false;
 
     private static final String MISSING_DATA = "NA";
 
@@ -341,7 +348,7 @@ public final class VariantsToTable extends VariantWalker {
      * @param vc                the VariantContext whose field values we can to capture
      * @return List of lists of field values
      */
-    protected List<List<String>> extractFields(final VariantContext vc) {
+    private List<List<String>> extractFields(final VariantContext vc) {
 
         final int numRecordsToProduce = splitMultiAllelic ? vc.getAlternateAlleles().size() : 1;
         final List<List<String>> records = new ArrayList<>(numRecordsToProduce);
@@ -395,42 +402,46 @@ public final class VariantsToTable extends VariantWalker {
 
     private void addGenotypeFieldsToRecords(final VariantContext vc, final List<List<String>> records, final boolean errorIfMissingData) {
         for ( final String sample : samples ) {
+            final Genotype genotype = vc.getGenotype(sample);
             for ( final String gf : genotypeFieldsToTake ) {
-                if ( vc.hasGenotype(sample) && vc.getGenotype(sample).hasAnyAttribute(gf) ) {
+                if ( genotype != null && genotype.hasAnyAttribute(gf) ) {
                     if (VCFConstants.GENOTYPE_KEY.equals(gf)) {
-                        addFieldValue(vc.getGenotype(sample).getGenotypeString(true), records);
+                        final String gtRepresentation = useNumericGT
+                                ? VCFEncoder.encodeGtField(vc, genotype) : genotype.getGenotypeString(true);
+                        addFieldValue(gtRepresentation, records);
                     } else {
-                        /**
+                        /*
                          * TODO - If gf == "FT" and the GT record is not filtered, Genotype.getAnyAttribute == null. Genotype.hasAnyAttribute should be changed so it
                          * returns false for this condition. Presently, it always returns true. Once this is fixed, then only the "addFieldValue" statement will
                          * remain in the following logic block.
                          */
-                        if (vc.getGenotype(sample).getAnyAttribute(gf) != null) {
-                            addFieldValue(vc.getGenotype(sample).getAnyAttribute(gf), records);
+                        if (genotype.getAnyAttribute(gf) != null) {
+                            addFieldValue(genotype.getAnyAttribute(gf), records);
                         } else {
                             handleMissingData(errorIfMissingData, gf, records, vc);
-                        }                    }
+                        }
+                    }
                 } else {
                     handleMissingData(errorIfMissingData, gf, records, vc);
                 }
             }
 
             for ( final String field : asGenotypeFieldsToTake) {
-                if ( vc.hasGenotype(sample) && vc.getGenotype(sample).hasAnyAttribute(field) ) {
+                if ( genotype != null && genotype.hasAnyAttribute(field) ) {
                     if (splitMultiAllelic) {
                         if (VCFConstants.GENOTYPE_ALLELE_DEPTHS.equals(field)) {
-                            List<String> altDepths = new ArrayList<>();
-                            int[] allDepths = vc.getGenotype(sample).getAD();
+                            final List<String> altDepths = new ArrayList<>();
+                            final int[] allDepths = genotype.getAD();
                             for (int i = 1; i < allDepths.length; i++) {
                                 altDepths.add(allDepths[0] + "," + allDepths[i]);
                             }
                             addFieldValue(altDepths, records);
                         } else {
-                            addAlleleSpecificFieldValue(split(vc.getGenotype(sample).getExtendedAttribute(field).toString(), ','),
+                            addAlleleSpecificFieldValue(split(genotype.getExtendedAttribute(field).toString(), ','),
                                     records, inputHeader.getFormatHeaderLine(field).getCountType());
                         }
                     } else {
-                        final String value = vc.getGenotype(sample).getAnyAttribute(field).toString();
+                        final String value = genotype.getAnyAttribute(field).toString();
                         if (field.equals(VCFConstants.GENOTYPE_ALLELE_DEPTHS)) {
                             addFieldValue(value.replace("[","").replace("]","").replaceAll("\\s",""),records);
                         } else {
@@ -460,8 +471,7 @@ public final class VariantsToTable extends VariantWalker {
             result.get(0).add(prettyPrintObject(val));
         }
         // if this field is a list of the proper size, add the appropriate entry to each record
-        else if ( (val instanceof List) && ((List)val).size() == numResultRecords ) {
-            final List<?> list = (List<?>)val;
+        else if ( (val instanceof List<?> list) && list.size() == numResultRecords ) {
             for ( int i = 0; i < numResultRecords; i++ ) {
                 result.get(i).add(list.get(i).toString());
             }
@@ -482,9 +492,8 @@ public final class VariantsToTable extends VariantWalker {
      * @param alleleCount scalar, R-type or A-type values
      */
     private static void addAlleleSpecificFieldValue(final Object val, final List<List<String>> result, final VCFHeaderLineCount alleleCount) {
-        if (val instanceof List && alleleCount.equals(VCFHeaderLineCount.R)) {
-            final List<?> myList = (List<?>) val;
-            addFieldValue(new ArrayList<>(myList.subList(1, myList.size())), result);
+        if (val instanceof final List<?> list && alleleCount.equals(VCFHeaderLineCount.R)) {
+            addFieldValue(new ArrayList<>(list.subList(1, list.size())), result);
         }
         else {
             addFieldValue(val, result);
@@ -496,8 +505,8 @@ public final class VariantsToTable extends VariantWalker {
             return "";
         }
 
-        if ( val instanceof List ) {
-            return prettyPrintObject(((List) val).toArray());
+        if ( val instanceof List<?> list) {
+            return prettyPrintObject(list.toArray());
         }
 
         if ( !val.getClass().isArray() ) {
