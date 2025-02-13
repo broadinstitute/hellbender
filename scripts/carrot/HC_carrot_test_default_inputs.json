@@ -1,0 +1,32 @@
+{
+  "VariantCallingCarrotOrchestrated.CHM_input_bam": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/chm1_chm13_hiseqx_sm_hf3mo.bam",
+  "VariantCallingCarrotOrchestrated.CHM_input_bam_index": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/NA24385_NA24385_O1D1_SM-G947H_v1_NS.bai",
+  "VariantCallingCarrotOrchestrated.CHM_base_file_name": "CHM113",
+  "VariantCallingCarrotOrchestrated.CHM_calling_interval_list": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/wgs_calling_regions.hg38.interval_list",
+  "VariantCallingCarrotOrchestrated.CHM_contamination": 0.0,
+
+  "VariantCallingCarrotOrchestrated.NIST_input_bam": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/NA24385_NA24385_O1D1_SM-G947H_v1_NS.bam",
+  "VariantCallingCarrotOrchestrated.NIST_input_bam_index": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/NA24385_NA24385_O1D1_SM-G947H_v1_NS.bai",
+  "VariantCallingCarrotOrchestrated.NIST_base_file_name": "NA24385",
+  "VariantCallingCarrotOrchestrated.NIST_calling_interval_list": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/wgs_calling_regions.hg38.interval_list",
+  "VariantCallingCarrotOrchestrated.NIST_contamination": 0.0383312,
+
+  "VariantCallingCarrotOrchestrated.exome1_input_bam": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/NA12878_forPCRplus_1.cram",
+  "VariantCallingCarrotOrchestrated.exome1_input_bam_index": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/NA12878_forPCRplus_1.cram.crai",
+  "VariantCallingCarrotOrchestrated.exome1_base_file_name": "NA12878Exome1",
+  "VariantCallingCarrotOrchestrated.exome1_calling_interval_list": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/exome_calling_regions.v1.interval_list",
+
+  "VariantCallingCarrotOrchestrated.ref_fasta": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/Homo_sapiens_assembly38.fasta",
+  "VariantCallingCarrotOrchestrated.ref_fasta_index": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/Homo_sapiens_assembly38.fasta.fai",
+  "VariantCallingCarrotOrchestrated.ref_dict": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/Homo_sapiens_assembly38.dict",
+
+  "VariantCallingCarrotOrchestrated.contamination": 0.0,
+
+  "VariantCallingCarrotOrchestrated.haplotype_scatter_count": 50,
+  "VariantCallingCarrotOrchestrated.break_bands_at_multiples_of": 100000,
+  "VariantCallingCarrotOrchestrated.agg_preemptible_tries": 3,
+  "VariantCallingCarrotOrchestrated.use_gatk3_haplotype_caller": true,
+  "VariantCallingCarrotOrchestrated.monitoring_script": "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/cromwell_monitoring_script.sh",
+
+  "VariantCallingCarrotOrchestrated.gatk_control_docker":  "broadinstitute/gatk-nightly:latest"
+}

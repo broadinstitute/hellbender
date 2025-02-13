@@ -1,0 +1,69 @@
+{
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_evalVcf":"test_output:VariantCallingCarrotOrchestrated.NIST_output_vcf",
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_evalLabel":"TESTSNAPSHOT2018HG002",
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_evalVcfIndex":"test_output:VariantCallingCarrotOrchestrated.NIST_output_vcf_index",
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_evalMonitoringExample": "test_output:VariantCallingCarrotOrchestrated.NIST_representative_benchmarking",
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_controlVcf":"test_output:VariantCallingCarrotOrchestrated.NIST_control_vcf",
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_controlLabel":"CONTROLSNAPSHOT2018HG002",
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_controlVcfIndex":"test_output:VariantCallingCarrotOrchestrated.NIST_control_vcf_index",
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_controlMonitoringExample": "test_output:VariantCallingCarrotOrchestrated.NIST_control_representative_benchmarking",
+
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_evalRuntimeSummaries": "test_output:VariantCallingCarrotOrchestrated.NIST_output_runtimes",
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_controlRuntimeSummaries": "test_output:VariantCallingCarrotOrchestrated.NIST_control_output_runtimes",
+
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_truthVcf":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/HG002_GRCh38_GIAB_1_22_v4.2.1_benchmark.broad-header.vcf.gz",
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_confidenceInterval":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/HG002_GRCh38_GIAB_1_22_v4.2.1_benchmark_noinconsistent.bed",
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_truthLabel":"HG002_GRCh38_GIAB",
+  "BenchmarkVCFsHeadToHeadOrchestrated.NIST_truthVcfIndex":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/HG002_GRCh38_GIAB_1_22_v4.2.1_benchmark.broad-header.vcf.gz.tbi",
+
+
+
+
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_evalVcf":"test_output:VariantCallingCarrotOrchestrated.CHM_output_vcf",
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_evalLabel":"TESTSNAPSHOT2018HG002",
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_evalVcfIndex":"test_output:VariantCallingCarrotOrchestrated.CHM_output_vcf_index",
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_evalMonitoringExample": "test_output:VariantCallingCarrotOrchestrated.CHM_representative_benchmarking",
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_controlVcf":"test_output:VariantCallingCarrotOrchestrated.CHM_control_vcf",
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_controlLabel":"CONTROLSNAPSHOT2018HG002",
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_controlVcfIndex":"test_output:VariantCallingCarrotOrchestrated.CHM_control_vcf_index",
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_controlMonitoringExample": "test_output:VariantCallingCarrotOrchestrated.CHM_control_representative_benchmarking",
+
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_evalRuntimeSummaries": "test_output:VariantCallingCarrotOrchestrated.CHM_output_runtimes",
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_controlRuntimeSummaries": "test_output:VariantCallingCarrotOrchestrated.CHM_control_output_runtimes",
+
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_truthVcf":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/chm.full.m38.vcf.gz",
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_confidenceInterval":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/chm.full.m38.interval_list",
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_truthLabel":"CHM_GRCh38_SYNDIPv20180222",
+  "BenchmarkVCFsHeadToHeadOrchestrated.CHM_truthVcfIndex":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/chm.full.m38.vcf.gz.tbi",
+
+
+
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_evalVcf":"test_output:VariantCallingCarrotOrchestrated.EXOME1_output_vcf",
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_evalLabel":"TESTSNAPSHOT2018HG002",
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_evalVcfIndex":"test_output:VariantCallingCarrotOrchestrated.EXOME1_output_vcf_index",
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_evalMonitoringExample": "test_output:VariantCallingCarrotOrchestrated.EXOME1_representative_benchmarking",
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_controlVcf":"test_output:VariantCallingCarrotOrchestrated.EXOME1_control_vcf",
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_controlLabel":"CONTROLSNAPSHOT2018HG002",
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_controlVcfIndex":"test_output:VariantCallingCarrotOrchestrated.EXOME1_control_vcf_index",
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_controlMonitoringExample": "test_output:VariantCallingCarrotOrchestrated.EXOME1_control_representative_benchmarking",
+
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_evalRuntimeSummaries": "test_output:VariantCallingCarrotOrchestrated.EXOME1_output_runtimes",
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_controlRuntimeSummaries": "test_output:VariantCallingCarrotOrchestrated.EXOME1_control_output_runtimes",
+
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_truthVcf":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/GIAB_v3.3.2_NA12878_hg38.vcf.gz",
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_confidenceInterval":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/GIAB_v3.3.2_NA12878_hg38.twist_exome.interval_list",
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_truthLabel":"NA12878_GRCh38_TWISTExome",
+  "BenchmarkVCFsHeadToHeadOrchestrated.EXOME1_truthVcfIndex":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/GIAB_v3.3.2_NA12878_hg38.vcf.gz.tbi",
+
+
+
+
+
+  "BenchmarkVCFsHeadToHeadOrchestrated.reference":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/Homo_sapiens_assembly38.fasta",
+  "BenchmarkVCFsHeadToHeadOrchestrated.refIndex":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/Homo_sapiens_assembly38.fasta.fai",
+  "BenchmarkVCFsHeadToHeadOrchestrated.refDict":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/Homo_sapiens_assembly38.dict",
+  "BenchmarkVCFsHeadToHeadOrchestrated.referenceVersion":"HG38",
+  "BenchmarkVCFsHeadToHeadOrchestrated.hapMap":"gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/Homo_sapiens_assembly38.haplotype_database.txt",
+  "BenchmarkVCFsHeadToHeadOrchestrated.stratIntervals":["gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/HCR_hg38.bed", "gs://dsp-methods-carrot-data/test_data/haplotypecaller_tests/LCR_Hg38.interval_list"],
+  "BenchmarkVCFsHeadToHeadOrchestrated.stratLabels":["HCR", "LCR"]
+}
