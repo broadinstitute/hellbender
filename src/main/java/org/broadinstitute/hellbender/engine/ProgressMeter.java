@@ -1,12 +1,17 @@
 package org.broadinstitute.hellbender.engine;
 
 import com.google.common.annotations.VisibleForTesting;
+import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SAMSequenceRecord;
 import htsjdk.samtools.util.Locatable;
+import htsjdk.samtools.util.SamConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.broadinstitute.hellbender.utils.Utils;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.function.LongSupplier;
 
 /**
@@ -111,6 +116,19 @@ public final class ProgressMeter {
     private LongSupplier timeFunction;
 
     /**
+     * Cached copy of the sequence dictionary from the currently running tool.
+     * Used to estimate percentage completion and time remaining.
+     */
+    @VisibleForTesting
+     SAMSequenceDictionary sequenceDictionary;
+
+    /**
+     * Map containing the cumulative number of bases in each contig in the reference dictionary.
+     * Used to estimate percentage completion and time remaining.
+     */
+    final HashMap<String, Long> cumulativeBasesInRefDict = new LinkedHashMap<>();
+
+    /**
      * Keeps track of whether the progress meter has ever been started.
      */
     private boolean started;
@@ -145,7 +163,7 @@ public final class ProgressMeter {
      * @param secondsBetweenUpdates number of seconds that should elapse before outputting a line to the logger
      */
     public ProgressMeter( final double secondsBetweenUpdates ) {
-        this(secondsBetweenUpdates, DEFAULT_TIME_FUNCTION, false);
+        this(secondsBetweenUpdates, DEFAULT_TIME_FUNCTION, false, null);
     }
 
     /**
@@ -156,8 +174,20 @@ public final class ProgressMeter {
      * @param disabled if true, set this ProgressMeter to be disabled, so that all operations on it are no-ops
      */
     public ProgressMeter( final double secondsBetweenUpdates, final boolean disabled ) {
-        this(secondsBetweenUpdates, DEFAULT_TIME_FUNCTION, disabled);
+        this(secondsBetweenUpdates, DEFAULT_TIME_FUNCTION, disabled, null);
     }
+
+    /**
+     * Create a progress meter with a custom update interval and the default time function {@link #DEFAULT_TIME_FUNCTION},
+     * and allows the ProgressMeter to be set as disabled
+     *
+     * @param secondsBetweenUpdates number of seconds that should elapse before outputting a line to the logger
+     * @param disabled if true, set this ProgressMeter to be disabled, so that all operations on it are no-ops
+     */
+    public ProgressMeter(final double secondsBetweenUpdates, final boolean disabled, final SAMSequenceDictionary sequenceDictionary) {
+        this(secondsBetweenUpdates, DEFAULT_TIME_FUNCTION, disabled, sequenceDictionary);
+    }
+
 
     /**
      * Create a progress meter with a custom update interval and a custom function for getting the current
@@ -171,7 +201,23 @@ public final class ProgressMeter {
      */
     @VisibleForTesting
     ProgressMeter( final double secondsBetweenUpdates, final LongSupplier timeFunction ) {
-        this(secondsBetweenUpdates, timeFunction, false);
+        this(secondsBetweenUpdates, timeFunction, false, null);
+    }
+
+    /**
+     * Create a progress meter with a custom update interval and a custom function for getting the current
+     * time in milliseconds.
+     *
+     * Providing your own time function is only useful in unit tests -- in normal usage
+     * clients should call one of the other constructors.
+     *
+     * @param secondsBetweenUpdates number of seconds that should elapse before outputting a line to the logger
+     * @param timeFunction function that returns the current time in milliseconds.
+     * @param sequenceDictionary the {@link SAMSequenceDictionary} for the current tool.  Used to estimate % complete and remaining time.
+     */
+    @VisibleForTesting
+    ProgressMeter(final double secondsBetweenUpdates, final LongSupplier timeFunction, final SAMSequenceDictionary sequenceDictionary) {
+        this(secondsBetweenUpdates, timeFunction, false, sequenceDictionary);
     }
 
     /**
@@ -184,9 +230,10 @@ public final class ProgressMeter {
      * @param secondsBetweenUpdates number of seconds that should elapse before outputting a line to the logger
      * @param timeFunction function that returns the current time in milliseconds.
      * @param disabled if true, set this ProgressMeter to be disabled, so that all operations on it are no-ops
+     * @param sequenceDictionary the {@link SAMSequenceDictionary} for the current tool.  Used to estimate % complete and remaining time.
      */
     @VisibleForTesting
-    ProgressMeter( final double secondsBetweenUpdates, final LongSupplier timeFunction, final boolean disabled ) {
+    ProgressMeter( final double secondsBetweenUpdates, final LongSupplier timeFunction, final boolean disabled, final SAMSequenceDictionary sequenceDictionary ) {
         Utils.nonNull(timeFunction);
         Utils.validateArg(secondsBetweenUpdates > 0, "secondsBetweenUpdates must be > 0.0");
         this.started = false;
@@ -194,6 +241,28 @@ public final class ProgressMeter {
         this.disabled = disabled;
         this.secondsBetweenUpdates = secondsBetweenUpdates;
         this.timeFunction = timeFunction;
+
+        // If we have a sequence dictionary, process it for estimated time remaining and percentage of progress:
+        if (sequenceDictionary != null) {
+            setSequenceDictionary(sequenceDictionary);
+        }
+    }
+
+    /**
+     * Set the sequence dictionary for this progress meter and allow it to estimate time remaining.
+     * @param sequenceDictionary the {@link SAMSequenceDictionary} for the current tool.  Used to estimate % complete and remaining time.
+     */
+    public void setSequenceDictionary(final SAMSequenceDictionary sequenceDictionary) {
+
+        // Process the sequence dictionary so that we can get estimated progress:
+        this.sequenceDictionary = sequenceDictionary;
+
+        // Generate the cumulative number of bases in each contig from the reference dict:
+        long cSum = 0;
+        for ( final SAMSequenceRecord r : sequenceDictionary.getSequences() ) {
+            cumulativeBasesInRefDict.put(r.getSequenceName(), cSum);
+            cSum += r.getSequenceLength();
+        }
     }
 
     /**
@@ -313,10 +382,27 @@ public final class ProgressMeter {
      * Print column headings labelling the output from {@link #printProgress}
      */
     private void printHeader() {
-        logger.info(String.format("%20s  %15s  %20s  %15s",
-                                  "Current Locus", "Elapsed Minutes",
-                                  StringUtils.capitalize(recordLabel) + " Processed",
-                                  StringUtils.capitalize(recordLabel) + "/Minute"));
+        logger.info(getHeader());
+    }
+
+    @VisibleForTesting
+    String getHeader() {
+        if (sequenceDictionary != null) {
+            return String.format("%20s  %15s  %20s  %15s  %10s  %23s",
+                    "Current Locus", "Elapsed Minutes",
+                    StringUtils.capitalize(recordLabel) + " Processed",
+                    StringUtils.capitalize(recordLabel) + "/Minute",
+                    "% Complete",
+                    "Est. Time Remaining (s)"
+            );
+        }
+        else{
+            return String.format("%20s  %15s  %20s  %15s",
+                    "Current Locus", "Elapsed Minutes",
+                    StringUtils.capitalize(recordLabel) + " Processed",
+                    StringUtils.capitalize(recordLabel) + "/Minute"
+            );
+        }
     }
 
     /**
@@ -324,8 +410,50 @@ public final class ProgressMeter {
      */
     private void printProgress() {
         ++numLoggerUpdates;
-        logger.info(String.format("%20s  %15.1f  %20d  %15.1f",
-                                  currentLocusString(), elapsedTimeInMinutes(), numRecordsProcessed, processingRate()));
+
+        // If we can display percentage of time remaining, we do so here:
+        if (sequenceDictionary != null) {
+
+            // We must check if the contig for the current locus is set:
+            if ((currentLocus == null) || (currentLocus.getContig() == null)) {
+                logger.info(String.format("%20s  %15.1f  %20d  %15.1f  %12s  %23s",
+                        currentLocusString(), elapsedTimeInMinutes(), numRecordsProcessed, processingRate(),
+                        "UNKNOWN", "UNKNOWN"));
+            }
+            else {
+                double percentageComplete = calculateEstimatedPercentComplete();
+                long   timeRemaining_s    = calculateEstimatedTimeRemaining_s(percentageComplete, currentTimeMs - startTimeMs);
+
+                logger.info(String.format("%20s  %15.1f  %20d  %15.1f  %10.2f  %23d",
+                        currentLocusString(), elapsedTimeInMinutes(), numRecordsProcessed, processingRate(),
+                        percentageComplete, timeRemaining_s));
+            }
+        }
+        else {
+            logger.info(String.format("%20s  %15.1f  %20d  %15.1f",
+                    currentLocusString(), elapsedTimeInMinutes(), numRecordsProcessed, processingRate()));
+        }
+    }
+
+    @VisibleForTesting
+    double calculateEstimatedPercentComplete() {
+        if ((currentLocus == null) || (currentLocus.getContig() == null)) {
+            return 0;
+        }
+
+        final long currentOverallPos = cumulativeBasesInRefDict.get(currentLocus.getContig()) + currentLocus.getStart();
+        return (100.0 * currentOverallPos) / sequenceDictionary.getReferenceLength();
+    }
+
+    @VisibleForTesting
+    long calculateEstimatedTimeRemaining_s(final double percentComplete, final long elapsedTime_ms) {
+
+        // 100 in numerator to cancel out the percentage units and get a proportion:
+        double totalTime_ms = (100 * elapsedTime_ms) / percentComplete;
+
+        // Subtract percentage complete from 100 to get percent remaining.
+        // Divide by 100 to convert percentage to proportion.
+        return (long)((((100.0 - percentComplete) * totalTime_ms)/100.0) / MILLISECONDS_PER_SECOND );
     }
 
     /**

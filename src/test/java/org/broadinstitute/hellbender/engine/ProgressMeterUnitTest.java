@@ -1,12 +1,17 @@
 package org.broadinstitute.hellbender.engine;
 
+import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SAMSequenceRecord;
+import htsjdk.samtools.util.Locatable;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.LongSupplier;
@@ -35,6 +40,23 @@ public class ProgressMeterUnitTest extends GATKBaseTest {
         }
     }
 
+    private static class NullyLocatable implements Locatable {
+        @Override
+        public String getContig() {
+            return null;
+        }
+
+        @Override
+        public int getStart() {
+            return 0;
+        }
+
+        @Override
+        public int getEnd() {
+            return 0;
+        }
+    }
+
     @DataProvider(name = "UpdateIntervalTestData")
     public Object[][] getUpdateIntervalTestData() {
         return new Object[][] {
@@ -59,6 +81,143 @@ public class ProgressMeterUnitTest extends GATKBaseTest {
 
         Assert.assertEquals(meter.numLoggerUpdates(), expectedUpdates, "Wrong number of logger updates given secondsBetweenUpdates = " + secondsBetweenUpdates);
     }
+
+    @Test()
+    public void testGetHeader() {
+        // test with no percent remaining:
+        final ProgressMeter m1 = new ProgressMeter(1.0, new ListBasedTimeFunction(Arrays.asList(1000L, 2000L)));
+        Assert.assertEquals(m1.getHeader(), "       Current Locus  Elapsed Minutes     Records Processed   Records/Minute");
+
+        final SAMSequenceDictionary sequenceDictionary =  new SAMSequenceDictionary(Arrays.asList(
+                new SAMSequenceRecord("contig1", 1000),
+                new SAMSequenceRecord("contig2", 1117),
+                new SAMSequenceRecord("contig3", 1000)
+        ));
+
+        // test with percent remaining:
+        final ProgressMeter m2 = new ProgressMeter(
+                1.0,
+                new ListBasedTimeFunction(Arrays.asList(1000L, 2000L)),
+                sequenceDictionary
+        );
+        Assert.assertEquals(m2.getHeader(), "       Current Locus  Elapsed Minutes     Records Processed   Records/Minute  % Complete  Est. Time Remaining (s)");
+    }
+
+    @Test()
+    public void testSetSequenceDictionary() {
+        final ProgressMeter meter = new ProgressMeter(1.0, new ListBasedTimeFunction(Arrays.asList(1000L, 2000L)));
+        Assert.assertNull(meter.sequenceDictionary);
+
+        final SAMSequenceDictionary sequenceDictionary =  new SAMSequenceDictionary(Arrays.asList(
+                new SAMSequenceRecord("contig1", 1000),
+                new SAMSequenceRecord("contig2", 1117),
+                new SAMSequenceRecord("contig3", 1000)
+        ));
+
+        // Validate that our sequence dictionary actually gets set:
+        meter.setSequenceDictionary(sequenceDictionary);
+        Assert.assertEquals(meter.sequenceDictionary, sequenceDictionary);
+
+        // Validate that the cumulative bases in the dictionary are correct:
+        Assert.assertEquals(meter.cumulativeBasesInRefDict, new LinkedHashMap<String, Long>() {{
+            put("contig1", 0L);
+            put("contig2", 1000L);
+            put("contig3", 2117L);
+        }});
+
+        // Validate the above but with the constructor:
+        final ProgressMeter meter2 = new ProgressMeter(1.0,
+                new ListBasedTimeFunction(Arrays.asList(1000L, 2000L)),
+                sequenceDictionary
+        );
+
+        Assert.assertEquals(meter2.cumulativeBasesInRefDict, new LinkedHashMap<String, Long>() {{
+            put("contig1", 0L);
+            put("contig2", 1000L);
+            put("contig3", 2117L);
+        }});
+    }
+    @DataProvider(name = "provideForCalculateEstimatedPercentComplete")
+    public Object[][] provideForCalculateEstimatedPercentComplete() {
+
+        final SAMSequenceDictionary sequenceDictionary =  new SAMSequenceDictionary(Arrays.asList(
+                new SAMSequenceRecord("contig1", 2000),
+                new SAMSequenceRecord("contig2", 3000),
+                new SAMSequenceRecord("contig3", 5000)
+        ));
+
+        return new Object[][] {
+                {sequenceDictionary, new SimpleInterval("contig1", 1000, 1000), 10.0},
+                {sequenceDictionary, new SimpleInterval("contig1", 2000, 2000), 20.0},
+                {sequenceDictionary, new SimpleInterval("contig2", 1000, 1000), 30.0},
+                {sequenceDictionary, new SimpleInterval("contig2", 2000, 2000), 40.0},
+                {sequenceDictionary, new NullyLocatable(), 0},
+                {sequenceDictionary, null, 0},
+        };
+    }
+
+    @Test(dataProvider = "provideForCalculateEstimatedPercentComplete")
+    public void testCalculateEstimatedPercentComplete(final SAMSequenceDictionary sequenceDictionary,
+                                                      final Locatable locus,
+                                                      final double expectedPercent) {
+
+        final double epsilon = 0.0001;
+
+        final ProgressMeter meter = new ProgressMeter(1.0,
+                new ListBasedTimeFunction(Arrays.asList(1000L, 2000L)),
+                sequenceDictionary
+        );
+
+        meter.start();
+
+        // We have to do at least DEFAULT_RECORDS_BETWEEN_TIME_CHECKS updates for the locus to be updated:
+        for (int i = 0 ; i < ProgressMeter.DEFAULT_RECORDS_BETWEEN_TIME_CHECKS; ++i) {
+            meter.update(locus);
+        }
+
+        Assert.assertTrue((meter.calculateEstimatedPercentComplete() - expectedPercent) < epsilon );
+    }
+
+    @DataProvider(name = "provideForTestCalculateEstimatedTimeRemaining_s")
+    public Object[][] provideForTestCalculateEstimatedTimeRemaining_s() {
+
+        final SAMSequenceDictionary sequenceDictionary =  new SAMSequenceDictionary(Arrays.asList(
+                new SAMSequenceRecord("contig1", 2000),
+                new SAMSequenceRecord("contig2", 3000),
+                new SAMSequenceRecord("contig3", 5000)
+        ));
+
+        return new Object[][] {
+                {sequenceDictionary, new SimpleInterval("contig1", 1000, 1000), 1000, 9},
+                {sequenceDictionary, new SimpleInterval("contig1", 1000, 1000), 5000, 45},
+                {sequenceDictionary, new SimpleInterval("contig1", 1000, 1000), 360000, 3240},
+                {sequenceDictionary, new SimpleInterval("contig1", 2000, 2000), 360000, 1440},
+                {sequenceDictionary, new SimpleInterval("contig2", 1000, 1000), 360000, 840},
+                {sequenceDictionary, new SimpleInterval("contig2", 2000, 2000), 360000, 540},
+        };
+    }
+
+    @Test(dataProvider = "provideForTestCalculateEstimatedTimeRemaining_s")
+    public void testCalculateEstimatedTimeRemaining_s(final SAMSequenceDictionary sequenceDictionary,
+                                                      final Locatable locus,
+                                                      final long elapsedTime_ms,
+                                                      final long expectedRemainingTime_s) {
+        final ProgressMeter meter = new ProgressMeter(1.0,
+                new ListBasedTimeFunction(Arrays.asList(1000L, 2000L)),
+                sequenceDictionary
+        );
+
+        meter.start();
+
+        // We have to do at least DEFAULT_RECORDS_BETWEEN_TIME_CHECKS updates for the locus to be updated:
+        for (int i = 0 ; i < ProgressMeter.DEFAULT_RECORDS_BETWEEN_TIME_CHECKS; ++i) {
+            meter.update(locus);
+        }
+
+        final double percentComplete = meter.calculateEstimatedPercentComplete();
+        Assert.assertEquals((meter.calculateEstimatedTimeRemaining_s(percentComplete, elapsedTime_ms)), expectedRemainingTime_s );
+    }
+
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInvalidUpdateInterval() {

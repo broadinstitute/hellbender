@@ -127,7 +127,7 @@ public final class ReferenceUtils {
      * @param interval The interval of the sequence.
      * @return the sequence's MD5 as a String.
      */
-    public final static String calculateMD5(GATKPath referencePath, SimpleInterval interval){
+    public static String calculateMD5(GATKPath referencePath, SimpleInterval interval){
         MessageDigest md5;
         try {
             md5 = MessageDigest.getInstance("MD5");
