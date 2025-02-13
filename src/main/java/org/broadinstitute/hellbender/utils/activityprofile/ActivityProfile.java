@@ -353,7 +353,7 @@ public class ActivityProfile {
      * @return the index into stateList of the last element of this region, or -1 if it cannot be found
      */
     private int findEndOfRegion(final boolean isActiveRegion, final int minRegionSize, final int maxRegionSize, final boolean forceConversion) {
-        if ( ! forceConversion && stateList.size() < maxRegionSize + getMaxProbPropagationDistance() ) {
+        if ( ! forceConversion && stateList.size() < maxRegionSize + getMaxProbPropagationDistance() + 1 ) {
             // we really haven't finalized at the probability mass that might affect our decision, so keep
             // waiting until we do before we try to make any decisions
             return -1;
