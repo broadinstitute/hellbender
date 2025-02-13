@@ -3,6 +3,10 @@ package org.broadinstitute.hellbender.tools.spark.sv.utils;
 import com.google.common.collect.HashBiMap;
 import htsjdk.variant.variantcontext.Allele;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.Map;
 
 import static java.util.Map.entry;
@@ -160,6 +164,39 @@ public final class GATKSVVCFConstants {
     public static final String ASSEMBLY_BASED_VARIANT_ALN_LENGTH_FILTER_KEY = "SHORT_ALN";
     public static final String LOW_QS_SCORE_FILTER_KEY = "LOW_QS";
     public static final String FREQUENCY_FILTER_KEY = "FREQ";
+
+    // CleanVcf
+    public static final String ME = "ME";
+    public static final String VAR_GQ = "varGQ";
+    public static final String MULTIALLELIC = "MULTIALLELIC";
+    public static final String UNRESOLVED = "UNRESOLVED";
+    public static final String HIGH_SR_BACKGROUND = "HIGH_SR_BACKGROUND";
+    public static final String BOTHSIDES_SUPPORT = "BOTHSIDES_SUPPORT";
+    public static final String PESR_GT_OVERDISPERSION = "PESR_GT_OVERDISPERSION";
+    public static final String REVISED_EVENT = "REVISED_EVENT";
+    public static final String MULTI_CNV = "MULTI_CNV";
+
+    public static final String RD_CN = "RD_CN";
+    public static final String RD_GQ = "RD_GQ";
+    public static final String PE_GT = "PE_GT";
+    public static final String SR_GT = "SR_GT";
+    public static final String PE_GQ = "PE_GQ";
+    public static final String SR_GQ = "SR_GQ";
+    public static final String CNV = "CNV";
+    public static final String UNR = "UNR";
+    public static final String EVENT = "EVENT";
+    public static final String EV = "EV";
+    public static final List<String> EV_VALUES = Arrays.asList(
+            null, "RD", "PE", "RD,PE", "SR", "RD,SR", "PE,SR", "RD,PE,SR"
+    );
+    public static final Set<String> FILTER_VCF_LINES = new HashSet<>(Arrays.asList(
+            "CIPOS", "CIEND", "RMSSTD", "source", "bcftools", "GATKCommandLine", "#CHROM"
+    ));
+
+    public static final Set<String> FILTER_VCF_INFO_LINES = new HashSet<>(Arrays.asList(
+        GATKSVVCFConstants.UNRESOLVED, GATKSVVCFConstants.MULTIALLELIC, GATKSVVCFConstants.VAR_GQ,
+            GATKSVVCFConstants.MULTI_CNV, GATKSVVCFConstants.REVISED_EVENT, GATKSVVCFConstants.EVENT
+    ));
 
     // Clustering
     public static final String CLUSTER_MEMBER_IDS_KEY = "MEMBERS";
