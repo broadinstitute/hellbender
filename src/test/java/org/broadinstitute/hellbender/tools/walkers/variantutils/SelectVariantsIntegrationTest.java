@@ -1,9 +1,15 @@
 package org.broadinstitute.hellbender.tools.walkers.variantutils;
 
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
+import htsjdk.beta.io.IOPathUtils;
+import htsjdk.beta.io.bundle.BundleJSON;
+import htsjdk.beta.plugin.variants.VariantsBundle;
+import htsjdk.io.IOPath;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFHeader;
 import org.apache.commons.lang3.tuple.Pair;
@@ -1250,6 +1256,81 @@ public class SelectVariantsIntegrationTest extends CommandLineProgramTest {
         new Main().instanceMain(args);
 
         IntegrationTestSpec.assertEqualTextFiles(IOUtils.getPath(out), IOUtils.getPath(expectedFile), null);
+    }
+
+    @DataProvider(name="cloudBucketBundles")
+    public Object[][] cloudBucketBundles() {
+        return new Object[][]{
+                {
+                    // cloud vcf with a .idx
+                        new GATKPath("gs://hellbender/test/resources/large/dbsnp_138.b37.1.1-65M.vcf"),
+                        new GATKPath("gs://hellbender/test/resources/large/dbsnp_138.b37.1.1-65M.vcf.idx"),
+                        "1:20547",
+                        "expected/testSelectVariants_BundleWith_idx.vcf"
+                },
+                {
+                    // cloud vcf with a .tbi
+                        new GATKPath("gs://hellbender/test/resources/large/dbsnp_138.b37.20.21.vcf.blockgz.gz"),
+                        new GATKPath("gs://hellbender/test/resources/large/dbsnp_138.b37.20.21.vcf.blockgz.gz.tbi"),
+                        "21:10000128",
+                        "expected/testSelectVariants_BundleWith_tbi.vcf"
+                }
+        };
+    }
+
+    @Test(dataProvider="cloudBucketBundles", groups = "bucket")
+    public void testBundleRemoteQueryWithVCFAndIndexInSeparateBuckets(
+            final IOPath vcfPath,
+            final IOPath indexPath,
+            final String queryInterval,
+            final String expectedOutputFile
+    ) throws IOException {
+        // test that a query using a bundle containing remote nio paths to a vcf works when the index is
+        // in a different bucket than the vcf
+        final String targetBucketName = BucketUtils.randomRemotePath(getGCPTestStaging(), "testSelectVariantsBundleOnNio", "") + "/";
+        IOUtils.deleteOnExit(IOUtils.getPath(targetBucketName));
+        final GATKPath targetVCFPath = new GATKPath(targetBucketName + vcfPath.toPath().getFileName());
+
+        // copy our test vcf (which is already in a bucket with it's accompanying index) to a different bucket where the
+        // index does not reside, and then create a bundle referencing the copy of the vcf and the original index, so
+        // the vcf and the index are in separate buckets
+        Files.copy(vcfPath.toPath(), targetVCFPath.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+        // create a bundle with the copied vcf and the original index
+        final VariantsBundle vcfBundle = new VariantsBundle(new GATKPath(targetVCFPath), indexPath);
+        final GATKPath bundleFilePath = new GATKPath(createTempFile("testSelectVariantsBundleOnNio", ".json").toString());
+        IOPathUtils.writeStringToPath(bundleFilePath, BundleJSON.toJSON(vcfBundle));
+
+        final IntegrationTestSpec spec = new IntegrationTestSpec(
+                " --variant " + bundleFilePath
+                        + " -L " + queryInterval
+                        + " --suppress-reference-path " // suppress reference file path in output for test differencing
+                        + " -O %s "
+                        + " --" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE +" false",
+                Collections.singletonList(getToolTestDataDir() + expectedOutputFile)
+        );
+
+        spec.executeTest("testBundle", this);
+    }
+
+    @Test(groups = "bucket")
+    public void testBundleRemoteWithQueryParams() throws IOException {
+        final VariantsBundle vcfBundle = new VariantsBundle(
+                new GATKPath(BucketUtils.createSignedUrlToGcsObject("gs://hellbender/test/resources/large/1000G.phase3.broad.withGenotypes.chr20.10100000.vcf", 1)),
+                new GATKPath(BucketUtils.createSignedUrlToGcsObject("gs://hellbender/test/resources/large/1000G.phase3.broad.withGenotypes.chr20.10100000.vcf.idx", 1)));
+        final IOPath bundleFile = new GATKPath(createTempFile("testSelectVariantsThroughBundle", ".json").toString());
+        IOPathUtils.writeStringToPath(bundleFile, BundleJSON.toJSON(vcfBundle));
+
+        final IntegrationTestSpec spec = new IntegrationTestSpec(
+                " --variant " + bundleFile.toString()
+                        + " -L 20:10001365 "
+                        + " --suppress-reference-path " // suppress reference file path in output for test differencing
+                        + " -O %s "
+                        + " --" + StandardArgumentDefinitions.ADD_OUTPUT_VCF_COMMANDLINE +" false",
+                Collections.singletonList(getToolTestDataDir() + "expected/" + "testSelectVariants_Bundle.vcf")
+        );
+
+        spec.executeTest("testBundle", this);
     }
 
     // the input test file is a somatic VCF with several many-allelic sites and no PLs.  This tests that the tool does not attempt

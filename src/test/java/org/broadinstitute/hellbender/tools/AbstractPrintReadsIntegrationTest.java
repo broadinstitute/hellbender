@@ -1,5 +1,9 @@
 package org.broadinstitute.hellbender.tools;
 
+import htsjdk.beta.io.IOPathUtils;
+import htsjdk.beta.io.bundle.Bundle;
+import htsjdk.beta.io.bundle.BundleJSON;
+import htsjdk.beta.plugin.registry.HaploidReferenceResolver;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamReader;
@@ -9,6 +13,7 @@ import org.broadinstitute.hellbender.CommandLineProgramTest;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.broadinstitute.hellbender.cmdline.ReadFilterArgumentDefinitions;
 import org.broadinstitute.hellbender.cmdline.StandardArgumentDefinitions;
+import org.broadinstitute.hellbender.engine.GATKPath;
 import org.broadinstitute.hellbender.engine.ReadsDataSource;
 import org.broadinstitute.hellbender.engine.ReadsPathDataSource;
 import org.broadinstitute.hellbender.engine.filters.ReadLengthReadFilter;
@@ -19,6 +24,7 @@ import org.broadinstitute.hellbender.testutils.IntegrationTestSpec;
 import org.broadinstitute.hellbender.testutils.SamAssertionUtils;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.gcs.BucketUtils;
+import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -37,14 +43,20 @@ public abstract class AbstractPrintReadsIntegrationTest extends CommandLineProgr
         String samFile = fileIn;
         final File outFile = GATKBaseTest.createTempFile(samFile + ".", extOut);
         final File ORIG_BAM = new File(TEST_DATA_DIR, samFile);
-        final File refFile;
+        final GATKPath refFile;
 
         final ArrayList<String> args = new ArrayList<>();
         args.add("--input"); args.add(ORIG_BAM.getAbsolutePath());
         args.add("--output"); args.add(outFile.getAbsolutePath());
         if (reference != null) {
-            refFile = new File(TEST_DATA_DIR, reference);
-            args.add("-R"); args.add(refFile.getAbsolutePath());
+            if (reference.endsWith(BundleJSON.BUNDLE_EXTENSION)) {
+                // the test json files are temporary files, not files in TEST_DATA_DIR
+                refFile = new GATKPath(reference);
+                args.add("-R"); args.add(reference);
+            } else {
+                refFile = new GATKPath(new File(TEST_DATA_DIR, reference).getAbsolutePath());
+                args.add("-R"); args.add(refFile.toString());
+            }
         }
         else {
             refFile = null;
@@ -55,11 +67,31 @@ public abstract class AbstractPrintReadsIntegrationTest extends CommandLineProgr
         }
         runCommandLine(args);
 
-        SamAssertionUtils.assertSamsEqual(outFile, ORIG_BAM, refFile);
+        SamAssertionUtils.assertSamsEqual(outFile, ORIG_BAM, refFile == null ? null : refFile.toPath().toFile());
 
         if (testMD5) {
             checkMD5asExpected(outFile);
         }
+    }
+
+    public void doFileToFileUsingReferenceBundle(String fileIn, String extOut, String reference, boolean testMD5) throws Exception {
+        final String referenceToUse;
+        if (reference != null) {
+            // create the bundle, using inference to find the sibling files, then write the bundle out to a temp file
+            final Bundle referenceBundle = HaploidReferenceResolver.referenceBundleFromFastaPath(
+                    new GATKPath(new File(TEST_DATA_DIR, reference).toPath().toString()),
+                    GATKPath::new);
+            final GATKPath tempBundlePath = new GATKPath(
+                    IOUtils.createTempFile("printReadsRefBundle", ".json").getAbsolutePath()
+            );
+            IOPathUtils.writeStringToPath(tempBundlePath, BundleJSON.toJSON(referenceBundle));
+            referenceToUse = tempBundlePath.toString();
+        } else {
+            referenceToUse = reference;
+        }
+
+        // no run the regular test, but using the reference bundle
+        doFileToFile(fileIn, extOut, referenceToUse, testMD5);
     }
 
     private void checkMD5asExpected(final File outFile) throws IOException {
@@ -74,8 +106,8 @@ public abstract class AbstractPrintReadsIntegrationTest extends CommandLineProgr
     }
 
     @Test(dataProvider="testingData")
-    public void testFileToFile(String fileIn, String extOut, String reference) throws Exception {
-        doFileToFile(fileIn, extOut, reference, false);
+    public void testFileToFileWithReferenceBundle(String fileIn, String extOut, String reference) throws Exception {
+        doFileToFileUsingReferenceBundle(fileIn, extOut, reference, false);
     }
 
     @DataProvider(name="testingData")
@@ -118,6 +150,18 @@ public abstract class AbstractPrintReadsIntegrationTest extends CommandLineProgr
                 {"print_reads.sorted.queryname.htsjdk-2.1.0.cram", ".cram", "print_reads.fasta"},
                 {"print_reads.sorted.queryname.htsjdk-2.1.0.cram", ".sam", "print_reads.fasta"}
         };
+    }
+
+    @Test(dataProvider="testingData")
+    public void testFileToFileUsingReferenceBundle(String fileIn, String extOut, String reference) throws Exception {
+        if (reference != null) {
+            doFileToFileUsingReferenceBundle(fileIn, extOut, reference, false);
+        }
+    }
+
+    @Test(dataProvider="testingData")
+    public void testFileToFile(String fileIn, String extOut, String reference) throws Exception {
+        doFileToFile(fileIn, extOut, reference, false);
     }
 
     @Test

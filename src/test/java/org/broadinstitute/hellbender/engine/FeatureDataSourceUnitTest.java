@@ -1,5 +1,8 @@
 package org.broadinstitute.hellbender.engine;
 
+import htsjdk.beta.io.IOPathUtils;
+import htsjdk.beta.io.bundle.BundleJSON;
+import htsjdk.beta.plugin.variants.VariantsBundle;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.tribble.Feature;
 import htsjdk.variant.variantcontext.VariantContext;
@@ -9,7 +12,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.GATKBaseTest;
-import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -408,6 +410,20 @@ public final class FeatureDataSourceUnitTest extends GATKBaseTest {
     @Test(dataProvider = "GVCFQueryTestData")
     public void testQueryGVCF( final SimpleInterval queryInterval, final List<String> expectedVariantIDs ) {
         try ( FeatureDataSource<VariantContext> featureSource = new FeatureDataSource<>(QUERY_TEST_GVCF) ) {
+            final List<VariantContext> queryResults = featureSource.queryAndPrefetch(queryInterval);
+            checkVariantQueryResults(queryResults, expectedVariantIDs, queryInterval);
+        }
+    }
+
+    @Test(dataProvider = "GVCFQueryTestData")
+    public void testQueryGVCFThroughBundle( final SimpleInterval queryInterval, final List<String> expectedVariantIDs ) {
+        final GATKPath vcfPath = new GATKPath(QUERY_TEST_GVCF.getAbsolutePath());
+        final GATKPath indexPath = VariantsBundle.resolveIndex(vcfPath, GATKPath::new).get();
+        final VariantsBundle vcfBundle = new VariantsBundle(vcfPath, indexPath);
+        final GATKPath bundleFile = new GATKPath(createTempFile("testQueryGVCFThroughBundle", ".json").toString());
+        IOPathUtils.writeStringToPath(bundleFile, BundleJSON.toJSON(vcfBundle));
+
+        try ( FeatureDataSource<VariantContext> featureSource = new FeatureDataSource<>(bundleFile.toString()) ) {
             final List<VariantContext> queryResults = featureSource.queryAndPrefetch(queryInterval);
             checkVariantQueryResults(queryResults, expectedVariantIDs, queryInterval);
         }

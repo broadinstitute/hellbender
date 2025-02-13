@@ -56,6 +56,10 @@ public final class StandardArgumentDefinitions {
     public static final String INTERVALS_SHORT_NAME = "L";
     public static final String COMPARISON_SHORT_NAME = "comp";
     public static final String READ_INDEX_SHORT_NAME = READ_INDEX_LONG_NAME;
+    public static final String PRIMARY_RESOURCE_LONG_NAME = "primary-resource";
+    public static final String PRIMARY_RESOURCE_SHORT_NAME = "PR";
+    public static final String SECONDARY_RESOURCE_LONG_NAME = "secondary-resource";
+    public static final String SECONDARY_RESOURCE_SHORT_NAME = "SR";
     public static final String LENIENT_SHORT_NAME = "LE";
     public static final String READ_VALIDATION_STRINGENCY_SHORT_NAME = "VS";
     public static final String SAMPLE_ALIAS_SHORT_NAME = "ALIAS";

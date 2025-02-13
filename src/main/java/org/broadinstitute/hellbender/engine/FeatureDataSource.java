@@ -1,5 +1,10 @@
 package org.broadinstitute.hellbender.engine;
 
+import htsjdk.beta.io.bundle.Bundle;
+import htsjdk.beta.io.bundle.BundleJSON;
+import htsjdk.beta.io.bundle.BundleResource;
+import htsjdk.beta.io.bundle.BundleResourceType;
+import htsjdk.io.IOPath;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.util.IOUtil;
 import htsjdk.samtools.util.Locatable;
@@ -148,7 +153,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
      * generated name, and will look ahead the default number of bases ({@link #DEFAULT_QUERY_LOOKAHEAD_BASES})
      * during queries that produce cache misses.
      *
-     * @param featurePath path or URI to source of Features
+     * @param featurePath path or URI to source of Features (may be a Bundle)
      */
     public FeatureDataSource(final String featurePath) {
         this(featurePath, null, DEFAULT_QUERY_LOOKAHEAD_BASES, null);
@@ -159,7 +164,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
      * name. We will look ahead the default number of bases ({@link #DEFAULT_QUERY_LOOKAHEAD_BASES}) during queries
      * that produce cache misses.
      *
-     * @param featureFile file containing Features
+     * @param featureFile file or Bundle containing Features
      * @param name        logical name for this data source (may be null)
      */
     public FeatureDataSource(final File featureFile, final String name) {
@@ -170,7 +175,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
      * Creates a FeatureDataSource backed by the provided File and assigns this data source the specified logical
      * name. We will look ahead the specified number of bases during queries that produce cache misses.
      *
-     * @param featureFile         file containing Features
+     * @param featureFile         file or Bundle containing Features
      * @param name                logical name for this data source (may be null)
      * @param queryLookaheadBases look ahead this many bases during queries that produce cache misses
      */
@@ -181,7 +186,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
     /**
      * Creates a FeatureDataSource backed by the resource at the provided path.
      *
-     * @param featurePath         path to file or GenomicsDB url containing features
+     * @param featurePath         path to file or GenomicsDB url or Bundle containing features
      * @param name                logical name for this data source (may be null)
      * @param queryLookaheadBases look ahead this many bases during queries that produce cache misses
      * @param targetFeatureType   When searching for a {@link FeatureCodec} for this data source, restrict the search to codecs
@@ -195,7 +200,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
      * Creates a FeatureDataSource backed by the provided FeatureInput. We will look ahead the specified number of bases
      * during queries that produce cache misses.
      *
-     * @param featureInput        a FeatureInput specifying a source of Features
+     * @param featureInput        a FeatureInput specifying a source of Features (or a Bundle)
      * @param queryLookaheadBases look ahead this many bases during queries that produce cache misses
      * @param targetFeatureType   When searching for a {@link FeatureCodec} for this data source, restrict the search to codecs
      *                            that produce this type of Feature. May be null, which results in an unrestricted search.
@@ -207,7 +212,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
     /**
      * Creates a FeatureDataSource backed by the resource at the provided path.
      *
-     * @param featurePath              path to file or GenomicsDB url containing features
+     * @param featurePath              path to file or GenomicsDB url or Bundle containing features
      * @param name                     logical name for this data source (may be null)
      * @param queryLookaheadBases      look ahead this many bases during queries that produce cache misses
      * @param targetFeatureType        When searching for a {@link FeatureCodec} for this data source, restrict the search to codecs
@@ -224,7 +229,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
      * Creates a FeatureDataSource backed by the provided FeatureInput. We will look ahead the specified number of bases
      * during queries that produce cache misses.
      *
-     * @param featureInput             a FeatureInput specifying a source of Features
+     * @param featureInput             a FeatureInput specifying a source of Features (may be a Bundle)
      * @param queryLookaheadBases      look ahead this many bases during queries that produce cache misses
      * @param targetFeatureType        When searching for a {@link FeatureCodec} for this data source, restrict the search to codecs
      *                                 that produce this type of Feature. May be null, which results in an unrestricted search.
@@ -241,7 +246,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
      * Creates a FeatureDataSource backed by the provided FeatureInput. We will look ahead the specified number of bases
      * during queries that produce cache misses.
      *
-     * @param featureInput             a FeatureInput specifying a source of Features
+     * @param featureInput             a FeatureInput specifying a source of Features (may be a Bundle)
      * @param queryLookaheadBases      look ahead this many bases during queries that produce cache misses
      * @param targetFeatureType        When searching for a {@link FeatureCodec} for this data source, restrict the search to codecs
      *                                 that produce this type of Feature. May be null, which results in an unrestricted search.
@@ -259,7 +264,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
      * Creates a FeatureDataSource backed by the provided FeatureInput. We will look ahead the specified number of bases
      * during queries that produce cache misses.
      *
-     * @param featureInput             a FeatureInput specifying a source of Features
+     * @param featureInput             a FeatureInput specifying a source of Features (may be a Bundle)
      * @param queryLookaheadBases      look ahead this many bases during queries that produce cache misses
      * @param targetFeatureType        When searching for a {@link FeatureCodec} for this data source, restrict the search to codecs
      *                                 that produce this type of Feature. May be null, which results in an unrestricted search.
@@ -278,7 +283,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
      * Creates a FeatureDataSource backed by the provided FeatureInput. We will look ahead the specified number of bases
      * during queries that produce cache misses.
      *
-     * @param featureInput             a FeatureInput specifying a source of Features
+     * @param featureInput             a FeatureInput specifying a source of Features (may be a Bundle)
      * @param queryLookaheadBases      look ahead this many bases during queries that produce cache misses
      * @param targetFeatureType        When searching for a {@link FeatureCodec} for this data source, restrict the search to codecs
      *                                 that produce this type of Feature. May be null, which results in an unrestricted search.
@@ -296,7 +301,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
      * Creates a FeatureDataSource backed by the provided FeatureInput. We will look ahead the specified number of bases
      * during queries that produce cache misses.
      *
-     * @param featureInput             a FeatureInput specifying a source of Features
+     * @param featureInput             a FeatureInput specifying a source of Features (may be a Bundle)
      * @param queryLookaheadBases      look ahead this many bases during queries that produce cache misses
      * @param targetFeatureType        When searching for a {@link FeatureCodec} for this data source, restrict the search to codecs
      *                                 that produce this type of Feature. May be null, which results in an unrestricted search.
@@ -369,9 +374,26 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
             } catch (final ClassCastException e) {
                 throw new UserException("GenomicsDB inputs can only be used to provide VariantContexts.", e);
             }
+        } else if (featureInput.hasExtension(BundleJSON.BUNDLE_EXTENSION)) {
+            // the feature input specifies a serialized json bundle file
+            final Bundle vcfBundle = BundleJSON.toBundle(htsjdk.beta.plugin.IOUtils.getStringFromPath(featureInput), GATKPath::new);
+            final IOPath vcfPath = vcfBundle.getOrThrow(BundleResourceType.CT_VARIANT_CONTEXTS).getIOPath().get();
+            // to get the codec we have to use the path of the underlying vcf resource, not the bundle path
+            final FeatureInput<T> fi = new FeatureInput<T>(vcfPath.getRawInputString(), featureInput.getName());
+            final FeatureCodec<T, ?> codec = getCodecForFeatureInput(fi, targetFeatureType, setNameOnCodec);
+            // propagate the bundle path, not the vcf path, to the reader, so that downstream code can retrieve
+            // the index path from the bundle
+            return getTribbleFeatureReader(featureInput, codec, cloudWrapper, cloudIndexWrapper);
+        } else if (featureInput.getParentBundle() != null) {
+            // the featureInput was created from a bundle list expansion (i.e, MultiVariantWalkers). it has the
+            // primary resource as the underlying resource path, and the containing bundle attached as the
+            // "parent bundle". Use the original FI to get the codec, but to get the feature reader, we use
+            // the FI that contains the bundle path, since the feature reader may require acccess to the index
+            final FeatureCodec<T, ?> codec = getCodecForFeatureInput(featureInput, targetFeatureType, setNameOnCodec);
+            return getTribbleFeatureReader(featureInput, codec, cloudWrapper, cloudIndexWrapper);
         } else {
             final FeatureCodec<T, ?> codec = getCodecForFeatureInput(featureInput, targetFeatureType, setNameOnCodec);
-            if ( featureInput.getFeaturePath().toLowerCase().endsWith(BCI_FILE_EXTENSION) ) {
+            if (featureInput.getFeaturePath().toLowerCase().endsWith(BCI_FILE_EXTENSION)) {
                 return new Reader(featureInput, codec);
             }
             return getTribbleFeatureReader(featureInput, codec, cloudWrapper, cloudIndexWrapper);
@@ -419,18 +441,48 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
     private static <T extends Feature> AbstractFeatureReader<T, ?> getTribbleFeatureReader(final FeatureInput<T> featureInput, final FeatureCodec<T, ?> codec, final Function<SeekableByteChannel, SeekableByteChannel> cloudWrapper, final Function<SeekableByteChannel, SeekableByteChannel> cloudIndexWrapper) {
         Utils.nonNull(codec);
         try {
-            // Must get the path to the data file from the codec here:
-            final String absoluteRawPath = featureInput.getRawInputString();
-
             // Instruct the reader factory to not require an index. We will require one ourselves as soon as
             // a query by interval is attempted.
             final boolean requireIndex = false;
 
-            // Only apply the wrappers if the feature input is in a remote location which will benefit from prefetching.
-            if (BucketUtils.isEligibleForPrefetching(featureInput)) {
-                return AbstractFeatureReader.getFeatureReader(absoluteRawPath, null, codec, requireIndex, cloudWrapper, cloudIndexWrapper);
+            if (featureInput.hasExtension(BundleJSON.BUNDLE_EXTENSION)) {
+                final Bundle vcfBundle = BundleJSON.toBundle(htsjdk.beta.plugin.IOUtils.getStringFromPath(featureInput), GATKPath::new);
+                final IOPath vcfPath = vcfBundle.getOrThrow(BundleResourceType.CT_VARIANT_CONTEXTS).getIOPath().get();
+                final Optional<BundleResource> vcfIndexPath = vcfBundle.get(BundleResourceType.CT_VARIANTS_INDEX);
+                final String rawIndexResourcePath =
+                        vcfIndexPath.isPresent() ? vcfIndexPath.get().getIOPath().get().getRawInputString() : null;
+
+                // Only apply the wrappers if the feature input is in a remote location which will benefit from prefetching.
+                if (BucketUtils.isEligibleForPrefetching(vcfPath)) {
+                    final String absoluteRawPath = vcfPath.getRawInputString();
+                    return AbstractFeatureReader.getFeatureReader(absoluteRawPath, rawIndexResourcePath, codec, requireIndex, cloudWrapper, cloudIndexWrapper);
+                } else {
+                    return AbstractFeatureReader.getFeatureReader(vcfPath.getRawInputString(), rawIndexResourcePath, codec, requireIndex, Utils.identityFunction(), Utils.identityFunction());
+                }
+            } else if (featureInput.getParentBundle() != null) {
+                final Bundle vcfBundle = featureInput.getParentBundle();
+                // code path for when a user has specified multiple bundles on the command line, so there is no single
+                // serialized bundle file to access
+                final IOPath vcfPath = vcfBundle.getOrThrow(BundleResourceType.CT_VARIANT_CONTEXTS).getIOPath().get();
+                // Only apply the wrappers if the feature input is in a remote location which will benefit from prefetching.
+                final Optional<BundleResource> vcfIndexPath = vcfBundle.get(BundleResourceType.CT_VARIANTS_INDEX);
+                final String rawIndexResourcePath =
+                        vcfIndexPath.isPresent() ? vcfIndexPath.get().getIOPath().get().getRawInputString() : null;
+                final String absoluteRawPath = vcfPath.getRawInputString();
+                if (BucketUtils.isEligibleForPrefetching(vcfPath)) {
+                    return AbstractFeatureReader.getFeatureReader(absoluteRawPath, rawIndexResourcePath, codec, requireIndex, cloudWrapper, cloudIndexWrapper);
+                } else {
+                    return AbstractFeatureReader.getFeatureReader(absoluteRawPath, rawIndexResourcePath, codec, requireIndex, Utils.identityFunction(), Utils.identityFunction());
+                }
             } else {
-                return AbstractFeatureReader.getFeatureReader(absoluteRawPath, null, codec, requireIndex, Utils.identityFunction(), Utils.identityFunction());
+                final String absoluteRawPath = featureInput.getRawInputString();
+
+                // Only apply the wrappers if the feature input is in a remote location which will benefit from prefetching.
+                if (BucketUtils.isEligibleForPrefetching(featureInput)) {
+                    return AbstractFeatureReader.getFeatureReader(absoluteRawPath, null, codec, requireIndex, cloudWrapper, cloudIndexWrapper);
+                } else {
+                    return AbstractFeatureReader.getFeatureReader(absoluteRawPath, null, codec, requireIndex, Utils.identityFunction(), Utils.identityFunction());
+                }
             }
         } catch (final TribbleException e) {
             throw new GATKException("Error initializing feature reader for path " + featureInput.getFeaturePath(), e);

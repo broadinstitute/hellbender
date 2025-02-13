@@ -11,6 +11,7 @@ import com.google.cloud.storage.contrib.nio.CloudStorageFileSystemProvider;
 import com.google.cloud.storage.contrib.nio.SeekableByteChannelPrefetcher;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
+import htsjdk.io.IOPath;
 import htsjdk.samtools.util.FileExtensions;
 import htsjdk.samtools.util.IOUtil;
 import htsjdk.samtools.util.RuntimeIOException;
@@ -18,7 +19,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.broadinstitute.hellbender.engine.GATKPath;
 import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.utils.Utils;
@@ -67,20 +67,20 @@ public final class BucketUtils {
     }
 
     /**
-     * Return true if this {@code GATKPath} represents a gcs URI.
+     * Return true if this {@code IOPath} represents a gcs URI.
      * @param pathSpec specifier to inspect
-     * @return true if this {@code GATKPath} represents a gcs URI.
+     * @return true if this {@code IOPath} represents a gcs URI.
      */
-    public static boolean isGcsUrl(final GATKPath pathSpec) {
+    public static boolean isGcsUrl(final IOPath pathSpec) {
         Utils.nonNull(pathSpec);
         return pathSpec.getScheme().equals(CloudStorageFileSystem.URI_SCHEME);
     }
 
     /**
      * @param pathSpec specifier to inspect
-     * @return true if this {@code GATKPath} represents a remote storage system which may benefit from prefetching (gcs or http(s))
+     * @return true if this {@code IOPath} represents a remote storage system which may benefit from prefetching (gcs or http(s))
      */
-    public static boolean isEligibleForPrefetching(final GATKPath pathSpec) {
+    public static boolean isEligibleForPrefetching(final IOPath pathSpec) {
         Utils.nonNull(pathSpec);
         return isEligibleForPrefetching(pathSpec.getScheme());
      }
@@ -319,10 +319,10 @@ public final class BucketUtils {
      * Note that sub-directories are ignored - they are not recursed into.
      * Only supports HDFS and local paths.
      *
-     * @param pathSpecifier The URL to the file or directory whose size to return
+     * @param pathSpecifier The IOPath to the file or directory whose size to return
      * @return the total size of all files in bytes
      */
-    public static long dirSize(final GATKPath pathSpecifier) {
+    public static long dirSize(final IOPath pathSpecifier) {
         try {
             // GCS case (would work with local too)
             if (isGcsUrl(pathSpecifier)) {

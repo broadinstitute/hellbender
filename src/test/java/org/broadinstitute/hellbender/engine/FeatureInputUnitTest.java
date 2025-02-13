@@ -1,5 +1,9 @@
 package org.broadinstitute.hellbender.engine;
 
+import htsjdk.beta.io.IOPathUtils;
+import htsjdk.beta.io.bundle.Bundle;
+import htsjdk.beta.io.bundle.BundleJSON;
+import htsjdk.beta.plugin.variants.VariantsBundle;
 import htsjdk.tribble.Feature;
 import htsjdk.tribble.FeatureCodec;
 import htsjdk.variant.variantcontext.VariantContext;
@@ -7,7 +11,6 @@ import htsjdk.variant.vcf.VCFCodec;
 import org.broadinstitute.barclay.argparser.Argument;
 import org.broadinstitute.barclay.argparser.CommandLineArgumentParser;
 import org.broadinstitute.barclay.argparser.CommandLineException;
-import org.broadinstitute.barclay.argparser.CommandLineParser;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.broadinstitute.hellbender.testutils.SparkTestUtils;
 import org.testng.Assert;
@@ -148,6 +151,25 @@ public final class FeatureInputUnitTest extends GATKBaseTest {
 
         Assert.assertEquals(hdfsInput.getFeaturePath(), expectedFeaturePath, "wrong featurePath");
         Assert.assertEquals(hdfsInput.getName(), expectedLogicalName, "wrong logical name");
+    }
+
+    @Test(dataProvider = "GcsPathAndNameData", groups={"bucket"})
+    public void testGcsBundlePathAndName( final String argWithTags, final String inputValue, final String unusedFeaturePath, final String expectedLogicalName ) {
+        // reuse the GcsPathAndNameData data provider, but with the input written to a bundle file
+        final Bundle bundleOfGcsPaths = new VariantsBundle(new GATKPath(inputValue));
+        final GATKPath bundleFile = new GATKPath(createTempFile("testGcsBundlePathAndName", ".json").toString());
+        IOPathUtils.writeStringToPath(new GATKPath(bundleFile.toString()), BundleJSON.toJSON(bundleOfGcsPaths));
+
+        final FeatureInput<Feature> gcsInput = runCommandLineWithTaggedFeatureInput(argWithTags, bundleFile.toString());
+
+        Assert.assertEquals(gcsInput.getFeaturePath(), bundleFile.toString(), "wrong featurePath");
+        if (argWithTags.contains(":")) {
+            Assert.assertEquals(gcsInput.getName(), expectedLogicalName, "wrong logical name");
+        } else {
+            // if the input arg has no tags, then the expected logical name is the same as the input value, but
+            // in this test, the input value is actually the bundle json file name, not the original input value
+            Assert.assertEquals(gcsInput.getName(), bundleFile.toString(), "wrong logical name");
+        }
     }
 
     @Test
