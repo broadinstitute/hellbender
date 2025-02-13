@@ -66,9 +66,6 @@ import java.util.stream.Collectors;
  * </pre>
  *
  *
- * When running on unfiltered output of Mutect2 in --mitochondria mode, setting the advanced option --autosomal-coverage
- * argument (default 0) activates a recommended filter against likely erroneously mapped  <a href="https://en.wikipedia.org/wiki/NUMT">NuMTs (nuclear mitochondrial DNA segments)</a>.
- * For the value, provide the median coverage expected in autosomal regions with coverage.
  *
  */
 @CommandLineProgramProperties(
