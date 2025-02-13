@@ -12,6 +12,8 @@ import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.VariantContextBuilder;
 import htsjdk.variant.vcf.VCFHeaderLineType;
 import htsjdk.variant.vcf.VCFInfoHeaderLine;
+import htsjdk.samtools.SAMSequenceDictionary;
+import htsjdk.samtools.SAMSequenceRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.broadinstitute.hellbender.engine.FeatureInput;
@@ -824,7 +826,8 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
     private static String getFivePrimeUtrSequenceFromTranscriptFasta( final String transcriptId,
                                                                       final Map<String, MappedTranscriptIdInfo> transcriptIdMap,
                                                                       final ReferenceDataSource transcriptFastaReferenceDataSource,
-                                                                      final int extraBases) {
+                                                                      final int extraBases, 
+                                                                      final int transcriptLength ) {
 
         final MappedTranscriptIdInfo transcriptMapIdAndMetadata = transcriptIdMap.get(transcriptId);
 
@@ -832,7 +835,9 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
             throw new UserException.BadInput( "Unable to find the given Transcript ID in our transcript list for our 5'UTR (not in given transcript FASTA file): " + transcriptId );
         }
 
-        if ( transcriptMapIdAndMetadata.has5pUtr ) {
+	boolean intervalWithinTranscript = transcriptMapIdAndMetadata.fivePrimeUtrEnd + extraBases < transcriptLength;
+
+        if ( transcriptMapIdAndMetadata.has5pUtr && intervalWithinTranscript ) {
 
             final SimpleInterval transcriptInterval = new SimpleInterval(
                     transcriptMapIdAndMetadata.mapKey,
@@ -1698,8 +1703,10 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
                 // Note: We grab 3 extra bases at the end (from the coding sequence) so that we can check for denovo starts
                 //       even if the variant occurs in the last base of the UTR.
                 final int numExtraTrailingBases = variant.getReference().length() < defaultNumTrailingBasesForUtrAnnotationSequenceConstruction ? defaultNumTrailingBasesForUtrAnnotationSequenceConstruction : variant.getReference().length() + 1;
+		int transcriptLength = getTranscriptLength( transcriptFastaReferenceDataSource, transcriptIdMap, transcript );
+		
                 final String fivePrimeUtrCodingSequence =
-                        getFivePrimeUtrSequenceFromTranscriptFasta( transcript.getTranscriptId(), transcriptIdMap, transcriptFastaReferenceDataSource, numExtraTrailingBases);
+                        getFivePrimeUtrSequenceFromTranscriptFasta( transcript.getTranscriptId(), transcriptIdMap, transcriptFastaReferenceDataSource, numExtraTrailingBases, transcriptLength );
 
                 // Get our start position in our coding sequence:
                 final int codingStartPos = FuncotatorUtils.getStartPositionInTranscript(variant, transcript.getExons(), strand);
@@ -1751,6 +1758,30 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
         gencodeFuncotationBuilder.setDataSourceName(getName());
 
         return gencodeFuncotationBuilder.build();
+    }
+
+    /**
+     * Get the length of the given transcript by querying the reference for the transcript ID
+     * @return the length of the requested {@code transcript} in the {@code transcriptFastaReferenceDataSource}
+     */
+    private static int getTranscriptLength(
+	    ReferenceDataSource transcriptFastaReferenceDataSource,
+	    Map<String, MappedTranscriptIdInfo> transcriptIdMap,
+	    GencodeGtfTranscriptFeature transcript
+    ){
+		SAMSequenceDictionary dict = transcriptFastaReferenceDataSource.getSequenceDictionary();
+		final MappedTranscriptIdInfo transcriptMapIdAndMetadata = transcriptIdMap.get( transcript.getTranscriptId() );
+
+		if ( transcriptMapIdAndMetadata == null ) {
+			String transcriptId = transcript.getTranscriptId();
+			throw new UserException.BadInput( "Unable to find the given Transcript ID in our transcript list for ou     r 5'UTR (not in given transcript FASTA file): " + transcriptId );
+		}
+
+		String transcriptReferenceKey = transcriptMapIdAndMetadata.mapKey;
+		SAMSequenceRecord transcriptRecord = dict.getSequence( transcriptReferenceKey );
+		int transcriptLength = transcriptRecord.getSequenceLength();
+
+		return transcriptLength;
     }
 
     /**
