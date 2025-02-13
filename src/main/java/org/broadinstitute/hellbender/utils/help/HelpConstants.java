@@ -43,6 +43,10 @@ public final class HelpConstants {
     public final static String DOC_CAT_CNV = "Copy Number Variant Discovery";
     public final static String DOC_CAT_CNV_SUMMARY = "Tools that analyze read coverage to detect copy number variants.";
 
+    public final static String DOC_CAT_LONGREAD = "Long Read Tools";
+    public final static String DOC_CAT_LONGREAD_SUMMARY = "Tools that are designed for use with long reads.";
+
+
     public final static String DOC_CAT_EXAMPLE = "Example Tools";
     public final static String DOC_CAT_EXAMPLE_SUMMARY = "Example tools that show developers how to implement new tools";
 
