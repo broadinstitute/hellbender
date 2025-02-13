@@ -50,6 +50,8 @@ public final class BucketUtils {
     public static final String HTTPS_PREFIX = HttpsFileSystemProvider.SCHEME +"://";
     public static final String HDFS_SCHEME = "hdfs";
     public static final String HDFS_PREFIX = HDFS_SCHEME + "://";
+    public static final String S3A_SCHEME = "s3a";
+    public static final String S3A_PREFIX = S3A_SCHEME + "://";
 
     // slashes omitted since hdfs paths seem to only have 1 slash which would be weirder to include than no slashes
     public static final String FILE_PREFIX = "file:";
@@ -112,7 +114,7 @@ public final class BucketUtils {
      * Returns true if the given path is a HDFS (Hadoop filesystem) URL.
      */
     public static boolean isHadoopUrl(String path) {
-        return path.startsWith(HDFS_PREFIX);
+        return path.startsWith(HDFS_PREFIX) || path.startsWith(S3A_PREFIX);
     }
 
     /**

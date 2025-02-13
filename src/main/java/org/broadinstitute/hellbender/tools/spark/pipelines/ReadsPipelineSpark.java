@@ -171,7 +171,7 @@ public class ReadsPipelineSpark extends GATKSparkTool {
         final SAMFileHeader header;
         final BwaSparkEngine bwaEngine;
         if (align) {
-            bwaEngine = new BwaSparkEngine(ctx, referenceArguments.getReferenceFileName(), bwaArgs.indexImageFile, getHeaderForReads(), getReferenceSequenceDictionary());
+            bwaEngine = new BwaSparkEngine(ctx, referenceArguments.getReferenceSpecifier().getRawInputString(), bwaArgs.indexImageFile, getHeaderForReads(), getReferenceSequenceDictionary());
             if (bwaArgs.singleEndAlignment) {
                 alignedReads = bwaEngine.alignUnpaired(getReads());
             } else {
@@ -221,7 +221,7 @@ public class ReadsPipelineSpark extends GATKSparkTool {
                 .flatMap(interval -> Shard.divideIntervalIntoShards(interval, shardingArgs.readShardSize, shardingArgs.readShardPadding, sequenceDictionary).stream())
                 .collect(Collectors.toList());
 
-        HaplotypeCallerSpark.callVariantsWithHaplotypeCallerAndWriteOutput(ctx, filteredReadsForHC, readsHeader, sequenceDictionary, referenceArguments.getReferenceFileName(), intervalShards, hcArgs, shardingArgs, assemblyRegionArgs, output, makeVariantAnnotations(), logger, strict, createOutputVariantIndex);
+        HaplotypeCallerSpark.callVariantsWithHaplotypeCallerAndWriteOutput(ctx, filteredReadsForHC, readsHeader, sequenceDictionary, referenceArguments.getReferenceSpecifier().getRawInputString(), intervalShards, hcArgs, shardingArgs, assemblyRegionArgs, output, makeVariantAnnotations(), logger, strict, createOutputVariantIndex);
 
         if (bwaEngine != null) {
             bwaEngine.close();
