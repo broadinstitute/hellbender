@@ -271,6 +271,7 @@ workflows:
              # `master` is here so there will be *something* under the branches filter, but GVS WDLs are not on `master`
              # so this shouldn't show up in the list of available versions in Dockstore or Terra.
              - master
+             - vs_1555_batch_job_failures_debug
          tags:
              - /.*/
    - name: GvsJointVariantCallsetCost
