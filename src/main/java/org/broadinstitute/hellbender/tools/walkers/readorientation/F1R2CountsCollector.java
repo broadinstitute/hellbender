@@ -42,12 +42,21 @@ public class F1R2CountsCollector {
     // For each sample store the total depths of alt sites with alt depth = 1 separately to save memory
     private Map<String, DepthOneHistograms> depthOneAltHistograms;
 
-    // alt table writer for each sample
-    private Map<String, AltSiteRecord.AltSiteRecordTableWriter> altTableWriters;
+    // alt table writers for each sample and 3-base context
+    // This is by far the largest quantity of data (for each sample histograms involve 64 3-base contexts x 3
+    // substitution errors x 2 orientations x (by default) 200 histogram count bins, which comes out to maybe 1MB of RAM.
+    // In a genome of 3 billion bases where every hundredth site or so has more than 1 alt base the alt records could come out
+    // to a gigabyte or more.  Thus it makes sense to split the alt table writers by sample *and* by 3-base context
+    // so that downstream tools (LearnReadOrientationModel) need only load the records for one context at a time.
+    private Map<String, Map<String, AltSiteRecord.AltSiteRecordTableWriter>> altTableWriters;
 
-    private final File outputTarGzFile;
-
+    // We put all pre-tarred output files in a temporary directory.  These include three files for each sample:
+    // an alt records file produced by that sample's altTableWriter, a depth one alt histogram file, and a ref site
+    // histogram file.  Each one of these files contains information for all 3-base contexts.
     private final File tmpDir = IOUtils.createTempDir("untarred");
+
+    // the final output file is produced by archiving every file in the temporary directory
+    private final File outputTarGzFile;
 
     public F1R2CountsCollector(final CollectF1R2CountsArgumentCollection CF1R2Args, final SAMFileHeader header, final File outputTarGzFile, final Collection<String> samples) {
         this.CF1R2Args = CF1R2Args;
@@ -62,23 +71,23 @@ public class F1R2CountsCollector {
         for (final String sample : samples) {
             final Map<String, Histogram<Integer>> refSitesHistogramsForThisSample = new HashMap<>(F1R2FilterConstants.ALL_KMERS.size());
 
+            altTableWriters.put(sample, new HashMap<>());
             // Initialize for each reference the histogram of the counts of reference sites by depth
-            F1R2FilterConstants.ALL_KMERS.forEach(context -> {
+            for (final String context : F1R2FilterConstants.ALL_KMERS) {
                 Histogram<Integer> emptyRefHistogram = F1R2FilterUtils.createRefHistogram(context, CF1R2Args.maxDepth);
                 refSitesHistogramsForThisSample.put(context, emptyRefHistogram);
-            });
+
+                // Intentionally not use try-with-resources so that the writer stays open outside of the try block
+                final File altTableFile = new File(tmpDir, IOUtils.urlEncode(sample) + "." + context + ALT_TABLE_EXTENSION);
+                try {
+                    altTableWriters.get(sample).put(context, new AltSiteRecord.AltSiteRecordTableWriter(IOUtils.fileToPath(altTableFile), sample));
+                } catch (IOException e) {
+                    throw new UserException(String.format("Encountered an IO exception creating a writer for %s", altTableFile), e);
+                }
+            }
 
             refSiteHistograms.put(sample, refSitesHistogramsForThisSample);
-
             depthOneAltHistograms.put(sample, new DepthOneHistograms(CF1R2Args.maxDepth));
-
-            // Intentionally not use try-with-resources so that the writer stays open outside of the try block
-            final File altTableFile = new File(tmpDir, IOUtils.urlEncode(sample) + ALT_TABLE_EXTENSION);
-            try {
-                altTableWriters.put(sample, new AltSiteRecord.AltSiteRecordTableWriter(IOUtils.fileToPath(altTableFile), sample));
-            } catch (IOException e) {
-                throw new UserException(String.format("Encountered an IO exception creating a writer for %s", altTableFile), e);
-            }
         }
     }
 
@@ -149,7 +158,7 @@ public class F1R2CountsCollector {
             }
 
             try {
-                altTableWriters.get(sample).writeRecord(new AltSiteRecord(refContext, refCount, altCount, refF1R2, altF1R2, altBase));
+                altTableWriters.get(sample).get(refContext).writeRecord(new AltSiteRecord(refContext, refCount, altCount, refF1R2, altF1R2, altBase));
             } catch (IOException e) {
                 throw new UserException("Encountered an IO Exception writing to the alt data table", e);
             }
@@ -173,7 +182,7 @@ public class F1R2CountsCollector {
 
     public void closeAndArchiveFiles() {
         if (altTableWriters != null) {
-            for (final AltSiteRecord.AltSiteRecordTableWriter writer : altTableWriters.values()) {
+            altTableWriters.values().stream().flatMap(map -> map.values().stream()).forEach( writer -> {
                 if (writer != null) {
                     try {
                         writer.close();
@@ -181,7 +190,7 @@ public class F1R2CountsCollector {
                         throw new UserException("Encountered an IO exception while closing the alt table writer", e);
                     }
                 }
-            }
+            });
         }
 
         try {
@@ -221,5 +230,9 @@ public class F1R2CountsCollector {
 
     public static List<File> getAltTablesFromExtractedTar(final File extractedTarDir) {
         return Arrays.stream(extractedTarDir.listFiles()).filter(file -> file.getAbsolutePath().endsWith(ALT_TABLE_EXTENSION)).collect(Collectors.toList());
+    }
+
+    public static List<File> getAltTablesFromExtractedTar(final File extractedTarDir, final String refContext) {
+        return Arrays.stream(extractedTarDir.listFiles()).filter(file -> file.getAbsolutePath().endsWith(refContext + ALT_TABLE_EXTENSION)).collect(Collectors.toList());
     }
 }

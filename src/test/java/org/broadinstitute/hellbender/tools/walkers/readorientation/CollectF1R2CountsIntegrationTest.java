@@ -48,7 +48,6 @@ public class CollectF1R2CountsIntegrationTest extends CommandLineProgramTest {
         IOUtils.extractTarGz(outputTarGz.toPath(), extractedDir.toPath());
 
         final File refHistogramFile = F1R2CountsCollector.getRefHistogramsFromExtractedTar(extractedDir).stream().findFirst().get();
-        final File altTableFile = F1R2CountsCollector.getAltTablesFromExtractedTar(extractedDir).stream().findFirst().get();
 
         final MetricsFile<?, Integer> referenceSiteMetrics = new MetricsFile<>();
         final Reader in = IOUtil.openFileForBufferedReading(refHistogramFile);
@@ -56,7 +55,6 @@ public class CollectF1R2CountsIntegrationTest extends CommandLineProgramTest {
         CloserUtil.close(in);
 
         List<Histogram<Integer>> histograms = referenceSiteMetrics.getAllHistograms();
-        List<AltSiteRecord> altDesignMatrix = AltSiteRecord.readAltSiteRecords(altTableFile.toPath()).getRight();
 
         /** Expected result
          *
@@ -85,30 +83,33 @@ public class CollectF1R2CountsIntegrationTest extends CommandLineProgramTest {
          **/
 
         // alt site tests
-        Assert.assertEquals(altDesignMatrix.size(), 4);
-        AltSiteRecord recordCAC = altDesignMatrix.stream().
-                filter(rec -> rec.getReferenceContext().equals("CAC")).findFirst().get();
+        final File altTableFileCAC = F1R2CountsCollector.getAltTablesFromExtractedTar(extractedDir, "CAC").stream().findFirst().get();
+        List<AltSiteRecord> altDesignMatrixCAC = AltSiteRecord.readAltSiteRecords(altTableFileCAC.toPath()).getRight();
+        AltSiteRecord recordCAC = altDesignMatrixCAC.get(0);
         Assert.assertEquals(recordCAC.getRefCount(), 70);
         Assert.assertEquals(recordCAC.getAltCount(), 30);
         Assert.assertEquals(recordCAC.getRefF1R2(), 35);
         Assert.assertEquals(recordCAC.getAltF1R2(), 15);
 
-        AltSiteRecord recordTAA = altDesignMatrix.stream().
-                filter(rec -> rec.getReferenceContext().equals("TAA")).findFirst().get();
+        final File altTableFileTAA = F1R2CountsCollector.getAltTablesFromExtractedTar(extractedDir, "TAA").stream().findFirst().get();
+        List<AltSiteRecord> altDesignMatrixTAA = AltSiteRecord.readAltSiteRecords(altTableFileCAC.toPath()).getRight();
+        AltSiteRecord recordTAA = altDesignMatrixCAC.get(0);
         Assert.assertEquals(recordTAA.getRefCount(), 70);
         Assert.assertEquals(recordTAA.getAltCount(), 30);
         Assert.assertEquals(recordTAA.getRefF1R2(), 35);
         Assert.assertEquals(recordTAA.getAltF1R2(), 15);
 
-        AltSiteRecord recordAGC = altDesignMatrix.stream().
-                filter(rec -> rec.getReferenceContext().equals("AGC")).findFirst().get();
+        final File altTableFileAGC = F1R2CountsCollector.getAltTablesFromExtractedTar(extractedDir, "AGC").stream().findFirst().get();
+        List<AltSiteRecord> altDesignMatrixAGC = AltSiteRecord.readAltSiteRecords(altTableFileCAC.toPath()).getRight();
+        AltSiteRecord recordAGC = altDesignMatrixCAC.get(0);
         Assert.assertEquals(recordAGC.getRefCount(), 70);
         Assert.assertEquals(recordAGC.getAltCount(), 30);
         Assert.assertEquals(recordAGC.getRefF1R2(), 35);
         Assert.assertEquals(recordAGC.getAltF1R2(), 15);
 
-        AltSiteRecord recordACA = altDesignMatrix.stream().
-                filter(rec -> rec.getReferenceContext().equals("ACA")).findFirst().get();
+        final File altTableFileACA = F1R2CountsCollector.getAltTablesFromExtractedTar(extractedDir, "ACA").stream().findFirst().get();
+        List<AltSiteRecord> altDesignMatrixACA = AltSiteRecord.readAltSiteRecords(altTableFileCAC.toPath()).getRight();
+        AltSiteRecord recordACA = altDesignMatrixCAC.get(0);
         Assert.assertEquals(recordACA.getRefCount(), 70);
         Assert.assertEquals(recordACA.getAltCount(), 30);
         Assert.assertEquals(recordACA.getRefF1R2(), 35);
@@ -201,8 +202,8 @@ public class CollectF1R2CountsIntegrationTest extends CommandLineProgramTest {
         final File outputTarGZ12 = createTempFile("f1r212",".tar.gz");
         final String sample1 = "SAMPLE1";
         final String sample2 = "SAMPLE2";
-        final File sam1 = createSyntheticSam(10, 1, "SAMPLE1");
-        final File sam2 = createSyntheticSam(20, 2, "SAMPLE2");
+        final File sam1 = createSyntheticSam(10, 1, sample1);
+        final File sam2 = createSyntheticSam(20, 2, sample2);
 
         final String[] args1 = {
                 "-R", hg19_chr1_1M_Reference,
@@ -231,8 +232,12 @@ public class CollectF1R2CountsIntegrationTest extends CommandLineProgramTest {
         final File extractedDir12 = createTempDir("extracted12");
         IOUtils.extractTarGz(outputTarGZ12.toPath(), extractedDir12.toPath());
 
+        for (final String context : List.of("ACC", "TGC", "CAA")) {
+            IntegrationTestSpec.assertEqualTextFiles(new File(extractedDir1, sample1 + "." + context + F1R2CountsCollector.ALT_TABLE_EXTENSION),
+                    new File(extractedDir12, sample1 + "." + context + F1R2CountsCollector.ALT_TABLE_EXTENSION));
+        }
 
-        for (final String extension : new String[] {F1R2CountsCollector.REF_HIST_EXTENSION, F1R2CountsCollector.ALT_HIST_EXTENSION, F1R2CountsCollector.ALT_TABLE_EXTENSION}) {
+        for (final String extension : List.of(F1R2CountsCollector.REF_HIST_EXTENSION, F1R2CountsCollector.ALT_HIST_EXTENSION)) {
             IntegrationTestSpec.assertEqualTextFiles(new File(extractedDir1, sample1 + extension),
                     new File(extractedDir12, sample1 + extension));
         }

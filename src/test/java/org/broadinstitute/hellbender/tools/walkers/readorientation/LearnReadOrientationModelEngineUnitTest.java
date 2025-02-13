@@ -26,6 +26,7 @@ import org.testng.annotations.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.broadinstitute.hellbender.tools.walkers.readorientation.F1R2FilterConstants.ALL_KMERS;
@@ -205,12 +206,9 @@ public class LearnReadOrientationModelEngineUnitTest extends CommandLineProgramT
     public void testReverseComplement() throws IOException {
         final File f1r2Dir = createTempDir("f1r2");
         final String sample = "sample";
-        final File altMatrixOutput = new File(f1r2Dir, sample + F1R2CountsCollector.ALT_TABLE_EXTENSION);
         final File refHistogramOutput = new File(f1r2Dir, sample + F1R2CountsCollector.REF_HIST_EXTENSION);
 
         final MetricsFile<?, Integer> refMetricsFile = new MetricsFile<>();
-
-        final AltSiteRecord.AltSiteRecordTableWriter altTableWriter = new AltSiteRecord.AltSiteRecordTableWriter(altMatrixOutput.toPath(), sample);
 
         final double epsilon = 1e-3;
         final int numRefExamples = 10_000;
@@ -227,7 +225,8 @@ public class LearnReadOrientationModelEngineUnitTest extends CommandLineProgramT
                 new ImmutableTriple<>("TGG", Nucleotide.C, ReadOrientation.F1R2), // should be recorded as CCA->G F2R1
                 new ImmutableTriple<>("GAT", Nucleotide.G, ReadOrientation.F2R1)); // should be recorded as ATC->C F1R2
 
-        final List<AltSiteRecord> altDesignMatrix = new ArrayList<>();
+        final Map<String, List<AltSiteRecord>> altDesignMatricesByContext = ALL_KMERS.stream()
+                .collect(Collectors.toMap(kmer -> kmer, kmer -> new ArrayList<>()));
 
         final Map<String, Histogram<Integer>> refSiteHistograms = new HashMap<>(ALL_KMERS.size());
         ALL_KMERS.forEach(context -> {
@@ -245,14 +244,23 @@ public class LearnReadOrientationModelEngineUnitTest extends CommandLineProgramT
             final int refF1R2 = refDepth / 2;
             final int altF1R2 = f1r2 == ReadOrientation.F1R2 ? altDepth : 0;
 
-            IntStream.range(0, numArtifactExamples).forEach(i -> altDesignMatrix.add(new AltSiteRecord(refContext, refDepth, altDepth, refF1R2, altF1R2, altAllele)));
+            IntStream.range(0, numArtifactExamples).forEach(i -> altDesignMatricesByContext.get(refContext).add(new AltSiteRecord(refContext, refDepth, altDepth, refF1R2, altF1R2, altAllele)));
         }
 
         refSiteHistograms.values().forEach(hist -> refMetricsFile.addHistogram(hist));
         refMetricsFile.addHeader(new StringHeader(sample));
         refMetricsFile.write(refHistogramOutput);
-        altTableWriter.writeAllRecords(altDesignMatrix);
-        altTableWriter.close();
+
+        for (final String context : ALL_KMERS) {
+            final List<AltSiteRecord> records = altDesignMatricesByContext.get(context);
+            if (!records.isEmpty()) {
+                final File altMatrixOutput = new File(f1r2Dir, sample + "." + context + F1R2CountsCollector.ALT_TABLE_EXTENSION);
+                final AltSiteRecord.AltSiteRecordTableWriter altTableWriter =
+                        new AltSiteRecord.AltSiteRecordTableWriter(altMatrixOutput.toPath(), sample);
+                altTableWriter.writeAllRecords(records);
+                altTableWriter.close();
+            }
+        }
 
         final File inputTarGz = createTempFile("input", ".tar.gz");
         IOUtils.writeTarGz(inputTarGz.getAbsolutePath(), f1r2Dir.listFiles());
