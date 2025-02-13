@@ -180,7 +180,9 @@ public abstract class AssemblyBasedCallerArgumentCollection {
     protected abstract int getDefaultMaxMnpDistance();
 
     /**
-     * Two or more phased substitutions separated by this distance or less are merged into MNPs.
+     * Two or more phased substitutions separated by this distance or less are merged into multi-nucleotide polymorphisms / variants (MNPs / MNVs).
+     * Recommended value for TNPs: 2. This will capture both three consecutive substitutions and two substitutions separated by one reference base.
+     * i.e. AAA -> GAT will be classified as one MNP
      */
     @Advanced
     @Argument(fullName = MAX_MNP_DISTANCE_LONG_NAME, shortName = MAX_MNP_DISTANCE_SHORT_NAME,
