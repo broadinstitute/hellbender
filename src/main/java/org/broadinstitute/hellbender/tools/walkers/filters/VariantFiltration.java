@@ -31,8 +31,8 @@ import static org.broadinstitute.hellbender.utils.variant.GATKVCFConstants.AS_FI
  *
  * <p>
  * This tool is designed for hard-filtering variant calls based on certain criteria. Records are hard-filtered by
- * changing the value in the FILTER field to something other than PASS. Filtered records will be preserved in the output
- * unless their removal is requested in the command line. </p>
+ * changing the value in the FILTER field to something other than PASS. Filtered records will be preserved in the
+ * output. </p>
  *
  * <h3>Inputs</h3>
  * <ul>
