@@ -1158,3 +1158,10 @@ downloadGsaLibFile.dependsOn sourcesJar
 }
 
 defaultTasks 'bundle'
+
+allprojects {
+    tasks.withType(JavaCompile).configureEach {
+        options.fork = true
+    }
+
+}
