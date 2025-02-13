@@ -73,6 +73,10 @@ public class FastaReferenceMaker extends ReferenceWalker {
     @Argument(fullName= LINE_WIDTH_LONG_NAME, doc="Maximum length of sequence to write per line", optional=true)
     public int basesPerLine = FastaReferenceWriter.DEFAULT_BASES_PER_LINE;
 
+    public static final String KEEP_CONTIG_NAMES = "keep-contig-names";
+    @Argument(fullName = KEEP_CONTIG_NAMES, doc="Keep the original contig names intact after modification", optional=true)
+    public boolean keepContigNames = false;
+
     protected FastaReferenceWriter writer;
     private int contigCount = 0;
     private int currentSequenceStartPosition = 0;
@@ -115,7 +119,12 @@ public class FastaReferenceMaker extends ReferenceWalker {
     private void finalizeSequence() {
         final String description = lastPosition.getContig() + ":" + currentSequenceStartPosition + "-" + lastPosition.getEnd();
         try {
-            writer.appendSequence(String.valueOf(contigCount), description, basesPerLine, Bytes.toArray(sequence));
+            if(keepContigNames) {
+                writer.appendSequence(lastPosition.getContig(), description, basesPerLine, Bytes.toArray(sequence));
+            }
+            else {
+                writer.appendSequence(String.valueOf(contigCount), description, basesPerLine, Bytes.toArray(sequence));
+            }
         } catch (IOException e) {
             throw new UserException.CouldNotCreateOutputFile("Failed while writing " + output + ".", e);
         }
