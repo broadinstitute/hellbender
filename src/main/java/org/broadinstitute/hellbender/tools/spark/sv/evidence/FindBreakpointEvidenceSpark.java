@@ -440,7 +440,7 @@ public final class FindBreakpointEvidenceSpark extends GATKSparkTool {
 
         SVLocation prevLocation = new SVLocation(0, 0);
         int partitionIdx = 0;
-        try ( final FeatureDataSource<Feature> dataSource = new FeatureDataSource<>(path, null, 0, null) ) {
+        try ( final FeatureDataSource<Feature> dataSource = new FeatureDataSource<>(path, null, 0, Feature.class) ) {
             for ( final Feature feature : dataSource ) {
                 final Integer contigID = contigNameMap.get(feature.getContig());
                 if ( contigID == null ) {

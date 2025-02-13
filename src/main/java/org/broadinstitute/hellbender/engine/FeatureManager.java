@@ -451,7 +451,7 @@ public final class FeatureManager implements AutoCloseable {
      * @return the codec suitable for decoding the provided file
      */
     public static FeatureCodec<? extends Feature, ?> getCodecForFile( final Path featurePath ) {
-        return getCodecForFile(featurePath, null);
+        return getCodecForFile(featurePath, Feature.class);
     }
 
     /**
@@ -477,30 +477,19 @@ public final class FeatureManager implements AutoCloseable {
             throw new UserException.CouldNotReadInputFile(featurePath.toUri().toString());
         }
 
-        // Gather all discovered codecs that claim to be able to decode the given file according to their
-        // canDecode() methods
-        final List<FeatureCodec<? extends Feature, ?>> candidateCodecs = getCandidateCodecsForFile(featurePath);
+        // Gather all discovered codecs that produce the right feature subtype and claim to be able
+        // to decode the given file according to their canDecode() methods
+        final List<FeatureCodec<? extends Feature, ?>> candidateCodecs = getCandidateCodecsForFile(featurePath, featureType);
 
         // If no codecs can handle the file, it's a user error (the user provided a file in an unsupported format)
         if ( candidateCodecs.isEmpty() ) {
             throw new UserException.NoSuitableCodecs(featurePath);
         }
 
-        // If featureType was specified, subset to only codecs that produce the requested type of Feature,
-        // and throw an error if there are no such codecs.
-        if ( featureType != null ) {
-            final List<String> discoveredCodecsFeatureTypes = candidateCodecs.stream().map(codec -> codec.getFeatureType().getSimpleName()).collect(Collectors.toList());
-            candidateCodecs.removeIf(codec -> ! featureType.isAssignableFrom(codec.getFeatureType()));
-
-            if ( candidateCodecs.isEmpty() ) {
-                throw new UserException.WrongFeatureType(featurePath, featureType, discoveredCodecsFeatureTypes);
-            }
-        }
-
         // If we still have multiple candidate codecs, it's a configuration error on the part of the codec authors
         if ( candidateCodecs.size() > 1 ) {
             final StringBuilder multiCodecMatches = new StringBuilder();
-            for ( FeatureCodec<? extends Feature, ?> candidateCodec : candidateCodecs ) {
+            for ( final FeatureCodec<? extends Feature, ?> candidateCodec : candidateCodecs ) {
                 multiCodecMatches.append(candidateCodec.getClass().getCanonicalName());
                 multiCodecMatches.append(' ');
             }
@@ -515,24 +504,30 @@ public final class FeatureManager implements AutoCloseable {
     }
 
     /**
-     * Returns a List of all codecs in DISCOVERED_CODECS that claim to be able to decode the specified file
-     * according to their {@link FeatureCodec#canDecode(String)} methods.
+     * Returns a List of all codecs in DISCOVERED_CODECS that return a feature type assignable to the
+     * requested feature subtype according to the {@link FeatureCodec#getFeatureType()} method,
+     * and that claim to be able to decode the specified file according to the {@link FeatureCodec#canDecode(String)} methods.
      *
      * @param featureFile file for which to find potential codecs
-     * @return A List of all codecs in DISCOVERED_CODECS for which {@link FeatureCodec#canDecode(String)} returns true on the specified file
+     * @param featureType subtype of Feature for which codecs are sought
+     * @return A List of all suitable codecs in DISCOVERED_CODECS
      */
-    private static List<FeatureCodec<? extends Feature, ?>> getCandidateCodecsForFile( final Path featureFile )  {
+    private static List<FeatureCodec<? extends Feature, ?>> getCandidateCodecsForFile( final Path featureFile, final Class<? extends Feature> featureType )  {
         final List<FeatureCodec<? extends Feature, ?>> candidateCodecs = new ArrayList<>();
 
+        final String featurePathname = featureFile.toAbsolutePath().toUri().toString();
         for ( final Class<?> codecClass : DISCOVERED_CODECS ) {
             try {
-                final FeatureCodec<? extends Feature, ?> codec = (FeatureCodec<? extends Feature, ?>)codecClass.getDeclaredConstructor().newInstance();
-                if ( codec.canDecode(featureFile.toAbsolutePath().toUri().toString()) ) {
-                    candidateCodecs.add(codec);
+                final FeatureCodec<? extends Feature, ?> codec =
+                        (FeatureCodec<? extends Feature, ?>)codecClass.getDeclaredConstructor().newInstance();
+                if ( featureType.isAssignableFrom(codec.getFeatureType()) ) {
+                    if ( codec.canDecode(featurePathname) ) {
+                        candidateCodecs.add(codec);
+                    }
                 }
             }
             catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e ) {
-                throw new GATKException("Unable to automatically instantiate codec " + codecClass.getName());
+                throw new GATKException("Unable to automatically instantiate codec " + codecClass.getName(), e);
             }
         }
 
@@ -544,7 +539,7 @@ public final class FeatureManager implements AutoCloseable {
      * @return True if the file exists and contains Features (ie., we have a FeatureCodec that can decode it), otherwise false
      */
     public static boolean isFeatureFile( final Path file ) {
-        return Files.exists(file) && ! getCandidateCodecsForFile(file).isEmpty();
+        return Files.exists(file) && ! getCandidateCodecsForFile(file, Feature.class).isEmpty();
     }
 
     /**

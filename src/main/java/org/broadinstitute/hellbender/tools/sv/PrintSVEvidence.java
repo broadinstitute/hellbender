@@ -57,7 +57,7 @@ import java.util.*;
  * <h3>Usage example</h3>
  *
  * <pre>
- *     gatk SVCluster \
+ *     gatk PrintSVEvidence \
  *       -F file1.baf.txt.gz [-F file2.baf.txt.gz ...] \
  *       -O merged.baf.bci \
  *       --sample-names sample1 [--sample-names sample2 ...]
@@ -73,7 +73,7 @@ import java.util.*;
         programGroup = StructuralVariantDiscoveryProgramGroup.class
 )
 @ExperimentalFeature
-public class PrintSVEvidence extends MultiFeatureWalker<SVFeature> {
+public class PrintSVEvidence extends MergingMultiFeatureWalker<SVFeature> {
     public static final String EVIDENCE_FILE_NAME = "evidence-file";
     public static final String SAMPLE_NAMES_NAME = "sample-names";
     public static final String COMPRESSION_LEVEL_NAME = "compression-level";
@@ -116,19 +116,14 @@ public class PrintSVEvidence extends MultiFeatureWalker<SVFeature> {
     private FeatureSink<SVFeature> outputSink;
 
     @Override
-    @SuppressWarnings("unchecked")
     public void onTraversalStart() {
         super.onTraversalStart();
 
-        final FeatureOutputCodec<? extends Feature, ? extends FeatureSink<? extends Feature>> codec =
-                FeatureOutputCodecFinder.find(outputFilePath);
-        final Class<? extends Feature> outputClass = codec.getFeatureType();
-        if ( !SVFeature.class.isAssignableFrom(outputClass) ) {
-            throw new UserException("Output file " + outputFilePath + " implies Feature subtype " +
-                    outputClass.getSimpleName() + " but this tool requires an SVFeature subtype.");
-        }
+        final FeatureOutputCodec<SVFeature,FeatureSink<SVFeature>> codec =
+                FeatureOutputCodecFinder.find(outputFilePath, SVFeature.class);
 
-        for ( FeatureInput<SVFeature> input : inputPaths ) {
+        final Class<? extends SVFeature> outputClass = codec.getFeatureType();
+        for ( final FeatureInput<SVFeature> input : inputPaths ) {
             try {
                 final Class<? extends Feature> inputClass =
                         input.getFeatureCodecClass().getDeclaredConstructor().newInstance().getFeatureType();
@@ -151,9 +146,8 @@ public class PrintSVEvidence extends MultiFeatureWalker<SVFeature> {
             }
         }
 
-        // the validity of this cast was checked at the beginning of this method
-        outputSink = (FeatureSink<SVFeature>)codec.makeSortMerger(outputFilePath,
-                                    getDictionary(), new ArrayList<>(sampleNames), compressionLevel);
+        outputSink = codec.makeSortMerger(outputFilePath, getDictionary(),
+                                            new ArrayList<>(sampleNames), compressionLevel);
     }
 
     @Override

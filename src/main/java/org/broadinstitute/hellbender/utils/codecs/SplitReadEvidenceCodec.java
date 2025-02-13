@@ -3,19 +3,19 @@ package org.broadinstitute.hellbender.utils.codecs;
 import com.google.common.base.Splitter;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.util.IOUtil;
-import htsjdk.tribble.AsciiFeatureCodec;
+import htsjdk.tribble.FeatureCodecHeader;
 import htsjdk.tribble.index.tabix.TabixFormat;
-import htsjdk.tribble.readers.LineIterator;
 import org.broadinstitute.hellbender.engine.GATKPath;
 import org.broadinstitute.hellbender.tools.sv.SplitReadEvidence;
 import org.broadinstitute.hellbender.tools.sv.SplitReadEvidenceSortMerger;
 import org.broadinstitute.hellbender.utils.io.FeatureOutputStream;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 /** Codec to handle SplitReadEvidence in tab-delimited text files */
-public class SplitReadEvidenceCodec extends AsciiFeatureCodec<SplitReadEvidence>
+public class SplitReadEvidenceCodec extends AbstractTextCodec<SplitReadEvidence>
         implements FeatureOutputCodec<SplitReadEvidence, FeatureOutputStream<SplitReadEvidence>> {
 
     public static final String FORMAT_SUFFIX = ".sr.txt";
@@ -24,8 +24,28 @@ public class SplitReadEvidenceCodec extends AsciiFeatureCodec<SplitReadEvidence>
     public static final String DIRECTION_LEFT = "left";
     private static final Splitter splitter = Splitter.on(COL_DELIMITER);
 
-    public SplitReadEvidenceCodec() {
-        super(SplitReadEvidence.class);
+    @Override
+    public boolean canDecode( final String path ) {
+        String toDecode = path.toLowerCase();
+        if ( IOUtil.hasBlockCompressedExtension(toDecode) ) {
+            toDecode = toDecode.substring(0, toDecode.lastIndexOf('.'));
+        }
+        return toDecode.endsWith(FORMAT_SUFFIX);
+    }
+
+    @Override
+    public Class<SplitReadEvidence> getFeatureType() {
+        return SplitReadEvidence.class;
+    }
+
+    @Override
+    public FeatureCodecHeader readHeader( final Iterator<String> itr ) {
+        return FeatureCodecHeader.EMPTY_HEADER;
+    }
+
+    @Override
+    public SplitReadEvidence decode( final Iterator<String> itr ) {
+        return itr.hasNext() ? decode(itr.next()) : null;
     }
 
     @Override
@@ -33,8 +53,7 @@ public class SplitReadEvidenceCodec extends AsciiFeatureCodec<SplitReadEvidence>
         return new TabixFormat(TabixFormat.ZERO_BASED, 1, 2, 0, '#', 0);
     }
 
-    @Override
-    public SplitReadEvidence decode(final String line) {
+    public SplitReadEvidence decode( final String line ) {
         final List<String> tokens = splitter.splitToList(line);
         if (tokens.size() != 5) {
             throw new IllegalArgumentException("Invalid number of columns: " + tokens.size());
@@ -49,18 +68,6 @@ public class SplitReadEvidenceCodec extends AsciiFeatureCodec<SplitReadEvidence>
         final String sample = tokens.get(4);
         return new SplitReadEvidence(sample, contig, position, count, strand);
     }
-
-    @Override
-    public boolean canDecode(final String path) {
-        String toDecode = path.toLowerCase();
-        if ( IOUtil.hasBlockCompressedExtension(toDecode) ) {
-            toDecode = toDecode.substring(0, toDecode.lastIndexOf('.'));
-        }
-        return toDecode.endsWith(FORMAT_SUFFIX);
-    }
-
-    @Override
-    public Object readActualHeader(final LineIterator reader) { return null; }
 
     @Override
     public FeatureOutputStream<SplitReadEvidence> makeSink( final GATKPath path,

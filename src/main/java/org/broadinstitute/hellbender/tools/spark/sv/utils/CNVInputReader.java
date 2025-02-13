@@ -22,7 +22,7 @@ public class CNVInputReader {
     public static SVIntervalTree<VariantContext> loadCNVCalls( final String cnvCallsFile,
                                                                final SAMFileHeader headerForReads) {
         Utils.validate(cnvCallsFile != null, "Can't load null CNV calls file");
-        try ( final FeatureDataSource<VariantContext> dataSource = new FeatureDataSource<>(cnvCallsFile, null, 0, null) ) {
+        try ( final FeatureDataSource<VariantContext> dataSource = new FeatureDataSource<>(cnvCallsFile, null, 0, VariantContext.class) ) {
 
             final String sampleId = SVUtils.getSampleId(headerForReads);
             validateCNVcallDataSource(headerForReads, sampleId, dataSource);

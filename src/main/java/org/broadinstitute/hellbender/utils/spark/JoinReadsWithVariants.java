@@ -60,7 +60,7 @@ public final class JoinReadsWithVariants {
     private static FeatureDataSource<VariantContext> openFeatureSource(String path) {
         int cloudPrefetchBuffer = ConfigFactory.getInstance().getGATKConfig().cloudPrefetchBuffer();
         int cloudIndexPrefetchBuffer = ConfigFactory.getInstance().getGATKConfig().cloudIndexPrefetchBuffer();
-        return new FeatureDataSource<>(path, null, DEFAULT_QUERY_LOOKAHEAD_BASES, null, cloudPrefetchBuffer, cloudIndexPrefetchBuffer);
+        return new FeatureDataSource<>(path, null, DEFAULT_QUERY_LOOKAHEAD_BASES, VariantContext.class, cloudPrefetchBuffer, cloudIndexPrefetchBuffer);
     }
 
     private static List<GATKVariant> getVariantsOverlappingInterval(FeatureDataSource<VariantContext> variantSource, SimpleInterval interval) {

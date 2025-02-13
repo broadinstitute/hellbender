@@ -18,13 +18,16 @@ import org.broadinstitute.hellbender.utils.SVInterval;
 import org.broadinstitute.hellbender.utils.SVIntervalTree;
 import org.broadinstitute.hellbender.utils.codecs.FeatureSink;
 import org.broadinstitute.hellbender.tools.sv.SVFeaturesHeader;
+import org.broadinstitute.hellbender.utils.gcs.BucketUtils;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Function;
 
 public class BlockCompressedIntervalStream {
 
@@ -307,12 +310,18 @@ public class BlockCompressedIntervalStream {
         SVIntervalTree<Long> index;
         boolean usedByIterator;
 
-        public Reader( final FeatureInput<T> inputDescriptor, final FeatureCodec<T, Reader<T>> codec ) {
-            this.path = inputDescriptor.getRawInputString();
+        public Reader( final FeatureInput<T> inputDescriptor,
+                       final FeatureCodec<T, Reader<T>> codec,
+                       final int cloudPrefetchBufferSize,
+                       final int cloudIndexPrefetchBufferSize ) {
+            this.path = inputDescriptor.toPath().toUri().toString();
             this.codec = codec;
             final SeekableStream ss;
+            final boolean prefetchable = BucketUtils.isEligibleForPrefetching(inputDescriptor);
+            final Function<SeekableByteChannel, SeekableByteChannel> wrapper =
+                    BucketUtils.getPrefetchingWrapper(prefetchable ? cloudPrefetchBufferSize : 0);
             try {
-                ss = SeekableStreamFactory.getInstance().getStreamFor(path);
+                ss = SeekableStreamFactory.getInstance().getStreamFor(path, wrapper);
             } catch ( final IOException ioe ) {
                 throw new UserException("unable to open " + path, ioe);
             }

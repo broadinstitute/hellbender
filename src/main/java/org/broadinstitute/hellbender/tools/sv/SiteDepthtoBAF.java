@@ -70,7 +70,7 @@ import java.util.List;
 )
 @ExperimentalFeature
 @DocumentedFeature
-public class SiteDepthtoBAF extends MultiFeatureWalker<SiteDepth> {
+public class SiteDepthtoBAF extends MergingMultiFeatureWalker<SiteDepth> {
     public static final String LOCUS_DEPTH_FILE_NAME = "site-depth";
     public static final String BAF_SITES_VCF_LONG_NAME = "baf-sites-vcf";
     public static final String SAMPLE_NAMES_NAME = "sample-names";
@@ -128,22 +128,15 @@ public class SiteDepthtoBAF extends MultiFeatureWalker<SiteDepth> {
     private final List<SiteDepth> sameLocusBuffer = new ArrayList<>();
 
     @Override
-    @SuppressWarnings("unchecked")
     public void onTraversalStart() {
         super.onTraversalStart();
-        bafSitesSource = new FeatureDataSource<>(bafSitesFile.toPath().toString());
+        bafSitesSource = new FeatureDataSource<>(bafSitesFile.getRawInputString());
         bafSitesIterator = new CollectSVEvidence.BAFSiteIterator(bafSitesSource.iterator());
         final SAMSequenceDictionary dict = getDictionary();
         dict.assertSameDictionary(bafSitesSource.getSequenceDictionary());
-        final FeatureOutputCodec<? extends Feature, ? extends FeatureSink<? extends Feature>> codec =
-                FeatureOutputCodecFinder.find(bafOutputFile);
-        if ( !codec.getFeatureType().isAssignableFrom(BafEvidence.class) ) {
-            throw new UserException("We're intending to write BafEvidence, but the feature type " +
-                    "associated with the output file expects features of type " +
-                    codec.getFeatureType().getSimpleName());
-        }
-        writer = (FeatureSink<BafEvidence>)codec.makeSink(bafOutputFile, dict, sampleNames,
-                                                            compressionLevel);
+        final FeatureOutputCodec<BafEvidence,FeatureSink<BafEvidence>> codec =
+                FeatureOutputCodecFinder.find(bafOutputFile, BafEvidence.class);
+        writer = codec.makeSink(bafOutputFile, dict, sampleNames, compressionLevel);
     }
 
     @Override

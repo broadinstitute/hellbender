@@ -9,7 +9,7 @@ import org.broadinstitute.hellbender.testutils.ArgumentsBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class ExampleMultiFeatureWalkerIntegrationTest extends CommandLineProgramTest {
+public class ExampleMergingMultiFeatureWalkerIntegrationTest extends CommandLineProgramTest {
 
     @Test
     public void testDictionarySubsetIsOK() {
@@ -23,7 +23,7 @@ public class ExampleMultiFeatureWalkerIntegrationTest extends CommandLineProgram
         argsBuilder.add(StandardArgumentDefinitions.INPUT_LONG_NAME, largeFileTestDir + "NA12878.alignedHg38.duplicateMarked.baseRealigned.bam");
         // no dictionary, no sample names, with a single feature
         argsBuilder.add(StandardArgumentDefinitions.FEATURE_LONG_NAME, packageRootTestDir + "engine/tiny_hg38.baf.txt");
-        final ExampleMultiFeatureWalker example = new ExampleMultiFeatureWalker();
+        final ExampleMergingMultiFeatureWalker example = new ExampleMergingMultiFeatureWalker();
         example.instanceMain(argsBuilder.getArgsArray());
 
         // full HG38 dictionary has 3366 entries
@@ -44,7 +44,7 @@ public class ExampleMultiFeatureWalkerIntegrationTest extends CommandLineProgram
         argsBuilder.add(StandardArgumentDefinitions.REFERENCE_LONG_NAME, b37_reference_20_21);
         // no dictionary, no sample names, with a single feature
         argsBuilder.add(StandardArgumentDefinitions.FEATURE_LONG_NAME, packageRootTestDir + "engine/tiny_hg38.baf.txt");
-        final ExampleMultiFeatureWalker example = new ExampleMultiFeatureWalker();
+        final ExampleMergingMultiFeatureWalker example = new ExampleMergingMultiFeatureWalker();
         example.instanceMain(argsBuilder.getArgsArray());
     }
 
@@ -58,7 +58,7 @@ public class ExampleMultiFeatureWalkerIntegrationTest extends CommandLineProgram
         argsBuilder.add(StandardArgumentDefinitions.REFERENCE_LONG_NAME, b38_reference_20_21);
         // no dictionary, no sample names, with a single feature
         argsBuilder.add(StandardArgumentDefinitions.FEATURE_LONG_NAME, packageRootTestDir + "engine/tiny_hg38.baf.txt");
-        final ExampleMultiFeatureWalker example = new ExampleMultiFeatureWalker();
+        final ExampleMergingMultiFeatureWalker example = new ExampleMergingMultiFeatureWalker();
         example.instanceMain(argsBuilder.getArgsArray());
     }
 
@@ -67,7 +67,7 @@ public class ExampleMultiFeatureWalkerIntegrationTest extends CommandLineProgram
         final ArgumentsBuilder argsBuilder = new ArgumentsBuilder();
         argsBuilder.add(StandardArgumentDefinitions.VERBOSITY_NAME, Log.LogLevel.ERROR.name());
         argsBuilder.add(StandardArgumentDefinitions.FEATURE_LONG_NAME, packageRootTestDir + "engine/tiny_hg38.baf.bci");
-        final ExampleMultiFeatureWalker example = new ExampleMultiFeatureWalker();
+        final ExampleMergingMultiFeatureWalker example = new ExampleMergingMultiFeatureWalker();
         example.instanceMain(argsBuilder.getArgsArray());
 
         // bci file has chr20, chr21, and alts for those contigs: 13 entries
@@ -87,7 +87,7 @@ public class ExampleMultiFeatureWalkerIntegrationTest extends CommandLineProgram
         argsBuilder.add(StandardArgumentDefinitions.FEATURE_LONG_NAME, packageRootTestDir + "engine/tiny_hg38.baf.txt");
         argsBuilder.add(StandardArgumentDefinitions.FEATURE_LONG_NAME, packageRootTestDir + "engine/tiny_chr9.baf.txt");
         argsBuilder.add(StandardArgumentDefinitions.FEATURE_LONG_NAME, packageRootTestDir + "engine/tiny_chr10.baf.txt");
-        final ExampleMultiFeatureWalker example = new ExampleMultiFeatureWalker();
+        final ExampleMergingMultiFeatureWalker example = new ExampleMergingMultiFeatureWalker();
         example.instanceMain(argsBuilder.getArgsArray());
 
         Assert.assertEquals(example.features.size(), 5);
@@ -108,7 +108,7 @@ public class ExampleMultiFeatureWalkerIntegrationTest extends CommandLineProgram
         argsBuilder.add(StandardArgumentDefinitions.SEQUENCE_DICTIONARY_NAME, FULL_HG38_DICT);
         argsBuilder.add(StandardArgumentDefinitions.FEATURE_LONG_NAME, packageRootTestDir + "engine/tiny_chr10.baf.txt");
         argsBuilder.add(StandardArgumentDefinitions.FEATURE_LONG_NAME, packageRootTestDir + "engine/tiny_chr10_2.baf.txt");
-        final ExampleMultiFeatureWalker example = new ExampleMultiFeatureWalker();
+        final ExampleMergingMultiFeatureWalker example = new ExampleMergingMultiFeatureWalker();
         example.instanceMain(argsBuilder.getArgsArray());
 
         Assert.assertEquals(example.features.size(), 5);
@@ -126,7 +126,7 @@ public class ExampleMultiFeatureWalkerIntegrationTest extends CommandLineProgram
         // full HG38 dictionary with 3366 entries
         argsBuilder.add(StandardArgumentDefinitions.SEQUENCE_DICTIONARY_NAME, FULL_HG38_DICT);
         argsBuilder.add(StandardArgumentDefinitions.FEATURE_LONG_NAME, packageRootTestDir + "engine/tiny_chr10_3.pe.txt");
-        final ExampleMultiFeatureWalker example = new ExampleMultiFeatureWalker();
+        final ExampleMergingMultiFeatureWalker example = new ExampleMergingMultiFeatureWalker();
         example.instanceMain(argsBuilder.getArgsArray());
 
         Assert.assertEquals(example.features.size(), 11);
@@ -145,7 +145,7 @@ public class ExampleMultiFeatureWalkerIntegrationTest extends CommandLineProgram
         argsBuilder.add(StandardArgumentDefinitions.FEATURE_LONG_NAME, packageRootTestDir + "engine/tiny_chr9.baf.txt.gz");
         argsBuilder.add(StandardArgumentDefinitions.FEATURE_LONG_NAME, packageRootTestDir + "engine/tiny_chr10.baf.txt.gz");
         argsBuilder.add(StandardArgumentDefinitions.INTERVALS_LONG_NAME, "chr10:2000-2002");
-        final ExampleMultiFeatureWalker example = new ExampleMultiFeatureWalker();
+        final ExampleMergingMultiFeatureWalker example = new ExampleMergingMultiFeatureWalker();
         example.instanceMain(argsBuilder.getArgsArray());
 
         Assert.assertEquals(example.features.size(), 1);

@@ -105,7 +105,6 @@ public class CondenseDepthEvidence extends FeatureWalker<DepthEvidence> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void onTraversalStart() {
         super.onTraversalStart();
 
@@ -113,19 +112,12 @@ public class CondenseDepthEvidence extends FeatureWalker<DepthEvidence> {
             throw new UserException("Minimum interval length exceeds maximum interval length.");
         }
 
-        final FeatureOutputCodec<? extends Feature, ? extends FeatureSink<? extends Feature>> codec =
-                FeatureOutputCodecFinder.find(outputPath);
-        final Class<? extends Feature> codecFeatureClass = codec.getFeatureType();
-        if ( !codecFeatureClass.equals(DepthEvidence.class) ) {
-            throw new UserException("Output file " + outputPath + " implies Feature subtype " +
-                    codecFeatureClass.getSimpleName() +
-                    ", but this tool expects to write DepthEvidence.");
-        }
+        final FeatureOutputCodec<DepthEvidence, ? extends FeatureSink<DepthEvidence>> codec =
+                FeatureOutputCodecFinder.find(outputPath, DepthEvidence.class);
         final SVFeaturesHeader header = (SVFeaturesHeader)getDrivingFeaturesHeader();
         final SAMSequenceDictionary dict =
                 header.getDictionary() != null ? header.getDictionary() : getBestAvailableSequenceDictionary();
-        outputSink = (FeatureSink<DepthEvidence>)codec.makeSink(outputPath, dict,
-                                                        header.getSampleNames(), compressionLevel);
+        outputSink = codec.makeSink(outputPath, dict, header.getSampleNames(), compressionLevel);
     }
 
     @Override

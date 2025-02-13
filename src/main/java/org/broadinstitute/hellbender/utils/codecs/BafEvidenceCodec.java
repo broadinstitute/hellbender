@@ -3,9 +3,8 @@ package org.broadinstitute.hellbender.utils.codecs;
 import com.google.common.base.Splitter;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.util.IOUtil;
-import htsjdk.tribble.AsciiFeatureCodec;
+import htsjdk.tribble.FeatureCodecHeader;
 import htsjdk.tribble.index.tabix.TabixFormat;
-import htsjdk.tribble.readers.LineIterator;
 import org.broadinstitute.hellbender.engine.GATKPath;
 import org.broadinstitute.hellbender.tools.sv.BafEvidence;
 import org.broadinstitute.hellbender.tools.sv.BafEvidenceSortMerger;
@@ -13,10 +12,11 @@ import org.broadinstitute.hellbender.utils.io.FeatureOutputStream;
 
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 /** Codec to handle BafEvidence in tab-delimited text files */
-public class BafEvidenceCodec extends AsciiFeatureCodec<BafEvidence>
+public class BafEvidenceCodec extends AbstractTextCodec<BafEvidence>
         implements FeatureOutputCodec<BafEvidence, FeatureOutputStream<BafEvidence>> {
 
     public static final String FORMAT_SUFFIX = ".baf.txt";
@@ -24,8 +24,28 @@ public class BafEvidenceCodec extends AsciiFeatureCodec<BafEvidence>
     private static final Splitter splitter = Splitter.on(COL_DELIMITER);
     private static final DecimalFormat valueFormatter = new DecimalFormat("#.00");
 
-    public BafEvidenceCodec() {
-        super(BafEvidence.class);
+    @Override
+    public boolean canDecode( final String path ) {
+        String toDecode = path.toLowerCase();
+        if ( IOUtil.hasBlockCompressedExtension(toDecode) ) {
+            toDecode = toDecode.substring(0, toDecode.lastIndexOf('.'));
+        }
+        return toDecode.endsWith(FORMAT_SUFFIX);
+    }
+
+    @Override
+    public Class<BafEvidence> getFeatureType() {
+        return BafEvidence.class;
+    }
+
+    @Override
+    public FeatureCodecHeader readHeader( final Iterator<String> itr ) {
+        return FeatureCodecHeader.EMPTY_HEADER;
+    }
+
+    @Override
+    public BafEvidence decode( final Iterator<String> itr ) {
+        return itr.hasNext() ? decode(itr.next()) : null;
     }
 
     @Override
@@ -33,8 +53,7 @@ public class BafEvidenceCodec extends AsciiFeatureCodec<BafEvidence>
         return new TabixFormat(TabixFormat.ZERO_BASED, 1, 2, 0, '#', 0);
     }
 
-    @Override
-    public BafEvidence decode(final String line) {
+    public BafEvidence decode( final String line) {
         final List<String> tokens = splitter.splitToList(line);
         if (tokens.size() != 4) {
             throw new IllegalArgumentException("Invalid number of columns: " + tokens.size());
@@ -45,18 +64,6 @@ public class BafEvidenceCodec extends AsciiFeatureCodec<BafEvidence>
         final String sample = tokens.get(3);
         return new BafEvidence(sample, contig, position, value);
     }
-
-    @Override
-    public boolean canDecode(final String path) {
-        String toDecode = path.toLowerCase();
-        if ( IOUtil.hasBlockCompressedExtension(toDecode) ) {
-            toDecode = toDecode.substring(0, toDecode.lastIndexOf('.'));
-        }
-        return toDecode.endsWith(FORMAT_SUFFIX);
-    }
-
-    @Override
-    public Object readActualHeader(final LineIterator reader) { return null; }
 
     @Override
     public FeatureOutputStream<BafEvidence> makeSink( final GATKPath path,

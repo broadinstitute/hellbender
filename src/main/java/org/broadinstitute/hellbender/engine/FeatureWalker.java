@@ -58,18 +58,20 @@ public abstract class FeatureWalker<F extends Feature> extends WalkerBase {
     private void initializeDrivingFeatures() {
         final GATKPath drivingPath = getDrivingFeaturePath();
         final FeatureCodec<? extends Feature, ?> codec = FeatureManager.getCodecForFile(drivingPath.toPath());
-        if (isAcceptableFeatureType(codec.getFeatureType())) {
+        final Class<? extends Feature> featureType = codec.getFeatureType();
+        if (isAcceptableFeatureType(featureType)) {
             final GenomicsDBOptions options = new GenomicsDBOptions(referenceArguments.getReferencePath());
             final FeatureInput<F> drivingFeatureInput = new FeatureInput<>(drivingPath);
             drivingFeatureInput.setFeatureCodecClass((Class<FeatureCodec<F, ?>>)codec.getClass());
-            drivingFeatures = new FeatureDataSource<>(drivingFeatureInput, FeatureDataSource.DEFAULT_QUERY_LOOKAHEAD_BASES, null,
-                    cloudPrefetchBuffer, cloudIndexPrefetchBuffer, options, false);
+            drivingFeatures =
+                    new FeatureDataSource<>(drivingFeatureInput, FeatureDataSource.DEFAULT_QUERY_LOOKAHEAD_BASES,
+                            featureType, cloudPrefetchBuffer, cloudIndexPrefetchBuffer, options, false);
             header = drivingFeatures.getHeader();
 
             final FeatureInput<F> featureInput = new FeatureInput<>(drivingPath, "drivingFeatureFile");
             featureInput.setFeatureCodecClass((Class<FeatureCodec<F, ?>>)codec.getClass());
             features.addToFeatureSources(featureInput,
-                    new FeatureDataSource<>(featureInput, 0, codec.getFeatureType(),
+                    new FeatureDataSource<>(featureInput, 0, featureType,
                         cloudPrefetchBuffer, cloudIndexPrefetchBuffer, options, false));
         } else {
             throw new UserException("File " + drivingPath.getRawInputString() + " contains features of the wrong type.");

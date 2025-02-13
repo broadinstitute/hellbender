@@ -19,8 +19,8 @@ import org.broadinstitute.hellbender.utils.IndexUtils;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.tools.sv.SVFeaturesHeader;
+import org.broadinstitute.hellbender.utils.codecs.FeatureReaderFactory;
 import org.broadinstitute.hellbender.utils.gcs.BucketUtils;
-import org.broadinstitute.hellbender.utils.io.BlockCompressedIntervalStream.Reader;
 import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.genomicsdb.model.GenomicsDBExportConfiguration;
 import org.genomicsdb.reader.GenomicsDBFeatureReader;
@@ -151,7 +151,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
      * @param featurePath path or URI to source of Features
      */
     public FeatureDataSource(final String featurePath) {
-        this(featurePath, null, DEFAULT_QUERY_LOOKAHEAD_BASES, null);
+        this(featurePath, null, DEFAULT_QUERY_LOOKAHEAD_BASES, Feature.class);
     }
 
     /**
@@ -175,7 +175,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
      * @param queryLookaheadBases look ahead this many bases during queries that produce cache misses
      */
     public FeatureDataSource(final File featureFile, final String name, final int queryLookaheadBases) {
-        this(Utils.nonNull(featureFile).getAbsolutePath(), name, queryLookaheadBases, null);
+        this(Utils.nonNull(featureFile).getAbsolutePath(), name, queryLookaheadBases, Feature.class);
     }
 
     /**
@@ -317,26 +317,18 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
         // Create a feature reader without requiring an index.  We will require one ourselves as soon as
         // a query by interval is attempted.
         this.featureReader = getFeatureReader(featureInput, targetFeatureType,
-                BucketUtils.getPrefetchingWrapper(cloudPrefetchBuffer),
-                BucketUtils.getPrefetchingWrapper(cloudIndexPrefetchBuffer),
-                genomicsDBOptions, setNameOnCodec);
+                cloudPrefetchBuffer, cloudIndexPrefetchBuffer, genomicsDBOptions, setNameOnCodec);
 
-        if (IOUtils.isGenomicsDBPath(featureInput) ||
-                featureInput.getFeaturePath().toLowerCase().endsWith(BCI_FILE_EXTENSION)) {
+        if (IOUtils.isGenomicsDBPath(featureInput)) {
             //genomics db uri's have no associated index file to read from, but they do support random access
-            // likewise with block-compressed interval files
             this.hasIndex = false;
             this.supportsRandomAccess = true;
         } else if (featureReader instanceof AbstractFeatureReader) {
             this.hasIndex = ((AbstractFeatureReader<T, ?>)featureReader).hasIndex();
             this.supportsRandomAccess = hasIndex;
         } else {
-            throw new GATKException("Found a feature input that was neither GenomicsDB or a Tribble AbstractFeatureReader.  Input was " + featureInput.toString() + ".");
-        }
-        // Due to a bug in HTSJDK, unindexed block compressed input files may fail to parse completely. For safety,
-        // these files have been disabled. See https://github.com/broadinstitute/gatk/issues/4224 for discussion
-        if (!hasIndex && IOUtil.hasBlockCompressedExtension(featureInput.getFeaturePath())) {
-            throw new UserException.MissingIndex(featureInput.toString(), "Support for unindexed block-compressed files has been temporarily disabled. Try running IndexFeatureFile on the input.");
+            this.hasIndex = false;
+            this.supportsRandomAccess = featureReader.isQueryable();
         }
 
         this.currentIterator = null;
@@ -351,8 +343,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static <T extends Feature> FeatureReader<T> getFeatureReader(final FeatureInput<T> featureInput, final Class<? extends Feature> targetFeatureType,
-                                                                         final Function<SeekableByteChannel, SeekableByteChannel> cloudWrapper,
-                                                                         final Function<SeekableByteChannel, SeekableByteChannel> cloudIndexWrapper,
+                                                                         final int cloudPrefetchBuffer, final int cloudIndexPrefetchBuffer,
                                                                          final GenomicsDBOptions genomicsDBOptions, final boolean setNameOnCodec) {
         if (IOUtils.isGenomicsDBPath(featureInput.getFeaturePath())) {
             Utils.nonNull(genomicsDBOptions);
@@ -369,13 +360,12 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
             } catch (final ClassCastException e) {
                 throw new UserException("GenomicsDB inputs can only be used to provide VariantContexts.", e);
             }
-        } else {
-            final FeatureCodec<T, ?> codec = getCodecForFeatureInput(featureInput, targetFeatureType, setNameOnCodec);
-            if ( featureInput.getFeaturePath().toLowerCase().endsWith(BCI_FILE_EXTENSION) ) {
-                return new Reader(featureInput, codec);
-            }
-            return getTribbleFeatureReader(featureInput, codec, cloudWrapper, cloudIndexWrapper);
         }
+        final FeatureCodec<T, ?> codec = getCodecForFeatureInput(featureInput, targetFeatureType, setNameOnCodec);
+        if ( codec instanceof FeatureReaderFactory ) {
+            return ((FeatureReaderFactory)codec).getReader(featureInput, cloudPrefetchBuffer, cloudIndexPrefetchBuffer);
+        }
+        return getTribbleFeatureReader(featureInput, codec, cloudPrefetchBuffer, cloudIndexPrefetchBuffer);
     }
 
     /**
@@ -416,7 +406,7 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
         return codec;
     }
 
-    private static <T extends Feature> AbstractFeatureReader<T, ?> getTribbleFeatureReader(final FeatureInput<T> featureInput, final FeatureCodec<T, ?> codec, final Function<SeekableByteChannel, SeekableByteChannel> cloudWrapper, final Function<SeekableByteChannel, SeekableByteChannel> cloudIndexWrapper) {
+    private static <T extends Feature> AbstractFeatureReader<T, ?> getTribbleFeatureReader(final FeatureInput<T> featureInput, final FeatureCodec<T, ?> codec, final int cloudPrefetchBuffer, final int cloudIndexPrefetchBuffer) {
         Utils.nonNull(codec);
         try {
             // Must get the path to the data file from the codec here:
@@ -427,11 +417,10 @@ public final class FeatureDataSource<T extends Feature> implements GATKDataSourc
             final boolean requireIndex = false;
 
             // Only apply the wrappers if the feature input is in a remote location which will benefit from prefetching.
-            if (BucketUtils.isEligibleForPrefetching(featureInput)) {
-                return AbstractFeatureReader.getFeatureReader(absoluteRawPath, null, codec, requireIndex, cloudWrapper, cloudIndexWrapper);
-            } else {
-                return AbstractFeatureReader.getFeatureReader(absoluteRawPath, null, codec, requireIndex, Utils.identityFunction(), Utils.identityFunction());
-            }
+            final boolean prefetch = BucketUtils.isEligibleForPrefetching(featureInput);
+            return AbstractFeatureReader.getFeatureReader(absoluteRawPath, null, codec, requireIndex,
+                    BucketUtils.getPrefetchingWrapper(prefetch ? cloudPrefetchBuffer : 0),
+                    BucketUtils.getPrefetchingWrapper(prefetch ? cloudIndexPrefetchBuffer : 0));
         } catch (final TribbleException e) {
             throw new GATKException("Error initializing feature reader for path " + featureInput.getFeaturePath(), e);
         }

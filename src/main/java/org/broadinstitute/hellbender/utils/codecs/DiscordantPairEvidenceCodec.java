@@ -3,18 +3,18 @@ package org.broadinstitute.hellbender.utils.codecs;
 import com.google.common.base.Splitter;
 import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.util.IOUtil;
-import htsjdk.tribble.AsciiFeatureCodec;
+import htsjdk.tribble.FeatureCodecHeader;
 import htsjdk.tribble.index.tabix.TabixFormat;
-import htsjdk.tribble.readers.LineIterator;
 import org.broadinstitute.hellbender.engine.GATKPath;
 import org.broadinstitute.hellbender.tools.sv.DiscordantPairEvidence;
 import org.broadinstitute.hellbender.utils.io.FeatureOutputStream;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 /** Codec to handle DiscordantPairEvidence in tab-delimited text files */
-public class DiscordantPairEvidenceCodec extends AsciiFeatureCodec<DiscordantPairEvidence>
+public class DiscordantPairEvidenceCodec extends AbstractTextCodec<DiscordantPairEvidence>
         implements FeatureOutputCodec<DiscordantPairEvidence, FeatureOutputStream<DiscordantPairEvidence>> {
 
     public static final String FORMAT_SUFFIX = ".pe.txt";
@@ -23,8 +23,28 @@ public class DiscordantPairEvidenceCodec extends AsciiFeatureCodec<DiscordantPai
     public static final String STRAND_PLUS = "+";
     public static final String STRAND_MINUS = "-";
 
-    public DiscordantPairEvidenceCodec() {
-        super(DiscordantPairEvidence.class);
+    @Override
+    public boolean canDecode( final String path ) {
+        String toDecode = path.toLowerCase();
+        if ( IOUtil.hasBlockCompressedExtension(toDecode) ) {
+            toDecode = toDecode.substring(0, toDecode.lastIndexOf('.'));
+        }
+        return toDecode.endsWith(FORMAT_SUFFIX);
+    }
+
+    @Override
+    public Class<DiscordantPairEvidence> getFeatureType() {
+        return DiscordantPairEvidence.class;
+    }
+
+    @Override
+    public FeatureCodecHeader readHeader( final Iterator<String> itr ) {
+        return FeatureCodecHeader.EMPTY_HEADER;
+    }
+
+    @Override
+    public DiscordantPairEvidence decode( final Iterator<String> itr ) {
+        return itr.hasNext() ? decode(itr.next()) : null;
     }
 
     @Override
@@ -32,8 +52,7 @@ public class DiscordantPairEvidenceCodec extends AsciiFeatureCodec<DiscordantPai
         return new TabixFormat(TabixFormat.ZERO_BASED, 1, 2, 0, '#', 0);
     }
 
-    @Override
-    public DiscordantPairEvidence decode(final String line) {
+    public DiscordantPairEvidence decode( final String line ) {
         final List<String> tokens = splitter.splitToList(line);
         if (tokens.size() != 7) {
             throw new IllegalArgumentException("Invalid number of columns: " + tokens.size());
@@ -47,18 +66,6 @@ public class DiscordantPairEvidenceCodec extends AsciiFeatureCodec<DiscordantPai
         final String sample = tokens.get(6);
         return new DiscordantPairEvidence(sample, startContig, start, startStrand, endContig, end, endStrand);
     }
-
-    @Override
-    public boolean canDecode(final String path) {
-        String toDecode = path.toLowerCase();
-        if ( IOUtil.hasBlockCompressedExtension(toDecode) ) {
-            toDecode = toDecode.substring(0, toDecode.lastIndexOf('.'));
-        }
-        return toDecode.endsWith(FORMAT_SUFFIX);
-    }
-
-    @Override
-    public Object readActualHeader(final LineIterator reader) { return null; }
 
     @Override
     public FeatureOutputStream<DiscordantPairEvidence> makeSink( final GATKPath path,

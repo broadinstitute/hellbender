@@ -67,11 +67,11 @@ public final class FeatureManagerUnitTest extends GATKBaseTest {
         FeatureManager.getCodecForFile(unsupportedFile.toPath());
     }
 
-    @Test(expectedExceptions = UserException.WrongFeatureType.class)
+    @Test(expectedExceptions = UserException.NoSuitableCodecs.class)
     public void testRestrictCodecSelectionToWrongFeatureType() {
         final File vcf = new File(FEATURE_MANAGER_TEST_DIRECTORY + "minimal_vcf4_file.vcf");
 
-        // If we require BED Features from this vcf file, we should get a type mismatch exception
+        // If we require BED Features from this vcf file, we should get a no suitable codec exception
         FeatureManager.getCodecForFile(vcf.toPath(), BEDFeature.class);
     }
 

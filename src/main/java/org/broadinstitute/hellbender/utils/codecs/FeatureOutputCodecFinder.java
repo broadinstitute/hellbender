@@ -29,20 +29,25 @@ public final class FeatureOutputCodecFinder {
         outputCodecs.add(new SplitReadEvidenceBCICodec());
     }
 
-    public static FeatureOutputCodec<? extends Feature, ? extends FeatureSink<? extends Feature>>
-                    find( final GATKPath outputFilePath ) {
-        FeatureOutputCodec<?, ?> result = null;
-        final String outputFileName = outputFilePath.toString();
+    @SuppressWarnings("unchecked")
+    public static <F extends Feature>
+            FeatureOutputCodec<F, FeatureSink<F>> find( final GATKPath outputFilePath,
+                                                        final Class<F> featureClass ) {
+        FeatureOutputCodec<F, FeatureSink<F>> result = null;
+        final String outputFileName = outputFilePath.getRawInputString();
         for ( final FeatureOutputCodec<?, ?> codec : outputCodecs ) {
             if ( codec.canDecode(outputFileName) ) {
                 if ( result != null ) {
                     throw new GATKException("Found multiple output codecs for " + outputFileName);
                 }
-                result = codec;
+                if ( featureClass.isAssignableFrom(codec.getFeatureType()) ) {
+                    result = (FeatureOutputCodec<F, FeatureSink<F>>)codec;
+                }
             }
         }
         if ( result == null ) {
-            throw new UserException("No feature output codec found for " + outputFileName);
+            throw new UserException("No feature output codec that writes " +
+                    featureClass.getSimpleName() + " was found for " + outputFileName);
         }
         return result;
     }
