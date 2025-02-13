@@ -28,8 +28,8 @@ public class SimpleCSVWriterWrapperWithHeaderUnitTest extends GATKBaseTest {
              SimpleXSVWriter localWriter = new SimpleXSVWriter(localPath, '\t')) {
 
             String[] header = new String[]{"a", "b", "c"};
-            bucketWriter.setHeaderLine(Arrays.asList(header));
-            localWriter.setHeaderLine(Arrays.asList(header));
+            bucketWriter.setHeaderLine(Arrays.asList(header), true);
+            localWriter.setHeaderLine(Arrays.asList(header), true);
 
             for (int i = 0; i < 100; i++) {
                 SimpleXSVWriter.LineBuilder bucketLine = bucketWriter.getNewLineBuilder();
@@ -50,7 +50,7 @@ public class SimpleCSVWriterWrapperWithHeaderUnitTest extends GATKBaseTest {
 
         try (SimpleXSVWriter localWriter = new SimpleXSVWriter(outputPath, ',')) {
             String[] header = new String[]{"a", "b", "c","d"};
-            localWriter.setHeaderLine(Arrays.asList(header));
+            localWriter.setHeaderLine(Arrays.asList(header), true);
 
             for (int i = 0; i < 100; i++) {
                 SimpleXSVWriter.LineBuilder localLine = localWriter.getNewLineBuilder();
@@ -78,7 +78,7 @@ public class SimpleCSVWriterWrapperWithHeaderUnitTest extends GATKBaseTest {
 
         try (SimpleXSVWriter localWriter = new SimpleXSVWriter(outputPath, ',')) {
             String[] header = new String[]{"a", "b", "c","d"};
-            localWriter.setHeaderLine(Arrays.asList(header));
+            localWriter.setHeaderLine(Arrays.asList(header), true );
 
             localWriter.getNewLineBuilder().setRow(Arrays.asList("1","2","3","4","5"));
         }

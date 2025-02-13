@@ -68,11 +68,13 @@ public class SimpleXSVWriter implements Closeable {
      *
      * @param columns Ordered list of header lines to be built into the XSV
      */
-    public void setHeaderLine(List<String> columns) {
+    public void setHeaderLine(final List<String> columns, final boolean displayHeader) {
         if (headerMap != null) {
             throw new GATKException("Cannot modify header line once set");
         }
-        outputWriter.writeNext(columns.toArray(new String[0]), false);
+        if (displayHeader) {
+            outputWriter.writeNext(columns.toArray(new String[0]), false);
+        }
         expectedNumColumns = columns.size();
 
         // Create the mapping between header and column
