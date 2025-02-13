@@ -17,26 +17,34 @@ channels:
 # if channels other than conda-forge are added and the channel order is changed (note that conda channel_priority is currently set to flexible),
 # verify that key dependencies are installed from the correct channel
 - conda-forge
+- pytorch
+- nvidia
 
 dependencies:
 
 # core python dependencies
 - conda-forge::python=3.10.13         # do not update without good reason
 - conda-forge:pip=23.3.1
-- conda-forge:blas=1.0=mkl            # our official environment uses MKL versions of various packages; if other versions are desired, users should edit this YML accordingly
+- conda-forge:blas=1.            # our official environment uses MKL versions of various packages; if other versions are desired, users should edit this YML accordingly
 - conda-forge::numpy=1.26.2
 - conda-forge::pymc=5.10.1
 - conda-forge::pytensor=2.18.3
 - conda-forge::scipy=1.11.4
 - conda-forge::h5py=3.10.0
-- conda-forge::pytorch=2.1.0=*mkl*100
+- pytorch::pytorch=2.1.0
 - conda-forge::pytorch-lightning=2.4.0   # supports Pytorch >= 2.1 and <= 2.4, used by NVScoreVariants
+- pytorch::pytorch-cuda=12.1
 - conda-forge::scikit-learn=1.3.2
 - conda-forge::matplotlib=3.8.2
 - conda-forge::pandas=2.1.3
 - conda-forge::tqdm=4.66.1
 - conda-forge::dill=0.3.7             # used for pickling lambdas in TrainVariantAnnotationsModel
 - conda-forge::biopython=1.84         # used by NVScoreVariants
+- conda-forge::tensorboard=2.8.0
+- conda-forge::setuptools>=57.0.0
+- conda-forge::psutil>=5.9.2
+# - conda-forge::protobuf<3.20,>=3.9.2  # Protobuf constraint for TensorFlow compatibility
+- conda-forge::intervaltree~=3.1.0
 
 # core R dependencies; these should only be used for plotting and do not take precedence over core python dependencies!
 - r-base=4.3.1
@@ -52,7 +60,9 @@ dependencies:
 # other python dependencies; these should be removed after functionality is moved into Java code
 - bioconda::pysam=0.22.0
 - conda-forge::pyvcf=0.6.8
+- bioconda::cyvcf2~=0.30.15
 
 # pip installs should be avoided, as pip may not respect the dependencies found by the conda solver
 - pip:
-  - gatkPythonPackageArchive.zip
+    - mmap-ninja>=0.2.4
+    - gatkPythonPackageArchive.zip

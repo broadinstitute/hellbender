@@ -136,3 +136,36 @@ workflows:
              - master
          tags:
              - /.*/
+   - name: permutect_call_variants_with_uda
+     subclass: WDL
+     primaryDescriptorPath: /scripts/permutect/call_variants_with_uda.wdl
+#     testParameterFiles:
+#       - /scripts/pathseq/wdl/pathseq_pipeline_template.json
+#     filters:
+#       branches:
+#         - master
+#         - je_updateCondaEnvironment
+#       tags:
+#         - /.*/
+   - name: permutect_make_training_dataset
+       subclass: WDL
+       primaryDescriptorPath: /scripts/permutect/make_training_dataset.wdl
+       #     testParameterFiles:
+       #       - /scripts/pathseq/wdl/pathseq_pipeline_template.json
+#       filters:
+#         branches:
+#           - master
+#           - je_updateCondaEnvironment
+#         tags:
+#           - /.*/
+   - name: permutect_train_base_model
+       subclass: WDL
+       primaryDescriptorPath: /scripts/permutect/permutect_train_base_model.wdl
+       #     testParameterFiles:
+       #       - /scripts/pathseq/wdl/pathseq_pipeline_template.json
+#       filters:
+#         branches:
+#           - master
+#           - je_updateCondaEnvironment
+#         tags:
+#           - /.*/
