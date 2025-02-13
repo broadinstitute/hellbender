@@ -49,6 +49,9 @@ public final class CachingIndexedFastaSequenceFile implements ReferenceSequenceF
     /** The default cache size in bp */
     public static final long DEFAULT_CACHE_SIZE = 1000000;
 
+    /** Requested cache size in bp - will be respected if set */
+    public static long requestedCacheSize = 0;
+
     /** The cache size of this CachingIndexedFastaSequenceFile */
     private final long cacheSize;
 
@@ -236,8 +239,13 @@ public final class CachingIndexedFastaSequenceFile implements ReferenceSequenceF
      * @return the size of the cache we are using
      */
     public long getCacheSize() {
-        return cacheSize;
+        return requestedCacheSize != 0 ? requestedCacheSize : cacheSize;
     }
+
+    private long getCacheMissBackup() {
+        return Math.max(getCacheSize() / 1000, 1);
+    }
+
 
     /**
      * Is this CachingIndexedFastaReader keeping the original case of bases in the fasta, or is
@@ -315,10 +323,10 @@ public final class CachingIndexedFastaSequenceFile implements ReferenceSequenceF
      *         all of the bases in the ReferenceSequence returned by this method will be upper cased.
      */
     @Override
-    public ReferenceSequence getSubsequenceAt( final String contig, long start, final long stop ) {
+    public synchronized ReferenceSequence getSubsequenceAt( final String contig, long start, final long stop ) {
         final ReferenceSequence result;
 
-        if ( (stop - start + 1) > cacheSize ) {
+        if ( (stop - start + 1) > getCacheSize() ) {
             cacheMisses++;
             result = sequenceFile.getSubsequenceAt(contig, start, stop);
             if ( ! preserveCase ) StringUtil.toUpperCase(result.getBases());
@@ -335,8 +343,8 @@ public final class CachingIndexedFastaSequenceFile implements ReferenceSequenceF
 
             if ( start < cache.start || stop > cache.stop || cache.seq == null || cache.seq.getContigIndex() != contigInfo.getSequenceIndex() ) {
                 cacheMisses++;
-                cache.start = Math.max(start - cacheMissBackup, 0);
-                cache.stop  = Math.min(start + cacheSize + cacheMissBackup, contigInfo.getSequenceLength());
+                cache.start = Math.max(start - getCacheMissBackup(), 0);
+                cache.stop  = Math.min(start + getCacheSize() + getCacheMissBackup(), contigInfo.getSequenceLength());
                 cache.seq   = sequenceFile.getSubsequenceAt(contig, cache.start, cache.stop);
 
                 // convert all of the bases in the sequence to upper case if we aren't preserving cases

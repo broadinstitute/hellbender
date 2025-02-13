@@ -90,6 +90,12 @@ public class FlowFeatureMapperArgumentCollection implements Serializable{
     public boolean keepSupplementaryAlignments = false;
 
     /**
+     *  edit distance should come from computed NM
+     **/
+    @Argument(fullName = "levenshtein-edit-distance", doc = "edit distance should come from a Levenshtein edit distance instead of NM ?", optional = true)
+    public boolean levenshteinEditDistance = false;
+
+    /**
      *  debug negatives?
      **/
     @Hidden
