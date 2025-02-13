@@ -1,0 +1,13 @@
+@HD	VN:1.6
+@SQ	SN:20	LN:1000000	UR:http://www.broadinstitute.org/ftp/pub/seq/references/Homo_sapiens_assembly19.fasta	AS:GRCh37	M5:0dec9660ec1efaaf33281c0d5ea2560f	SP:Homo Sapiens
+@RG	ID:GATKCopyNumber	SM:HCC1143 BL
+CONTIG	POSITION	A	C	G	T	N
+20	167218	0	0	10	0	0
+20	167310	7	0	4	0	0
+20	167325	0	0	10	0	0
+20	167431	5	0	3	0	0
+20	167441	0	0	8	0	0
+20	167455	8	0	0	0	0
+20	167647	0	0	0	12	0
+20	167774	0	0	13	0	0
+20	167833	0	0	0	10	0

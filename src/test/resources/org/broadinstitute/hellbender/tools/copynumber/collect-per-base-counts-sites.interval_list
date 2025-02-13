@@ -1,0 +1,11 @@
+@HD	VN:1.5
+@SQ	SN:20	LN:1000000	UR:http://www.broadinstitute.org/ftp/pub/seq/references/Homo_sapiens_assembly19.fasta	AS:GRCh37	M5:0dec9660ec1efaaf33281c0d5ea2560f	SP:Homo Sapiens
+20	167218	167218	+	common_SNP
+20	167310	167310	+	common_SNP
+20	167325	167325	+	common_SNP
+20	167431	167431	+	common_SNP
+20	167441	167441	+	common_SNP
+20	167455	167455	+	common_SNP
+20	167647	167647	+	common_SNP
+20	167774	167774	+	common_SNP
+20	167833	167833	+	common_SNP
