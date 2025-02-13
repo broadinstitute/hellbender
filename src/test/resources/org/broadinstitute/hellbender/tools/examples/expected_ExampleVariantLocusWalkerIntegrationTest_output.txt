@@ -1,0 +1,80 @@
+Current locus 1:100
+	Reference base(s): N
+	Variant at 1:100-100. Ref: G* Alt(s): [A]
+
+Current locus 1:199
+	Reference base(s): N
+	Variant at 1:199-200. Ref: GG* Alt(s): [G]
+
+Current locus 1:200
+	Reference base(s): N
+	Variant at 1:199-200. Ref: GG* Alt(s): [G]
+	Variant at 1:200-200. Ref: G* Alt(s): [A]
+
+Current locus 1:203
+	Reference base(s): N
+	Variant at 1:203-206. Ref: GGGG* Alt(s): [G]
+
+Current locus 1:204
+	Reference base(s): N
+	Variant at 1:203-206. Ref: GGGG* Alt(s): [G]
+
+Current locus 1:205
+	Reference base(s): N
+	Variant at 1:203-206. Ref: GGGG* Alt(s): [G]
+
+Current locus 1:206
+	Reference base(s): N
+	Variant at 1:203-206. Ref: GGGG* Alt(s): [G]
+
+Current locus 1:280
+	Reference base(s): N
+	Variant at 1:280-280. Ref: G* Alt(s): [A]
+
+Current locus 1:284
+	Reference base(s): N
+	Variant at 1:284-286. Ref: GGG* Alt(s): [G]
+
+Current locus 1:285
+	Reference base(s): N
+	Variant at 1:284-286. Ref: GGG* Alt(s): [G]
+	Variant at 1:285-285. Ref: G* Alt(s): [A]
+
+Current locus 1:286
+	Reference base(s): N
+	Variant at 1:284-286. Ref: GGG* Alt(s): [G]
+	Variant at 1:286-286. Ref: G* Alt(s): [A]
+
+Current locus 1:999
+	Reference base(s): N
+	Variant at 1:999-999. Ref: G* Alt(s): [A]
+
+Current locus 1:1000
+	Reference base(s): N
+	Variant at 1:1000-1000. Ref: G* Alt(s): [A]
+	Variant at 1:1000-1003. Ref: GGGG* Alt(s): [G]
+
+Current locus 1:1001
+	Reference base(s): N
+	Variant at 1:1000-1003. Ref: GGGG* Alt(s): [G]
+
+Current locus 1:1002
+	Reference base(s): N
+	Variant at 1:1000-1003. Ref: GGGG* Alt(s): [G]
+
+Current locus 1:1003
+	Reference base(s): N
+	Variant at 1:1000-1003. Ref: GGGG* Alt(s): [G]
+
+Current locus 1:1076
+	Reference base(s): N
+	Variant at 1:1076-1076. Ref: G* Alt(s): [A]
+
+Current locus 1:1150
+	Reference base(s): N
+	Variant at 1:1150-1150. Ref: G* Alt(s): [A]
+
+Current locus 1:1176
+	Reference base(s): N
+	Variant at 1:1176-1176. Ref: G* Alt(s): [A]
+
