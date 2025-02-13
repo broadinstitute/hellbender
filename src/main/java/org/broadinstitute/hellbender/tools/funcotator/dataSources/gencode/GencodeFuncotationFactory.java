@@ -28,6 +28,7 @@ import org.broadinstitute.hellbender.tools.funcotator.metadata.FuncotationMetada
 import org.broadinstitute.hellbender.tools.funcotator.metadata.VcfFuncotationMetadata;
 import org.broadinstitute.hellbender.utils.BaseUtils;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
+import org.broadinstitute.hellbender.utils.TranscriptUtils;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.codecs.gtf.*;
 import org.broadinstitute.hellbender.utils.io.IOUtils;
@@ -102,6 +103,13 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
      */
     // TODO: Make this a parameter:
     final static private int referenceWindow = 10;
+
+    /**
+     * Whether to convert input contigs to hg19 before processing.
+     * This is only used to pull the transcript information from the reference FASTA in the case where we are running
+     * HG19 data on a B37 reference.
+     */
+    private boolean doExonContigConversionToB37ForTranscripts = false;
 
     /**
      * List of valid Appris Ranks used for sorting funcotations to get the "best" one.z
@@ -812,6 +820,34 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
     }
 
     /**
+     * Get the coding sequence from the given {@link ReferenceContext} for a given {@link GencodeGtfTranscriptFeature}.
+     * NOTE: The transcript coding sequence strings consist of all UTR and CDS sequences.
+     * @param referenceContext The {@link ReferenceContext} from which to get the coding sequence.
+     * @param transcript The {@link GencodeGtfTranscriptFeature} for which to get the coding sequence.
+     * @param tailPaddingBases Bases to add to the end of the transcript base string to enable processing variants that overrrun the end of the transcript.
+     * @param doExonContigConversionToB37ForTranscripts If {@code true}, convert the exon contig to B37 for the transcript sequence.
+     * @return The coding sequence for the given {@code transcript} as represented in the given {@code referenceContext}.
+     */
+    private static String getCodingSequenceFromReferenceContext(final ReferenceContext referenceContext,
+                                                                final GencodeGtfTranscriptFeature transcript,
+                                                                final String tailPaddingBases,
+                                                                final boolean doExonContigConversionToB37ForTranscripts) {
+
+        // The transcript strings consist of CDS and stop_codon sequences:
+        final List<Locatable> transcriptFeatureList = transcript.getAllFeatures().stream()
+                .filter((feature) -> feature.getFeatureType() == GencodeGtfFeature.FeatureType.CDS || feature.getFeatureType() == GencodeGtfFeature.FeatureType.STOP_CODON)
+                .collect(Collectors.toList());
+
+        // If we're on the reverse strand, we need to reverse complement the sequence:
+        if ( transcript.getGenomicStrand() == Strand.NEGATIVE ) {
+            return new String(BaseUtils.simpleReverseComplement(TranscriptUtils.extractTrascriptFromReference(referenceContext, transcriptFeatureList, doExonContigConversionToB37ForTranscripts).getBytes())) + tailPaddingBases;
+        }
+        else {
+            return TranscriptUtils.extractTrascriptFromReference(referenceContext, transcriptFeatureList, doExonContigConversionToB37ForTranscripts) + tailPaddingBases;
+        }
+    }
+
+    /**
      * Get the 5' UTR sequence from the GENCODE Transcript FASTA file for a given {@code transcriptId}.
      * This will get ONLY the 5' UTR sequence for the given {@code transcriptId} and will NOT include the coding sequence or the 3' UTR.
      * If the given transcript has no 5' UTR, this will return an empty {@link String}.
@@ -846,6 +882,85 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
             return "";
         }
     }
+
+    /**
+     * Get the 5' UTR sequence from the given {@link ReferenceContext} for a given {@link GencodeGtfTranscriptFeature}.
+     * @param referenceContext The {@link ReferenceContext} from which to get the 5' UTR sequence.
+     * @param transcript The {@link GencodeGtfTranscriptFeature} for which to get the 5' UTR sequence.
+     * @param numExtraBases The number of extra bases from the coding region to include in the results after the 5' UTR region.
+     * @return A {@link String} containing the 5' UTR sequence for the given {@code transcript} as represented in the given {@code referenceContext}.
+     */
+    private static String getFivePrimeUtrSequenceFromReference(final ReferenceContext referenceContext,
+                                                               final GencodeGtfTranscriptFeature transcript,
+                                                               final int numExtraBases,
+                                                               final boolean doExonContigConversionToB37ForTranscripts) {
+
+        // The 5' UTR is always the UTR that occurs at the beginning of the transcript, so we can grab the CDS and UTR regions
+        // and sort them to find where the 5' UTR is (if there is one):
+        List<GencodeGtfFeature> transcriptFeatureList = transcript.getAllFeatures().stream()
+                .filter((feature) -> feature.getFeatureType() == GencodeGtfFeature.FeatureType.CDS || feature.getFeatureType() == GencodeGtfFeature.FeatureType.UTR)
+                .sorted(Comparator.comparingInt(Locatable::getStart).thenComparing(Locatable::getEnd))
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        // If we're on the reverse strand, let's reverse the list so that we can get the UTRs in the correct order:
+        if (transcript.getGenomicStrand() == Strand.NEGATIVE) {
+            Collections.reverse(transcriptFeatureList);
+        }
+
+        // Now that we've sorted our feature list, we can go through and collect all the UTRs at the start to get the
+        // combined 5' UTR:
+        final List<Locatable> fivePrimeUtrs = new ArrayList<>();
+        for ( final GencodeGtfFeature feature : transcriptFeatureList ) {
+            if ( feature.getFeatureType() == GencodeGtfFeature.FeatureType.UTR ) {
+                fivePrimeUtrs.add(feature);
+            }
+            else {
+                // As soon as we see any feature that is not a UTR, we know
+                // we are done with the 5' UTR:
+                break;
+            }
+        }
+
+        // If we need to get extra bases at the end, we do so:
+        String extraBases = "";
+        if (numExtraBases > 0) {
+
+            // TODO: Yet another B37 conversion.  This is getting out of hand.  We need to refactor this.
+            final String contig = doExonContigConversionToB37ForTranscripts ? FuncotatorUtils.convertHG19ContigToB37Contig(fivePrimeUtrs.get(fivePrimeUtrs.size() - 1).getContig()) : fivePrimeUtrs.get(fivePrimeUtrs.size() - 1).getContig();
+
+            // Once again we must check our strandedness:
+            if (transcript.getGenomicStrand() == Strand.NEGATIVE) {
+                extraBases = new String(referenceContext.getBases(
+                        new SimpleInterval(
+                                contig,
+                                fivePrimeUtrs.get(fivePrimeUtrs.size() - 1).getStart() - numExtraBases,
+                                fivePrimeUtrs.get(fivePrimeUtrs.size() - 1).getStart() - 1)  // subtract an additional 1 here because coordinates are inclusive and we need to have exactly `numExtraBases` more bases
+                ));
+            }
+            else {
+                extraBases = new String(referenceContext.getBases(
+                        new SimpleInterval(
+                                contig,
+                                fivePrimeUtrs.get(fivePrimeUtrs.size() - 1).getEnd() + 1,
+                                fivePrimeUtrs.get(fivePrimeUtrs.size() - 1).getEnd() + numExtraBases)
+                ));
+            }
+        }
+
+        // Now we have our start and end coordinates for the 5' UTR, we can extract that from the reference
+        final String utrBases = TranscriptUtils.extractTrascriptFromReference(referenceContext, fivePrimeUtrs, doExonContigConversionToB37ForTranscripts);
+
+        // Finally, if we're on the reverse strand, we need to reverse complement the UTR bases.
+        // NOTE: the extra bases are not reverse complemented because they are not part of the UTR.
+        if (transcript.getGenomicStrand() == Strand.NEGATIVE) {
+            return new String(BaseUtils.simpleReverseComplement(utrBases.getBytes())) + new String(BaseUtils.simpleReverseComplement(extraBases.getBytes()));
+        }
+        else {
+            return utrBases + extraBases;
+        }
+    }
+
+
 
     /**
      * Returns whether a variant is in a coding region based on its primary and secondary {@link org.broadinstitute.hellbender.tools.funcotator.dataSources.gencode.GencodeFuncotation.VariantClassification}.
@@ -1306,7 +1421,9 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
 
         // Set up our SequenceComparison object so we can calculate some useful fields more easily
         // These fields can all be set without knowing the alternate allele:
-        final SequenceComparison sequenceComparison = createSequenceComparison(variant, altAllele, reference, transcript, exonPositionList, transcriptIdMap, transcriptFastaReferenceDataSource, true);
+        final SequenceComparison sequenceComparison = createSequenceComparison(
+                variant, altAllele, reference, transcript, exonPositionList, transcriptIdMap, doExonContigConversionToB37ForTranscripts
+        );
 
         // Set our transcript positions:
         setTranscriptPosition(variant, altAllele, sequenceComparison.getTranscriptAlleleStart(), gencodeFuncotationBuilder);
@@ -1698,8 +1815,16 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
                 // Note: We grab 3 extra bases at the end (from the coding sequence) so that we can check for denovo starts
                 //       even if the variant occurs in the last base of the UTR.
                 final int numExtraTrailingBases = variant.getReference().length() < defaultNumTrailingBasesForUtrAnnotationSequenceConstruction ? defaultNumTrailingBasesForUtrAnnotationSequenceConstruction : variant.getReference().length() + 1;
-                final String fivePrimeUtrCodingSequence =
-                        getFivePrimeUtrSequenceFromTranscriptFasta( transcript.getTranscriptId(), transcriptIdMap, transcriptFastaReferenceDataSource, numExtraTrailingBases);
+//                final String fivePrimeUtrCodingSequenceOld =
+//                        getFivePrimeUtrSequenceFromTranscriptFasta( transcript.getTranscriptId(), transcriptIdMap, transcriptFastaReferenceDataSource, numExtraTrailingBases);
+
+                final String fivePrimeUtrCodingSequence = getFivePrimeUtrSequenceFromReference(reference, transcript, numExtraTrailingBases, doExonContigConversionToB37ForTranscripts);
+
+//                // todo: DEBUGGING:
+//                if (!fivePrimeUtrCodingSequence.equals(fivePrimeUtrCodingSequenceOld)) {
+//                    getFivePrimeUtrSequenceFromReference(reference, transcript, numExtraTrailingBases);
+//                    throw new RuntimeException("5' UTR sequences do not match!  This is a bug!");
+//                }
 
                 // Get our start position in our coding sequence:
                 final int codingStartPos = FuncotatorUtils.getStartPositionInTranscript(variant, transcript.getExons(), strand);
@@ -1968,8 +2093,7 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
      * @param transcript The {@link GencodeGtfTranscriptFeature} for the current gene feature / alt allele.
      * @param exonPositionList A {@link List} of {@link htsjdk.samtools.util.Locatable} objects representing exon positions in the transcript.
      * @param transcriptIdMap The {@link Map} of TranscriptID to {@link MappedTranscriptIdInfo} for all transcripts in the current Gencode data source.
-     * @param transcriptFastaReferenceDataSource The {@link ReferenceDataSource} of the transcript FASTA file containing the sequence information for all Transcripts in the current Gencode data source.
-     * @param processSequenceInformation If {@code true} will attempt to process and create sequence information for the given {@code variant}.
+     * @param doExonContigConversionToB37ForTranscripts If {@code true} will convert exon contigs to B37 for the purposes of transcript sequence extraction.
      * @return A populated {@link org.broadinstitute.hellbender.tools.funcotator.SequenceComparison} object.
      */
     @VisibleForTesting
@@ -1979,8 +2103,7 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
                                                        final GencodeGtfTranscriptFeature transcript,
                                                        final List<? extends htsjdk.samtools.util.Locatable> exonPositionList,
                                                        final Map<String, MappedTranscriptIdInfo> transcriptIdMap,
-                                                       final ReferenceDataSource transcriptFastaReferenceDataSource,
-                                                       final boolean processSequenceInformation) {
+                                                       final boolean doExonContigConversionToB37ForTranscripts) {
 
         // TODO: Somewhere down the line we should adjust the positions at creation-time to account for the leading bases in VCF input files.  (issue 5349 - https://github.com/broadinstitute/gatk/issues/5349)
         // This will have ramifications down the line for all fields that get rendered.
@@ -2080,19 +2203,26 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
         //==============================================================================================================
         // Get the coding sequence for the transcript if we have a transcript sequence for this variant:
 
-        if ( processSequenceInformation ) {
+        if ( true ) {
             if ( transcriptIdMap.containsKey(transcript.getTranscriptId()) ) {
 
                 // Get padding bases just in case this variant is an indel and trails off the end of our transcript:
                 final String transcriptTailPaddingBaseString = getTranscriptEndPaddingBases(variant, altAllele, exonPositionList, reference);
 
                 // NOTE: This can't be null because of the Funcotator input args.
-                final String rawCodingSequence = getCodingSequenceFromTranscriptFasta(
-                        transcript.getTranscriptId(),
-                        transcriptIdMap,
-                        transcriptFastaReferenceDataSource,
-                        transcriptTailPaddingBaseString
+                final String rawCodingSequence = getCodingSequenceFromReferenceContext(
+                        reference,
+                        transcript,
+                        transcriptTailPaddingBaseString,
+                        doExonContigConversionToB37ForTranscripts
                 );
+
+//                final String rawCodingSequenceOld = getCodingSequenceFromTranscriptFasta(
+//                        transcript.getTranscriptId(),
+//                        transcriptIdMap,
+//                        transcriptFastaReferenceDataSource,
+//                        transcriptTailPaddingBaseString
+//                );
 
                 // Now that we have our transcript sequence, we must make sure that our reference allele is in it
                 // correctly.
@@ -2199,6 +2329,21 @@ public class GencodeFuncotationFactory extends DataSourceFuncotationFactory {
         }
 
         return new String(transcriptTailPaddingBases);
+    }
+
+    /**
+     * @return Whether this {@link GencodeFuncotationFactory} will convert contigs to hg19 before processing transcript sequences.
+     */
+    public boolean getDoExonContigConversionToB37ForTranscripts() {
+        return this.doExonContigConversionToB37ForTranscripts;
+    }
+
+    /**
+     * Set whether this {@link GencodeFuncotationFactory} will convert contigs to hg19 before processing transcript sequences.
+     * @param b Whether to convert contigs to hg19 before processing transcript sequences.
+     */
+    public void setDoExonContigConversionToB37ForTranscripts(final boolean b) {
+        this.doExonContigConversionToB37ForTranscripts = b;
     }
 
     /**

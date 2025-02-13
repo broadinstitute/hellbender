@@ -19,6 +19,7 @@ import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.tools.funcotator.compositeoutput.CompositeOutputRenderer;
 import org.broadinstitute.hellbender.tools.funcotator.dataSources.DataSourceUtils;
 import org.broadinstitute.hellbender.tools.funcotator.dataSources.gencode.GencodeFuncotation;
+import org.broadinstitute.hellbender.tools.funcotator.dataSources.gencode.GencodeFuncotationFactory;
 import org.broadinstitute.hellbender.tools.funcotator.genelistoutput.GeneListOutputRenderer;
 import org.broadinstitute.hellbender.tools.funcotator.mafOutput.MafOutputRenderer;
 import org.broadinstitute.hellbender.tools.funcotator.metadata.FuncotationMetadata;
@@ -108,6 +109,9 @@ public final class FuncotatorEngine implements AutoCloseable {
         this.funcotatorArgs = funcotatorArgs;
         inputMetadata = metadata;
 
+        // Determine whether we have to convert given variants from B37 to HG19:
+        mustConvertInputContigsToHg19 = determineReferenceAndDatasourceCompatibility();
+
         dataSourceFactories = funcotationFactories;
         // Note: The dataSourceFactories must be sorted to ensure that as we iterate through them
         // to create funcotations, the inherent dependencies between different funcotation types are preserved.
@@ -115,8 +119,9 @@ public final class FuncotatorEngine implements AutoCloseable {
         // create their annotations.   This sorting enables such dependencies.
         dataSourceFactories.sort(DataSourceUtils::datasourceComparator);
 
-        // Determine whether we have to convert given variants from B37 to HG19:
-        mustConvertInputContigsToHg19 = determineReferenceAndDatasourceCompatibility();
+        // Now set the GencodeFuncotationFactory to convert exon sequences to B37 for transcripts, if necessary:
+        // TODO: (NOTE:) This is a workaround for the B37 / HG19 problem.  We really need to make B37 datasources.
+        dataSourceFactories.stream().filter(f -> f.getType().equals(FuncotatorArgumentDefinitions.DataSourceType.GENCODE)).forEach(f -> ((GencodeFuncotationFactory)f).setDoExonContigConversionToB37ForTranscripts(mustConvertInputContigsToHg19));
 
         // Read in the custom variant classification order file here so that it can be shared across all engines:
         if (funcotatorArgs.customVariantClassificationOrderFile != null) {

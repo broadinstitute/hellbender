@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  *
  * Created by jonn on 7/21/17.
  */
-public abstract class GencodeGtfFeature implements Feature, Comparable<GencodeGtfFeature> {
+public abstract class GencodeGtfFeature implements Feature, Locatable, Comparable<GencodeGtfFeature> {
 
     private static final Logger logger = LogManager.getLogger(GencodeGtfFeature.class);
 

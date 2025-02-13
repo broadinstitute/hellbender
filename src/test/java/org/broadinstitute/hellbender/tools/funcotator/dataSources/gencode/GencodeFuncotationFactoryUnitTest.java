@@ -1442,8 +1442,7 @@ public class GencodeFuncotationFactoryUnitTest extends GATKBaseTest {
                         transcript,
                         exonPositionList,
                         muc16TranscriptIdMap,
-                        muc16TranscriptDataSource,
-                        true);
+                        false);
 
         final GencodeFuncotation.VariantClassification varClass = GencodeFuncotationFactory.createVariantClassification(
                 variantContext,
@@ -1531,8 +1530,7 @@ public class GencodeFuncotationFactoryUnitTest extends GATKBaseTest {
                         transcript,
                         exonPositionList,
                         muc16TranscriptIdMap,
-                        muc16TranscriptDataSource,
-                        true);
+                        false);
 
         final GencodeFuncotation.VariantClassification varClass = GencodeFuncotationFactory.createVariantClassification(
                 variantContext,
@@ -2828,10 +2826,23 @@ public class GencodeFuncotationFactoryUnitTest extends GATKBaseTest {
                 new FlankSettings(5000, 0),
                 "TEST")) {
 
+            // We have to set the contig conversion because of the datasources / B37 mismatch:
+            funcotationFactory.setDoExonContigConversionToB37ForTranscripts(true);
+
             final List<Funcotation> gencodeFuncotationList = funcotationFactory.createFuncotations(vcHg19, referenceContext, featureContext);
 
             System.out.println(gencodeFuncotationList.size());
         }
     }
 
+//    @Test
+//    public void testGetCodingSequenceFromTranscriptFasta() {
+//
+//
+//        getCodingSequenceFromReferenceContext();
+//
+//        final String transcriptFastaFile    = FuncotatorTestConstants.PIK3CA_ALL_TRANSCRIPTS_GENCODE_TRANSCRIPT_FASTA_FILE;
+//        final String transcriptId           = "ENST00000263967.1";
+//        final String expectedCodingSequence = "ATGAGTGGGAGCTGCT";
+//    }
 }
