@@ -1,16 +1,21 @@
 package org.broadinstitute.hellbender.tools.walkers.haplotypecaller;
 
+import htsjdk.samtools.SAMFileHeader;
+import htsjdk.samtools.util.CollectionUtil;
 import htsjdk.variant.variantcontext.Allele;
 import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.tools.walkers.haplotypecaller.graphs.InverseAllele;
 import org.broadinstitute.hellbender.tools.walkers.mutect.*;
+import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.genotyper.AlleleLikelihoods;
 import org.broadinstitute.hellbender.utils.genotyper.AlleleList;
 import org.broadinstitute.hellbender.utils.genotyper.LikelihoodMatrix;
+import org.broadinstitute.hellbender.utils.haplotype.Event;
+import org.broadinstitute.hellbender.utils.haplotype.Haplotype;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 
 import java.io.OutputStreamWriter;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -25,12 +30,19 @@ import java.util.stream.IntStream;
 
 public class AlleleFilteringMutect extends AlleleFiltering {
     private SomaticGenotypingEngine genotypingEngine;
+    private Set<String> normalSamples;
+
     public AlleleFilteringMutect(M2ArgumentCollection _m2args,
                                  OutputStreamWriter assemblyDebugStream,
-                                 SomaticGenotypingEngine _genotypingEngine){
-        super(_m2args, assemblyDebugStream);
+                                 SomaticGenotypingEngine _genotypingEngine,
+                                 Set<String> _normalSamples,
+                                 final SAMFileHeader header){
+        super(_m2args, assemblyDebugStream, header);
         genotypingEngine = _genotypingEngine;
+        normalSamples = _normalSamples;
     }
+
+    protected double getStringentQuality() { return -50; }
 
     /**
      * Calculate calculate genotype likelihood of requirement of an allele. Specifically, calculates the likelihood
@@ -38,6 +50,7 @@ public class AlleleFilteringMutect extends AlleleFiltering {
      * This is very similar to what is done in the callMutations function in MutectEngine, but here the haplotypes that do
      * not support the allele are all haplotypes that do not contain the allele rather than only the haplotypes that support reference
      * etc.
+     * The log odds is calculated separately for the tumor and the normal samples and the smalles (the strongest) is returned
      *
      * @param alleleLikelihoods
      * @param allele
@@ -48,13 +61,28 @@ public class AlleleFilteringMutect extends AlleleFiltering {
     int getAlleleLikelihoodVsInverse(final AlleleLikelihoods<GATKRead, Allele> alleleLikelihoods, Allele allele) {
 
         final List<LikelihoodMatrix<GATKRead, Allele>> allMatrices = IntStream.range(0, alleleLikelihoods.numberOfSamples())
+                .filter(i -> !normalSamples.contains(alleleLikelihoods.getSample(i)))
                 .mapToObj(alleleLikelihoods::sampleMatrix)
                 .collect(Collectors.toList());
         final AlleleList<Allele> alleleList = allMatrices.get(0);
         final LikelihoodMatrix<GATKRead, Allele> logAllMatrix = SomaticGenotypingEngine.combinedLikelihoodMatrix(allMatrices, alleleList);
-        double alleleLogOdds = somaticAltLogOdds(logAllMatrix);
-        logger.debug(() -> String.format("GAL:: %s: %f", allele.toString(), alleleLogOdds));
+        final double alleleLogOddsTumor = somaticAltLogOdds(logAllMatrix);
+        logger.debug(() -> String.format("GAL:: Tumor %s: %f", allele.toString(), alleleLogOddsTumor));
+        double alleleLogOdds = alleleLogOddsTumor;
+        if (!normalSamples.isEmpty()) {
+            final List<LikelihoodMatrix<GATKRead, Allele>> allMatricesNormal = IntStream.range(0, alleleLikelihoods.numberOfSamples())
+                    .filter(i -> normalSamples.contains(alleleLikelihoods.getSample(i)))
+                    .mapToObj(alleleLikelihoods::sampleMatrix)
+                    .collect(Collectors.toList());
+            final LikelihoodMatrix<GATKRead, Allele> logAllMatrixNormal = SomaticGenotypingEngine.combinedLikelihoodMatrix(allMatricesNormal, alleleList);
+            double alleleLogOddsNormal = somaticAltLogOdds(logAllMatrixNormal);
+            logger.debug(() -> String.format("GAL:: Normal %s: %f", allele.toString(), alleleLogOddsNormal));
+            if (alleleLogOddsNormal < alleleLogOddsTumor) {
+                alleleLogOdds = alleleLogOddsNormal;
+            }
+        }
         return (int)(10*alleleLogOdds);
+
     }
 
 
@@ -69,6 +97,7 @@ public class AlleleFilteringMutect extends AlleleFiltering {
     private double somaticAltLogOdds(final LikelihoodMatrix<GATKRead, Allele> matrix) {
 
         final LikelihoodMatrix<GATKRead, Allele> initialMatrix = matrix;
+
         if (matrix.getAllele(1-matrix.indexOfReference()) instanceof InverseAllele){
             throw new GATKException.ShouldNeverReachHereException("Inverse allele removed in filtering");
         }

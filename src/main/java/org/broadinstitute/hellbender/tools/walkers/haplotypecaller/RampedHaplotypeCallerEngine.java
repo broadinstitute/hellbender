@@ -480,7 +480,7 @@ public class RampedHaplotypeCallerEngine extends HaplotypeCallerEngine {
                 context.suspiciousLocations = new HashSet<>();
                 if (hcArgs.filterAlleles) {
                     logger.debug("Filtering alleles");
-                    AlleleFilteringHC alleleFilter = new AlleleFilteringHC(hcArgs, assemblyDebugOutStream, localGenotypingEngine);
+                    AlleleFilteringHC alleleFilter = new AlleleFilteringHC(hcArgs, assemblyDebugOutStream, localGenotypingEngine, readsHeader);
                     //need to update haplotypes to find the alleles
                     EventMap.buildEventMapsForHaplotypes(context.readLikelihoods.alleles(),
                             context.assemblyResult.getFullReferenceWithPadding(),

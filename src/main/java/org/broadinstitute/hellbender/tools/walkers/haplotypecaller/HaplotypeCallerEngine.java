@@ -927,14 +927,16 @@ public class HaplotypeCallerEngine implements AssemblyRegionEvaluator {
         if (hcArgs.filterAlleles) {
             logger.debug("Filtering alleles");
 
-            AlleleFilteringHC alleleFilter = new AlleleFilteringHC(hcArgs, assemblyDebugOutStream, localGenotypingEngine);
+            AlleleFilteringHC alleleFilter = new AlleleFilteringHC(hcArgs, assemblyDebugOutStream, localGenotypingEngine, readsHeader);
             //need to update haplotypes to find the alleles
             EventMap.buildEventMapsForHaplotypes(readLikelihoods.alleles(),
                     assemblyResult.getFullReferenceWithPadding(),
                     assemblyResult.getPaddedReferenceLoc(),
                     hcArgs.assemblerArgs.debugAssembly,
                     hcArgs.maxMnpDistance);
-            subsettedReadLikelihoodsFinal = alleleFilter.filterAlleles(readLikelihoods, assemblyResult.getPaddedReferenceLoc().getStart(), suspiciousLocations);
+            subsettedReadLikelihoodsFinal = alleleFilter.filterAlleles(readLikelihoods,
+                    assemblyResult.getPaddedReferenceLoc().getStart(),
+                    suspiciousLocations);
 
         } else {
             subsettedReadLikelihoodsFinal = readLikelihoods;

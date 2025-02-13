@@ -1,5 +1,7 @@
 package org.broadinstitute.hellbender.tools.walkers.haplotypecaller;
 
+import htsjdk.samtools.SAMFileHeader;
+import htsjdk.samtools.SAMSequenceDictionary;
 import htsjdk.samtools.util.CollectionUtil;
 import htsjdk.variant.variantcontext.Allele;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -11,6 +13,7 @@ import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.tools.walkers.annotator.StrandOddsRatio;
 import org.broadinstitute.hellbender.tools.walkers.haplotypecaller.graphs.InverseAllele;
 import org.broadinstitute.hellbender.utils.BaseUtils;
+import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.genotyper.AlleleLikelihoods;
 import org.broadinstitute.hellbender.utils.haplotype.Event;
 import org.broadinstitute.hellbender.utils.haplotype.Haplotype;
@@ -40,14 +43,19 @@ import com.google.common.annotations.VisibleForTesting;
  */
 
 public abstract class AlleleFiltering {
-
     final protected static Logger logger = LogManager.getLogger(AlleleFiltering.class);
     final protected AssemblyBasedCallerArgumentCollection assemblyArgs;
     final private OutputStreamWriter assemblyDebugOutStream;
-    AlleleFiltering(final AssemblyBasedCallerArgumentCollection assemblyArgs, final OutputStreamWriter assemblyDebugOutStream){
+    final private SAMSequenceDictionary sequenceDictionary;
+
+    AlleleFiltering(final AssemblyBasedCallerArgumentCollection assemblyArgs,
+                    final OutputStreamWriter assemblyDebugOutStream,
+                    final SAMFileHeader header){
         this.assemblyArgs = assemblyArgs;
         this.assemblyDebugOutStream = assemblyDebugOutStream;
+        this.sequenceDictionary = header.getSequenceDictionary();
     }
+    protected abstract double getStringentQuality();
 
     /**
      * Finds alleles that are likely not contributing much to explaining the data and remove the haplotypes
@@ -177,8 +185,6 @@ public abstract class AlleleFiltering {
                 }
                 logger.debug("AHM::printout end");
 
-
-
                 final List<AlleleLikelihoods<GATKRead, Allele>> alleleLikelihoods =
                         activeAlleles.stream().map(al -> getAlleleLikelihoodMatrix(readLikelihoods, al,
                                 haplotypeAlleleMap, activeHaplotypes)).collect(Collectors.toList());
@@ -199,8 +205,7 @@ public abstract class AlleleFiltering {
                 // the very weak quality is hardcoded
                 final List<Event> filteringCandidatesStringent = identifyBadAlleles(collectedRPLs,
                         collectedSORs,
-                        activeAlleles,
-                        1,
+                        activeAlleles, getStringentQuality(),
                         Integer.MAX_VALUE);
 
 
@@ -334,7 +339,9 @@ public abstract class AlleleFiltering {
                                                                                      final Map<Haplotype, Collection<Event>> haplotypeAlleleMap,
                                                                                      final Set<Haplotype> enabledHaplotypes
                                                                                      ){
+
         final Map<Allele,List<Haplotype>> alleleHaplotypeMap = new CollectionUtil.DefaultingMap<>((k) -> new ArrayList<>(), true);
+
 
         final Allele notAllele= InverseAllele.of(allele.altAllele(), true);
         readLikelihoods.alleles().stream().filter(enabledHaplotypes::contains)
@@ -345,6 +352,9 @@ public abstract class AlleleFiltering {
                 .forEach(alleleHaplotypeMap.get(notAllele)::add);
 
         final AlleleLikelihoods<GATKRead, Allele> alleleLikelihoods = readLikelihoods.marginalize(alleleHaplotypeMap);
+        final SimpleInterval variantCallingRelevantFragmentOverlap = new SimpleInterval(allele).expandWithinContig(assemblyArgs.informativeReadOverlapMargin, sequenceDictionary);
+        alleleLikelihoods.retainEvidence(variantCallingRelevantFragmentOverlap::overlaps);
+
         logger.debug(() -> String.format("GALM: %s %d %d", allele, alleleHaplotypeMap.get(allele.altAllele()).size(), alleleHaplotypeMap.get(notAllele).size()));
         return alleleLikelihoods;
     }
@@ -358,7 +368,6 @@ public abstract class AlleleFiltering {
         final double sor = StrandOddsRatio.calculateSOR(contingency_table);
         logger.debug(() -> String.format("GAS:: %s: %f (%d %d %d %d)", allele.toString(), sor, contingency_table[0][0], contingency_table[0][1], contingency_table[1][0], contingency_table[1][1]));
         return sor;
-
     }
 
     //filters pairs of alleles by distance
