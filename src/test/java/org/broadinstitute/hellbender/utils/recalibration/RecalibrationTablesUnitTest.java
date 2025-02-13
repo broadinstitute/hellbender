@@ -33,13 +33,13 @@ public final class RecalibrationTablesUnitTest extends GATKBaseTest {
             for ( final EventType et : EventType.values() ) {
                 for ( final int rg : combineStates) {
                     final double error = rg % 2 == 0 ? 1 : 0;
-                    RecalUtils.incrementDatumOrPutIfNecessary2keys(tables.getReadGroupTable(), qualByte, error, rg, et.ordinal());
+                    RecalUtils.incrementDatum2keys(tables.getReadGroupTable(), qualByte, error, rg, et.ordinal());
                     for ( final int qual : combineStates) {
-                        RecalUtils.incrementDatumOrPutIfNecessary3keys(tables.getQualityScoreTable(), qualByte, error, rg, qual, et.ordinal());
+                        RecalUtils.incrementDatum3keys(tables.getQualityScoreTable(), qualByte, error, rg, qual, et.ordinal());
                         for ( final int cycle : combineStates)
-                            RecalUtils.incrementDatumOrPutIfNecessary4keys(tables.getTable(2), qualByte, error, rg, qual, cycle, et.ordinal());
+                            RecalUtils.incrementDatum4keys(tables.getTable(2), qualByte, error, rg, qual, cycle, et.ordinal());
                         for ( final int context : combineStates)
-                            RecalUtils.incrementDatumOrPutIfNecessary4keys(tables.getTable(3), qualByte, error, rg, qual, context, et.ordinal());
+                            RecalUtils.incrementDatum4keys(tables.getTable(3), qualByte, error, rg, qual, context, et.ordinal());
                     }
                 }
             }
@@ -131,7 +131,7 @@ public final class RecalibrationTablesUnitTest extends GATKBaseTest {
     public void testCombinePartial() {
         final RecalibrationTables merged = new RecalibrationTables(covariates, numReadGroups);
         for ( final int rg : combineStates) {
-            RecalUtils.incrementDatumOrPutIfNecessary4keys(merged.getTable(3), qualByte, 1, rg, 0, 0, 0);
+            RecalUtils.incrementDatum4keys(merged.getTable(3), qualByte, 1, rg, 0, 0, 0);
         }
 
         merged.combine(tables);

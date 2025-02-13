@@ -40,7 +40,8 @@ public final class BaseRecalibratorSparkFn {
                 RecalibrationTables::inPlaceCombine,
                 Math.max(1, (int)(Math.log(unmergedTables.partitions().size()) / Math.log(2))));
 
-        BaseRecalibrationEngine.finalizeRecalibrationTables(combinedTables);
+        BaseRecalibrationEngine.collapseQualityScoreTableToReadGroupTable(combinedTables.getQualityScoreTable(), combinedTables.getReadGroupTable());
+        BaseRecalibrationEngine.roundTableValues(combinedTables);
 
         final QuantizationInfo quantizationInfo = new QuantizationInfo(combinedTables, recalArgs.QUANTIZING_LEVELS);
 

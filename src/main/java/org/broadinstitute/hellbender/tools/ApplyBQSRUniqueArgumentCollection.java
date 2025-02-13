@@ -17,6 +17,9 @@ import java.util.List;
 public class ApplyBQSRUniqueArgumentCollection implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    public static final String STATIC_QUANTIZED_QUALS_LONG_NAME = "static-quantized-quals";
+    public static final String ALLOW_MISSING_READ_GROUPS_LONG_NAME = "allow-missing-read-group";
+
     /**
      * Turns on the base quantization module. It requires a recalibration report.
      *
@@ -31,9 +34,11 @@ public class ApplyBQSRUniqueArgumentCollection implements Serializable {
     /**
      * Static quantized quals are entirely separate from the quantize_qual option which uses dynamic binning.
      * The two types of binning should not be used together.
+     *
+     * For example, the Warp germline pipeline uses the static bins { 10, 20, 30, 40 }
      */
     @Advanced
-    @Argument(fullName="static-quantized-quals", doc = "Use static quantized quality scores to a given number of levels (with -"+ StandardArgumentDefinitions.BQSR_TABLE_SHORT_NAME+ ")", optional=true, mutex = "quantize-quals")
+    @Argument(fullName=STATIC_QUANTIZED_QUALS_LONG_NAME, doc = "Use static quantized quality scores to a given number of levels (with -"+ StandardArgumentDefinitions.BQSR_TABLE_SHORT_NAME+ ")", optional=true, mutex = "quantize-quals")
     public List<Integer> staticQuantizationQuals = new ArrayList<>();
 
     /**
@@ -62,6 +67,13 @@ public class ApplyBQSRUniqueArgumentCollection implements Serializable {
     public double globalQScorePrior = -1.0;
 
     /**
+     * If set to true, do not throw an error upon encountering a read with a read group that's not in the recalibration table.
+     * Instead, simply set the quantized original base qualities as the recalibrated base qualities.
+     */
+    @Argument(fullName = ALLOW_MISSING_READ_GROUPS_LONG_NAME, doc = "Do not throw an error when encountering a read group not in the recal table", optional = true)
+    public boolean allowMissingReadGroups = false;
+
+    /**
      * Combine the extra arguments in {@link ApplyBQSRArgumentCollection} that are not in this {@link ApplyBQSRUniqueArgumentCollection}
      * from the given {@link RecalibrationArgumentCollection} to create a {@link ApplyBQSRArgumentCollection}.
      * @param bqsrArgs the recalibration arguments
@@ -75,6 +87,8 @@ public class ApplyBQSRUniqueArgumentCollection implements Serializable {
         ret.roundDown = this.roundDown;
         ret.emitOriginalQuals = this.emitOriginalQuals;
         ret.globalQScorePrior = this.globalQScorePrior;
+        ret.allowMissingReadGroups = this.allowMissingReadGroups;
+
         // include all the fields from RecalibrationArgumentCollection
         ret.PRESERVE_QSCORES_LESS_THAN = bqsrArgs.PRESERVE_QSCORES_LESS_THAN;
         ret.useOriginalBaseQualities = bqsrArgs.useOriginalBaseQualities;

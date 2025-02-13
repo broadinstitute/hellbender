@@ -3,7 +3,6 @@ package org.broadinstitute.hellbender.utils.recalibration;
 import htsjdk.samtools.CigarOperator;
 import org.apache.commons.lang3.tuple.Pair;
 import org.broadinstitute.hellbender.utils.SerializableFunction;
-import htsjdk.samtools.Cigar;
 import htsjdk.samtools.CigarElement;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.util.Locatable;
@@ -25,7 +24,7 @@ import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.read.ReadUtils;
 import org.broadinstitute.hellbender.utils.recalibration.covariates.Covariate;
 import org.broadinstitute.hellbender.utils.recalibration.covariates.CovariateKeyCache;
-import org.broadinstitute.hellbender.utils.recalibration.covariates.ReadCovariates;
+import org.broadinstitute.hellbender.utils.recalibration.covariates.PerReadCovariateMatrix;
 import org.broadinstitute.hellbender.utils.recalibration.covariates.StandardCovariateList;
 
 import java.io.Serializable;
@@ -121,7 +120,7 @@ public final class BaseRecalibrationEngine implements Serializable {
             return; // the whole read was inside the adaptor so skip it
         }
 
-        RecalUtils.parsePlatformForRead(read, readsHeader, recalArgs);
+        RecalUtils.updatePlatformForRead(read, readsHeader, recalArgs);
 
         int[] isSNP = new int[read.getLength()];
         int[] isInsertion = new int[isSNP.length];
@@ -133,9 +132,9 @@ public final class BaseRecalibrationEngine implements Serializable {
         // note for efficiency reasons we don't compute the BAQ array unless we actually have
         // some error to marginalize over.  For ILMN data ~85% of reads have no error
         final byte[] baqArray = (nErrors == 0 || !recalArgs.enableBAQ) ? flatBAQArray(read) : calculateBAQArray(read, refDS);
-
+        // by default, baqArray is the array of constant value 64 i.e. [64, 64, .... , 64]
         if( baqArray != null ) { // some reads just can't be BAQ'ed
-            final ReadCovariates covariates = RecalUtils.computeCovariates(read, readsHeader, this.covariates, true, keyCache);
+            final PerReadCovariateMatrix covariates = RecalUtils.computeCovariates(read, readsHeader, this.covariates, true, keyCache);
             final boolean[] skip = calculateSkipArray(read, knownSites); // skip known sites of variation as well as low quality and non-regular bases
             final double[] snpErrors = calculateFractionalErrorArray(isSNP, baqArray);
             final double[] insertionErrors = calculateFractionalErrorArray(isInsertion, baqArray);
@@ -159,27 +158,36 @@ public final class BaseRecalibrationEngine implements Serializable {
      */
     public void finalizeData() {
         Utils.validate(!finalized, "FinalizeData() has already been called");
-        finalizeRecalibrationTables(recalTables);
+        collapseQualityScoreTableToReadGroupTable(recalTables.getQualityScoreTable(), recalTables.getReadGroupTable());
+        roundTableValues(recalTables);
         finalized = true;
     }
 
+
     /**
-     * Finalize, if appropriate, all derived data in recalibrationTables.
+     * Populate the read group table, whose elements have been null up to this point,
+     * by collapsing (marginalizing) the datum table index by both the read group and the reported quality score
+     * over the reported quality score.
      *
      * Called once after all calls to updateDataForRead have been issued.
      *
-     * Assumes that all of the principal tables (by quality score) have been completely updated,
-     * and walks over this data to create summary data tables like by read group table.
+     * @param byQualTable the RecalDatum table indexed by (read group, reported quality score)
+     * @param byReadGroupTable the empty RecalDatum table to be populated by this method.
+     *
+     * TODO: this method should take a qual table and return a read group table.
      */
-    public static void finalizeRecalibrationTables( final RecalibrationTables tables ) {
-        Utils.nonNull(tables);
-        final NestedIntegerArray<RecalDatum> byReadGroupTable = tables.getReadGroupTable();
-        final NestedIntegerArray<RecalDatum> byQualTable = tables.getQualityScoreTable();
+    public static void collapseQualityScoreTableToReadGroupTable(final NestedIntegerArray<RecalDatum> byQualTable,
+                                                                 final NestedIntegerArray<RecalDatum> byReadGroupTable) {
+        // the read group table has shape: (num read groups) x (num error modes)
+        // the qual table has shape:       (num read groups) x (num reported qualities [default = MAX_PHRED_SCORE + 1 = 94]) x (num error modes)
 
         // iterate over all values in the qual table
+        final int readGroupIndex = 0;
+        final int errorModeIndex = 2;
+
         for ( final NestedIntegerArray.Leaf<RecalDatum> leaf : byQualTable.getAllLeaves() ) {
-            final int rgKey = leaf.keys[0];
-            final int eventIndex = leaf.keys[2];
+            final int rgKey = leaf.keys[readGroupIndex];
+            final int eventIndex = leaf.keys[errorModeIndex];
             final RecalDatum rgDatum = byReadGroupTable.get(rgKey, eventIndex);
             final RecalDatum qualDatum = leaf.value;
 
@@ -191,19 +199,18 @@ public final class BaseRecalibrationEngine implements Serializable {
                 rgDatum.combine(qualDatum);
             }
         }
-
-        /* To replicate the results of BQSR whether or not we save tables to disk (which we need in Spark),
-         * we need to trim the numbers to a few decimal placed (that's what writing and reading does).
-         */
-        roundTableValues(tables);
     }
 
-    private static void roundTableValues(final RecalibrationTables rt) {
+    /**
+     * To replicate the results of BQSR whether or not we save tables to disk (which we need in Spark),
+     * we need to trim the numbers to a few decimal placed (that's what writing and reading does).
+     */
+    public static void roundTableValues(final RecalibrationTables rt) {
         for (int i = 0; i < rt.numTables(); i++) {
             for (final NestedIntegerArray.Leaf<RecalDatum> leaf : rt.getTable(i).getAllLeaves()) {
+                // Empirical quality is implemented an integer qual score and does not need rounding.
                 leaf.value.setNumMismatches(MathUtils.roundToNDecimalPlaces(leaf.value.getNumMismatches(), RecalUtils.NUMBER_ERRORS_DECIMAL_PLACES));
-                leaf.value.setEmpiricalQuality(MathUtils.roundToNDecimalPlaces(leaf.value.getEmpiricalQuality(), RecalUtils.EMPIRICAL_QUAL_DECIMAL_PLACES));
-                leaf.value.setEstimatedQReported(MathUtils.roundToNDecimalPlaces(leaf.value.getEstimatedQReported(), RecalUtils.EMPIRICAL_Q_REPORTED_DECIMAL_PLACES));
+                leaf.value.setReportedQuality(MathUtils.roundToNDecimalPlaces(leaf.value.getReportedQuality(), RecalUtils.REPORTED_QUALITY_DECIMAL_PLACES));
             }
         }
     }
@@ -238,37 +245,41 @@ public final class BaseRecalibrationEngine implements Serializable {
     }
 
     /**
-     * Update the recalibration statistics using the information in recalInfo
+     * Update the recalibration statistics using the information in recalInfo.
+     *
+     * Implementation detail: we only populate the quality score table and the optional tables.
+     * The read group table will be populated later by collapsing the quality score table.
+     *
      * @param recalInfo data structure holding information about the recalibration values for a single read
      */
     private void updateRecalTablesForRead( final ReadRecalibrationInfo recalInfo ) {
         Utils.validate(!finalized, "FinalizeData() has already been called");
 
         final GATKRead read = recalInfo.getRead();
-        final ReadCovariates readCovariates = recalInfo.getCovariatesValues();
+        final PerReadCovariateMatrix perReadCovariateMatrix = recalInfo.getCovariatesValues();
         final NestedIntegerArray<RecalDatum> qualityScoreTable = recalTables.getQualityScoreTable();
 
         final int nCovariates = covariates.size();
-        final int nSpecialCovariates = covariates.numberOfSpecialCovariates();
         final int readLength = read.getLength();
         for( int offset = 0; offset < readLength; offset++ ) {
             if( ! recalInfo.skip(offset) ) {
                 for (int idx = 0; idx < cachedEventTypes.length; idx++) { //Note: we loop explicitly over cached values for speed
                     final EventType eventType = cachedEventTypes[idx];
-                    final int[] keys = readCovariates.getKeySet(offset, eventType);
+                    final int[] covariatesAtOffset = perReadCovariateMatrix.getCovariatesAtOffset(offset, eventType);
                     final int eventIndex = eventType.ordinal();
                     final byte qual = recalInfo.getQual(eventType, offset);
                     final double isError = recalInfo.getErrorFraction(eventType, offset);
 
-                    final int key0 = keys[0];
-                    final int key1 = keys[1];
+                    final int readGroup = covariatesAtOffset[StandardCovariateList.READ_GROUP_COVARIATE_DEFAULT_INDEX];
+                    final int baseQuality = covariatesAtOffset[StandardCovariateList.BASE_QUALITY_COVARIATE_DEFAULT_INDEX];
 
-                    RecalUtils.incrementDatumOrPutIfNecessary3keys(qualityScoreTable, qual, isError, key0, key1, eventIndex);
+                    RecalUtils.incrementDatum3keys(qualityScoreTable, qual, isError, readGroup, baseQuality, eventIndex);
 
-                    for (int i = nSpecialCovariates; i < nCovariates; i++) {
-                        final int keyi = keys[i];
-                        if (keyi >= 0) {
-                            RecalUtils.incrementDatumOrPutIfNecessary4keys(recalTables.getTable(i), qual, isError, key0, key1, keyi, eventIndex);
+                    for (int i = RecalUtils.NUM_REQUIRED_COVARIATES; i < nCovariates; i++) {
+                        final int specialCovariate = covariatesAtOffset[i];
+                        if (specialCovariate >= 0) {
+                            RecalUtils.incrementDatum4keys(recalTables.getTable(i), qual, isError,
+                                    readGroup, baseQuality, specialCovariate, eventIndex);
                         }
                     }
                 }
@@ -318,6 +329,13 @@ public final class BaseRecalibrationEngine implements Serializable {
         return read;
     }
 
+    /**
+     * Outputs a boolean array that has the same length as the read.
+     * The array contains true at each index if the position meets one of the following criteria:
+     *   1) not a regular base
+     *   2) base quality is less than 6
+     *   3) is a known site.
+     */
     private boolean[] calculateSkipArray( final GATKRead read, final Iterable<? extends Locatable> knownSites ) {
         final int readLength = read.getLength();
         final boolean[] skip = new boolean[readLength];
@@ -328,10 +346,13 @@ public final class BaseRecalibrationEngine implements Serializable {
         return skip;
     }
 
-    protected static boolean[] calculateKnownSites( final GATKRead read, final Iterable<? extends Locatable> knownSites ) {
+    /**
+     * Outputs a boolean array that has the same length as the read and contains true at positions where known events
+     * occur, as determined by the knownSites variable.
+     */
+    private static boolean[] calculateKnownSites( final GATKRead read, final Iterable<? extends Locatable> knownSites ) {
         final int readLength = read.getLength();
         final boolean[] knownSitesArray = new boolean[readLength];//initializes to all false
-        final Cigar cigar = read.getCigar();
         final int softStart = read.getSoftStart();
         final int softEnd = read.getSoftEnd();
         for ( final Locatable knownSite : knownSites ) {
@@ -444,7 +465,7 @@ public final class BaseRecalibrationEngine implements Serializable {
         for( i = 0; i < fractionalErrors.length; i++ ) {
             if( baqArray[i] == NO_BAQ_UNCERTAINTY ) {
                 if( !inBlock ) {
-                    fractionalErrors[i] = (double) errorArray[i];
+                    fractionalErrors[i] = errorArray[i];
                 } else {
                     calculateAndStoreErrorsInBlock(i, blockStartIndex, errorArray, fractionalErrors);
                     inBlock = false; // reset state variables

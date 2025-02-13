@@ -17,7 +17,7 @@ public final class QualityScoreCovariate implements Covariate {
     }
 
     @Override
-    public void recordValues(final GATKRead read, final SAMFileHeader header, final ReadCovariates values, final boolean recordIndelValues) {
+    public void recordValues(final GATKRead read, final SAMFileHeader header, final PerReadCovariateMatrix values, final boolean recordIndelValues) {
         final int baseQualityCount = read.getBaseQualityCount();
         final byte[] baseInsertionQualities = recordIndelValues ? ReadUtils.getBaseInsertionQualities(read) : null;
         final byte[] baseDeletionQualities = recordIndelValues ? ReadUtils.getBaseDeletionQualities(read) : null;

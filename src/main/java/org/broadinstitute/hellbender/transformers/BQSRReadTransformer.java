@@ -1,18 +1,20 @@
 package org.broadinstitute.hellbender.transformers;
 
 import htsjdk.samtools.SAMFileHeader;
+import htsjdk.samtools.SAMReadGroupRecord;
 import htsjdk.samtools.SAMTag;
 import htsjdk.samtools.SAMUtils;
+import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.exceptions.UserException.MalformedRead;
 import org.broadinstitute.hellbender.tools.ApplyBQSRArgumentCollection;
 import org.broadinstitute.hellbender.utils.QualityUtils;
 import org.broadinstitute.hellbender.utils.Utils;
-import org.broadinstitute.hellbender.utils.collections.NestedIntegerArray;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.read.ReadUtils;
 import org.broadinstitute.hellbender.utils.recalibration.*;
 import org.broadinstitute.hellbender.utils.recalibration.covariates.CovariateKeyCache;
-import org.broadinstitute.hellbender.utils.recalibration.covariates.ReadCovariates;
+import org.broadinstitute.hellbender.utils.recalibration.covariates.PerReadCovariateMatrix;
+import org.broadinstitute.hellbender.utils.recalibration.covariates.ReadGroupCovariate;
 import org.broadinstitute.hellbender.utils.recalibration.covariates.StandardCovariateList;
 
 import java.io.File;
@@ -27,13 +29,12 @@ import static org.broadinstitute.hellbender.utils.recalibration.RecalDatum.MAX_R
 public final class BQSRReadTransformer implements ReadTransformer {
     private static final long serialVersionUID = 1L;
 
-    private final QuantizationInfo quantizationInfo; // histogram containing the map for qual quantization (calculated after recalibration is done)
     private final RecalibrationTables recalibrationTables;
     private final StandardCovariateList covariates; // list of all covariates to be used in this calculation
     private final SAMFileHeader header;
-    
+
     private final int preserveQLessThan;
-    private final double globalQScorePrior;
+    private final double constantQualityScorePrior;
     private final boolean emitOriginalQuals;
 
     //These fields are created to avoid redoing these calculations for every read
@@ -43,11 +44,17 @@ public final class BQSRReadTransformer implements ReadTransformer {
     private static final int BASE_SUBSTITUTION_INDEX = EventType.BASE_SUBSTITUTION.ordinal();
 
     //Note: varargs allocates a new array every time. We'll pre-allocate one array and reuse it to avoid object allocation for every base of every read.
-    private final RecalDatum[] empiricalQualCovsArgs;
+    private final RecalDatum[] recalDatumsForSpecialCovariates;
     private final boolean useOriginalBaseQualities;
 
+    // TODO: this should be merged with the quantized quals
     private byte[] staticQuantizedMapping;
     private final CovariateKeyCache keyCache;
+
+    private final boolean allowMissingReadGroups;
+    private static final int READ_GROUP_MISSING_IN_RECAL_TABLE_CODE = -1;
+
+    private List<Byte> quantizedQuals;
 
     /**
      * Constructor using a GATK Report file
@@ -73,7 +80,6 @@ public final class BQSRReadTransformer implements ReadTransformer {
         this.header = header;
         this.recalibrationTables = recalibrationTables;
         this.covariates = covariates;
-        this.quantizationInfo = quantizationInfo;
 
         if (args.quantizationLevels == 0) { // quantizationLevels == 0 means no quantization, preserve the quality scores
             quantizationInfo.noQuantization();
@@ -82,7 +88,7 @@ public final class BQSRReadTransformer implements ReadTransformer {
         }
 
         this.preserveQLessThan = args.PRESERVE_QSCORES_LESS_THAN;
-        this.globalQScorePrior = args.globalQScorePrior;
+        this.constantQualityScorePrior = args.globalQScorePrior;
         this.emitOriginalQuals = args.emitOriginalQuals;
         this.useOriginalBaseQualities = args.useOriginalBaseQualities;
 
@@ -92,12 +98,14 @@ public final class BQSRReadTransformer implements ReadTransformer {
             staticQuantizedMapping = constructStaticQuantizedMapping(args.staticQuantizationQuals, args.roundDown);
         }
 
-        totalCovariateCount = covariates.size();
-        specialCovariateCount = covariates.numberOfSpecialCovariates();
+        this.quantizedQuals = quantizationInfo.getQuantizedQuals();
+        this.totalCovariateCount = covariates.size();
+        this.specialCovariateCount = covariates.numberOfSpecialCovariates();
 
         //Note: We pre-create the varargs arrays that will be used in the calls. Otherwise we're spending a lot of time allocating those int[] objects
-        empiricalQualCovsArgs = new RecalDatum[totalCovariateCount - specialCovariateCount];
-        keyCache = new CovariateKeyCache();//one cache per transformer
+        this.recalDatumsForSpecialCovariates = new RecalDatum[specialCovariateCount];
+        this.keyCache = new CovariateKeyCache();//one cache per transformer
+        this.allowMissingReadGroups = args.allowMissingReadGroups;
     }
 
     /**
@@ -133,8 +141,11 @@ public final class BQSRReadTransformer implements ReadTransformer {
     @Override
     public GATKRead apply(final GATKRead originalRead) {
         final GATKRead read = useOriginalBaseQualities ? ReadUtils.resetOriginalBaseQualities(originalRead) : originalRead;
+        final SAMReadGroupRecord readGroup = header.getReadGroup(read.getReadGroup());
 
-        if (emitOriginalQuals && ! read.hasAttribute(SAMTag.OQ.name())) { // Save the old qualities if the tag isn't already taken in the read
+        // If requested, emit the base qualities of the input bam as the OQ (original qualities) of the output bam.
+        // If OQ is already set in the input bam, we do not write over it.
+        if (emitOriginalQuals && ! read.hasAttribute(SAMTag.OQ.name())) {
             try {
                 read.setAttribute(SAMTag.OQ.name(), SAMUtils.phredToFastq(read.getBaseQualities()));
             } catch (final IllegalArgumentException e) {
@@ -142,87 +153,139 @@ public final class BQSRReadTransformer implements ReadTransformer {
             }
         }
 
-        final ReadCovariates readCovariates = RecalUtils.computeCovariates(read, header, covariates, false, keyCache);
+        final PerReadCovariateMatrix perReadCovariateMatrix = RecalUtils.computeCovariates(read, header, covariates, false, keyCache);
 
-        //clear indel qualities
+        // clear indel qualities TODO: do we still modify indel qualities?
         read.clearAttribute(ReadUtils.BQSR_BASE_INSERTION_QUALITIES);
         read.clearAttribute(ReadUtils.BQSR_BASE_DELETION_QUALITIES);
 
-        // get the keyset for this base using the error model
-        final int[][] fullReadKeySet = readCovariates.getKeySet(EventType.BASE_SUBSTITUTION);
+        // this array has shape ( read length ) x ( num covariates ). The covariates are encoded as integers.
+        final int[][] covariatesForRead = perReadCovariateMatrix.getMatrixForErrorModel(EventType.BASE_SUBSTITUTION);
 
-        // the rg key is constant over the whole read, the global deltaQ is too
-        final int rgKey = fullReadKeySet[0][0];
+        // The integer code used to store read groups in the perReadCovariateMatrix
+        final int rgKey = covariates.getReadGroupCovariate().keyFromValue(ReadGroupCovariate.getReadGroupIdentifier(readGroup));
 
-        final RecalDatum empiricalQualRG = recalibrationTables.getReadGroupTable().get2Keys(rgKey, BASE_SUBSTITUTION_INDEX);
+        final byte[] recalibratedQuals = read.getBaseQualities(); // recall this returns a new copy of the array
+        final byte[] preUpdateQuals = read.getBaseQualities();
 
-        if (empiricalQualRG == null) {
-            return read;
+        if (rgKey == READ_GROUP_MISSING_IN_RECAL_TABLE_CODE){
+            // The read group is not in the recal table.
+            if (allowMissingReadGroups) {
+                // Given the way the recalibration code is implemented below, we cannot recalibrate a read with a
+                // read group that's not in the recal table. TODO: change the implementation below so we can collapse the read groups i.e. marginalize over it
+                for (int i = 0; i < recalibratedQuals.length; i++){
+                    recalibratedQuals[i] = staticQuantizedMapping != null ? staticQuantizedMapping[preUpdateQuals[i]] : quantizedQuals.get(preUpdateQuals[i]);
+                }
+                read.setBaseQualities(recalibratedQuals);
+
+                return read;
+            } else {
+                throw new GATKException("Read group " + read.getReadGroup() + " not found in the recalibration table." +
+                        "Set the " + ApplyBQSRArgumentCollection.ALLOW_MISSING_READ_GROUPS_LONG_NAME + " command line argument to ignore this error.");
+            }
         }
-        final byte[] quals = read.getBaseQualities();
 
-        final int readLength = quals.length;
-        final double epsilon = globalQScorePrior > 0.0 ? globalQScorePrior : empiricalQualRG.getEstimatedQReported();
+        // Datum for the single covariate, read group, with other covariates marginalized.
+        final RecalDatum readGroupDatum = recalibrationTables.getReadGroupTable().get2Keys(rgKey, BASE_SUBSTITUTION_INDEX);
 
-        final NestedIntegerArray<RecalDatum> qualityScoreTable = recalibrationTables.getQualityScoreTable();
-        final List<Byte> quantizedQuals = quantizationInfo.getQuantizedQuals();
+        if (readGroupDatum == null) {
+            throw new GATKException("readGroupDatum for " + ReadGroupCovariate.getReadGroupIdentifier(readGroup) + " is null");
+        }
+
+        final int readLength = recalibratedQuals.length;
 
         //Note: this loop is under very heavy use in applyBQSR. Keep it slim.
         for (int offset = 0; offset < readLength; offset++) { // recalibrate all bases in the read
 
-            // only recalibrate usable qualities (the original quality will come from the instrument -- reported quality)
-            if (quals[offset] < preserveQLessThan) {
+            // only recalibrate usable qualities (default: >= 6) (the original quality will come from the instrument -- reported quality)
+            if (recalibratedQuals[offset] < preserveQLessThan) {
                 continue;
             }
-            Arrays.fill(empiricalQualCovsArgs, null);  //clear the array
-            final int[] keySet = fullReadKeySet[offset];
 
+            // clear and reuse this array to save space
+            Arrays.fill(recalDatumsForSpecialCovariates, null);
+            final int[] covariatesAtOffset = covariatesForRead[offset];
+            final int reportedBaseQualityAtOffset = covariatesAtOffset[StandardCovariateList.BASE_QUALITY_COVARIATE_DEFAULT_INDEX];
 
-            final RecalDatum empiricalQualQS = qualityScoreTable.get3Keys(keySet[0], keySet[1], BASE_SUBSTITUTION_INDEX);
+            // Datum for the tuple (read group, reported quality score).
+            final RecalDatum qualityScoreDatum = recalibrationTables.getQualityScoreTable()
+                    .get3Keys(rgKey, reportedBaseQualityAtOffset, BASE_SUBSTITUTION_INDEX);
 
-            for (int i = specialCovariateCount; i < totalCovariateCount; i++) {
-                if (keySet[i] >= 0) {
-                    empiricalQualCovsArgs[i - specialCovariateCount] = recalibrationTables.getTable(i).get4Keys(keySet[0], keySet[1], keySet[i], BASE_SUBSTITUTION_INDEX);
+            for (int j = StandardCovariateList.NUM_REQUIRED_COVARITES; j < totalCovariateCount; j++) {
+                // If the covariate is -1 (e.g. the first base in each read should have -1 for the context covariate),
+                // we simply leave the corresponding Datum to be null, which will subsequently be ignored when it comes time to recalibrate.
+                if (covariatesAtOffset[j] >= 0) {
+                    recalDatumsForSpecialCovariates[j - StandardCovariateList.NUM_REQUIRED_COVARITES] = recalibrationTables.getTable(j)
+                            .get4Keys(rgKey, reportedBaseQualityAtOffset, covariatesAtOffset[j], BASE_SUBSTITUTION_INDEX);
                 }
             }
-            final double recalibratedQualDouble = hierarchicalBayesianQualityEstimate(epsilon, empiricalQualRG, empiricalQualQS, empiricalQualCovsArgs);
 
-            final byte recalibratedQualityScore = quantizedQuals.get(getRecalibratedQual(recalibratedQualDouble));
+            // Use the reported quality score of the read group as the prior, which can be non-integer because of collapsing.
+            // TODO: Avoid using this "estimated" reported quality, and remove it.
+            final double priorQualityScore = constantQualityScorePrior > 0.0 ? constantQualityScorePrior : readGroupDatum.getReportedQuality();
+            final double rawRecalibratedQualityScore = hierarchicalBayesianQualityEstimate(priorQualityScore, readGroupDatum, qualityScoreDatum, recalDatumsForSpecialCovariates);
+            final byte quantizedQualityScore = quantizedQuals.get(getBoundedIntegerQual(rawRecalibratedQualityScore));
 
-            // Bin to static quals
-            quals[offset] = staticQuantizedMapping == null ? recalibratedQualityScore : staticQuantizedMapping[recalibratedQualityScore];
+            // TODO: as written the code quantizes *twice* if the static binning is enabled (first time to the dynamic bin). It should be quantized once.
+            recalibratedQuals[offset] = staticQuantizedMapping == null ? quantizedQualityScore : staticQuantizedMapping[quantizedQualityScore];
         }
-        read.setBaseQualities(quals);
+
+        read.setBaseQualities(recalibratedQuals);
         return read;
     }
 
     // recalibrated quality is bound between 1 and MAX_QUAL
-    private byte getRecalibratedQual(final double recalibratedQualDouble) {
+    private byte getBoundedIntegerQual(final double recalibratedQualDouble) {
         return boundQual(fastRound(recalibratedQualDouble), MAX_RECALIBRATED_Q_SCORE);
     }
 
-    public static double hierarchicalBayesianQualityEstimate( final double epsilon,
-                                                              final RecalDatum empiricalQualRG,
-                                                              final RecalDatum empiricalQualQS,
-                                                              final RecalDatum... empiricalQualCovs ) {
-        final double globalDeltaQ = empiricalQualRG == null ? 0.0 : empiricalQualRG.getEmpiricalQuality(epsilon) - epsilon;
-        final double deltaQReported = empiricalQualQS == null ? 0.0 : empiricalQualQS.getEmpiricalQuality(globalDeltaQ + epsilon) - (globalDeltaQ + epsilon);
+    /**
+     * Quality score recalibration algorithm works as follows:
+     * - Start with the (approximate, or "estimated") reported quality score. (Approximation occurs when marginalizing/collapsing
+     * over the reported qualities for each read group).
+     * - Compute (retrieve?) the empirical quality score using the per-read group datum (i.e. counts). Call it y_1.
+     * - Use y_1 just computed as the prior for the empirical quality score for the datum for the 2-tuple ( read group, quality score). Call it y_2.
+     * - Use y_2 as the prior to compute the empirical quality for the 3-tuple ( read-group, quality-score, special covariate ). Call it y_3 for the context covariate.
+     *     Similarly define y_4 for the cycle covariate. Let d_3 = y_3 - y_2, d_4 = y_4 - y_2.
+     * - (final recalibrated score) = y_2 + d_3 + d_4 = y_3 + y_4 - y_2.
+     *
+     * @param priorQualityScore the prior quality score (in log space). It is either the "estimated" or collapsed reported quality score
+     *                          for the read group, or the constant prior if given. This value has type double because of the "combine" (or collapse) operation
+     *                          that collapses the quality scores represented within the same read group.
+     * @param readGroupDatum the RecalDatum object for a particular read group at hand. May be null.
+     * @param qualityScoreDatum the RecalDatum object for a particular (read group, reported quality) tuple at hand. May be null.
+     * @param specialCovariateDatums the array of RecalDatum objects for the non-required covariates (cycle and context covariates by default).
+     * @return
+     */
+    public static double hierarchicalBayesianQualityEstimate(final double priorQualityScore,
+                                                             final RecalDatum readGroupDatum,
+                                                             final RecalDatum qualityScoreDatum,
+                                                             final RecalDatum... specialCovariateDatums) {
+        final double empiricalQualityForReadGroup = readGroupDatum == null ? priorQualityScore : readGroupDatum.getEmpiricalQuality(priorQualityScore);
+        // TODO: the prior is ignored if the estimatedQuality for the datum has already been computed and cached.
+        final double posteriorEmpiricalQualityForReportedQuality = qualityScoreDatum == null ? empiricalQualityForReadGroup :
+                qualityScoreDatum.getEmpiricalQuality(empiricalQualityForReadGroup);
 
-        double deltaQCovariates = 0.0;
-        final double conditionalPrior2 = deltaQReported + globalDeltaQ + epsilon;
-        for( final RecalDatum empiricalQualCov : empiricalQualCovs ) {
-            if (empiricalQualCov != null) {
-                deltaQCovariates += empiricalQualCov.getEmpiricalQuality(conditionalPrior2) - conditionalPrior2;
+        //
+        double deltaSpecialCovariates = 0.0;
+        // At this point we stop being iterative; the special covariates (context and cycle by default) are treated differently.
+        for( final RecalDatum specialCovariateDatum : specialCovariateDatums ) {
+            if (specialCovariateDatum != null) {
+                // TODO: address the ignored prior
+                deltaSpecialCovariates += specialCovariateDatum.getEmpiricalQuality(posteriorEmpiricalQualityForReportedQuality) - posteriorEmpiricalQualityForReportedQuality;
             }
         }
 
-        return conditionalPrior2 + deltaQCovariates;
+        return posteriorEmpiricalQualityForReportedQuality + deltaSpecialCovariates;
     }
-
+    
     /**
      * Constructs an array that maps particular quantized values to a rounded value in staticQuantizedQuals
      *
-     * Rounding is done in probability space.  When roundDown is true, we simply round down to the nearest
+     * Rounding is done in probability space.
+     * For instance, Q34 (error probability 10^(-3.4) = 0.00039) is rounded down to Q40 (error probability 10^-4 = 0.0001).
+     *
+     * When roundDown is true, we simply round down to the nearest
      * available qual in staticQuantizedQuals
      *
      * @param staticQuantizedQuals the list of qualities to round to
@@ -256,7 +319,7 @@ public final class BQSRReadTransformer implements ReadTransformer {
 
         final int firstQual = QualityUtils.MIN_USABLE_Q_SCORE;
         int previousQual = firstQual;
-        double previousProb = QualityUtils.qualToProb(previousQual);
+        double previousProb = QualityUtils.qualToProb(previousQual); // this is 1 - (error probability)
         for (final int nextQual : staticQuantizedQuals) {
             final double nextProb = QualityUtils.qualToProb(nextQual);
 
@@ -265,6 +328,7 @@ public final class BQSRReadTransformer implements ReadTransformer {
                     mapping[i] = (byte) previousQual;
                 } else {
                     final double iProb = QualityUtils.qualToProb(i);
+
                     if (iProb - previousProb > nextProb - iProb) {
                         mapping[i] = (byte) nextQual;
                     } else {

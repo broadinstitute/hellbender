@@ -38,21 +38,21 @@ public final class CycleCovariateUnitTest extends GATKBaseTest {
         read.setIsPaired(true);
         read.setReadGroup(illuminaReadGroup.getReadGroupId());
 
-        ReadCovariates readCovariates = new ReadCovariates(read.getLength(), 1, new CovariateKeyCache());
-        covariate.recordValues(read, header, readCovariates, true);
-        verifyCovariateArray(readCovariates.getMismatchesKeySet(), 1, (short) 1);
+        PerReadCovariateMatrix perReadCovariateMatrix = new PerReadCovariateMatrix(read.getLength(), 1, new CovariateKeyCache());
+        covariate.recordValues(read, header, perReadCovariateMatrix, true);
+        verifyCovariateArray(perReadCovariateMatrix.getMismatchMatrix(), 1, (short) 1);
 
         read.setIsReverseStrand(true);
-        covariate.recordValues(read, header, readCovariates, true);
-        verifyCovariateArray(readCovariates.getMismatchesKeySet(), readLength, -1);
+        covariate.recordValues(read, header, perReadCovariateMatrix, true);
+        verifyCovariateArray(perReadCovariateMatrix.getMismatchMatrix(), readLength, -1);
 
         read.setIsSecondOfPair();
-        covariate.recordValues(read, header, readCovariates, true);
-        verifyCovariateArray(readCovariates.getMismatchesKeySet(), -readLength, 1);
+        covariate.recordValues(read, header, perReadCovariateMatrix, true);
+        verifyCovariateArray(perReadCovariateMatrix.getMismatchMatrix(), -readLength, 1);
 
         read.setIsReverseStrand(false);
-        covariate.recordValues(read, header, readCovariates, true);
-        verifyCovariateArray(readCovariates.getMismatchesKeySet(), -1, -1);
+        covariate.recordValues(read, header, perReadCovariateMatrix, true);
+        verifyCovariateArray(perReadCovariateMatrix.getMismatchMatrix(), -1, -1);
     }
 
     private void verifyCovariateArray(int[][] values, int init, int increment) {
@@ -72,8 +72,8 @@ public final class CycleCovariateUnitTest extends GATKBaseTest {
         read.setIsPaired(true);
         read.setReadGroup(illuminaReadGroup.getReadGroupId());
 
-        ReadCovariates readCovariates = new ReadCovariates(read.getLength(), 1, new CovariateKeyCache());
-        covariate.recordValues(read, header, readCovariates, true);
+        PerReadCovariateMatrix perReadCovariateMatrix = new PerReadCovariateMatrix(read.getLength(), 1, new CovariateKeyCache());
+        covariate.recordValues(read, header, perReadCovariateMatrix, true);
     }
 
     @Test
@@ -85,8 +85,8 @@ public final class CycleCovariateUnitTest extends GATKBaseTest {
         read.setIsPaired(true);
         read.setReadGroup(illuminaReadGroup.getReadGroupId());
 
-        ReadCovariates readCovariates = new ReadCovariates(read.getLength(), 1, new CovariateKeyCache());
-        covariate.recordValues(read, header, readCovariates, true);
+        PerReadCovariateMatrix perReadCovariateMatrix = new PerReadCovariateMatrix(read.getLength(), 1, new CovariateKeyCache());
+        covariate.recordValues(read, header, perReadCovariateMatrix, true);
     }
 
     public static int expectedCycle(GATKRead read, final int baseNumber, final boolean indel, final int maxCycle) {

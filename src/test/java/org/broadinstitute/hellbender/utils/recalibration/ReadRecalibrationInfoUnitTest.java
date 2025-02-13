@@ -5,7 +5,7 @@ import org.broadinstitute.hellbender.utils.read.ArtificialReadUtils;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.read.ReadUtils;
 import org.broadinstitute.hellbender.utils.recalibration.covariates.CovariateKeyCache;
-import org.broadinstitute.hellbender.utils.recalibration.covariates.ReadCovariates;
+import org.broadinstitute.hellbender.utils.recalibration.covariates.PerReadCovariateMatrix;
 import org.broadinstitute.hellbender.GATKBaseTest;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -33,7 +33,7 @@ public final class ReadRecalibrationInfoUnitTest extends GATKBaseTest {
 
     @Test(dataProvider = "InfoProvider")
     public void testReadInfo(final int readLength, final boolean includeIndelErrors) {
-        final ReadCovariates covariates = new ReadCovariates(readLength, 2, new CovariateKeyCache());
+        final PerReadCovariateMatrix covariates = new PerReadCovariateMatrix(readLength, 2, new CovariateKeyCache());
 
         final byte[] bases = new byte[readLength];
         final byte[] baseQuals = new byte[readLength];

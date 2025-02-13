@@ -22,7 +22,7 @@ public interface Covariate extends Serializable {
      * @param values the object to record the covariate values for every base in the read.
      * @param recordIndelValues indicates whether values of the covariate are to be recorded for indels
      */
-    public void recordValues(final GATKRead read, final SAMFileHeader header, final ReadCovariates values, final boolean recordIndelValues);
+    public void recordValues(final GATKRead read, final SAMFileHeader header, final PerReadCovariateMatrix values, final boolean recordIndelValues);
 
     /**
      * Converts the internal representation of the key to String format for file output.

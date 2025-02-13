@@ -4,7 +4,6 @@ import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMReadGroupRecord;
 import org.broadinstitute.hellbender.utils.read.ArtificialReadUtils;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
-import org.broadinstitute.hellbender.utils.recalibration.RecalibrationArgumentCollection;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -18,7 +17,7 @@ public final class ReadGroupCovariateUnitTest {
     public void testSingleRecord() {
         final String id = "MY.ID";
         final String expected = "SAMPLE.1";
-        final ReadGroupCovariate covariate = new ReadGroupCovariate(new RecalibrationArgumentCollection(), Arrays.asList(expected));
+        final ReadGroupCovariate covariate = new ReadGroupCovariate(Arrays.asList(expected));
         SAMReadGroupRecord rg = new SAMReadGroupRecord(id);
         rg.setPlatformUnit(expected);
         runTest(rg, expected, covariate);
@@ -28,7 +27,7 @@ public final class ReadGroupCovariateUnitTest {
     public void testMaxValue() {
         final String id = "MY.ID";
         final String expected = "SAMPLE.1";
-        final ReadGroupCovariate covariate = new ReadGroupCovariate(new RecalibrationArgumentCollection(), Arrays.asList(expected));
+        final ReadGroupCovariate covariate = new ReadGroupCovariate(Arrays.asList(expected));
         SAMReadGroupRecord rg = new SAMReadGroupRecord(id);
         rg.setPlatformUnit(expected);
         Assert.assertEquals(covariate.maximumKeyValue(), 0);//there's just 1 read group, so 0 is the max value
@@ -38,32 +37,31 @@ public final class ReadGroupCovariateUnitTest {
     public void testReadGroupNames() {
         final String id = "MY.ID";
         final String expected = "SAMPLE.1";
-        final ReadGroupCovariate covariate = new ReadGroupCovariate(new RecalibrationArgumentCollection(), Arrays.asList(expected));
+        final ReadGroupCovariate covariate = new ReadGroupCovariate(Arrays.asList(expected));
         final SAMFileHeader headerWithGroups = ArtificialReadUtils.createArtificialSamHeaderWithGroups(1, 0, 100, 2);
         final List<String> rgs = Arrays.asList("rg1", "rg2");
-        Assert.assertEquals(ReadGroupCovariate.getReadGroupIDs(headerWithGroups), headerWithGroups.getReadGroups().stream().map(rg -> ReadGroupCovariate.getID(rg)).collect(Collectors.toList()));
+        Assert.assertEquals(ReadGroupCovariate.getReadGroupIDs(headerWithGroups), headerWithGroups.getReadGroups().stream().map(rg -> ReadGroupCovariate.getReadGroupIdentifier(rg)).collect(Collectors.toList()));
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
     public void testMissingKey() {
         final String id = "MY.ID";
         final String expected = "SAMPLE.1";
-        final ReadGroupCovariate covariate = new ReadGroupCovariate(new RecalibrationArgumentCollection(), Arrays.asList(expected));
+        final ReadGroupCovariate covariate = new ReadGroupCovariate(Arrays.asList(expected));
         final String s = covariate.formatKey(1);
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test()
     public void testMissingReadGroup() {
-        final String id = "MY.ID";
-        final String expected = "SAMPLE.1";
-        final ReadGroupCovariate covariate = new ReadGroupCovariate(new RecalibrationArgumentCollection(), Arrays.asList(expected));
-        final int key = covariate.keyFromValue("fred");
+        final ReadGroupCovariate covariate = new ReadGroupCovariate(Arrays.asList("SAMPLE.1"));
+        final int badKey = covariate.keyFromValue("bad_read_name");
+        Assert.assertEquals(badKey, ReadGroupCovariate.MISSING_READ_GROUP_KEY);
     }
 
     @Test
     public void testMissingPlatformUnit() {
         final String expected = "MY.7";
-        final ReadGroupCovariate covariate = new ReadGroupCovariate(new RecalibrationArgumentCollection(), Arrays.asList(expected));
+        final ReadGroupCovariate covariate = new ReadGroupCovariate(Arrays.asList(expected));
         SAMReadGroupRecord rg = new SAMReadGroupRecord(expected);
         runTest(rg, expected, covariate);
     }
@@ -74,9 +72,9 @@ public final class ReadGroupCovariateUnitTest {
         GATKRead read = ArtificialReadUtils.createRandomRead(header, 10);
         read.setReadGroup(rg.getReadGroupId());
 
-        ReadCovariates readCovariates = new ReadCovariates(read.getLength(), 1, new CovariateKeyCache());
-        covariate.recordValues(read, header, readCovariates, true);
-        verifyCovariateArray(readCovariates.getMismatchesKeySet(), expected, covariate);
+        PerReadCovariateMatrix perReadCovariateMatrix = new PerReadCovariateMatrix(read.getLength(), 1, new CovariateKeyCache());
+        covariate.recordValues(read, header, perReadCovariateMatrix, true);
+        verifyCovariateArray(perReadCovariateMatrix.getMismatchMatrix(), expected, covariate);
 
     }
 

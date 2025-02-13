@@ -81,7 +81,7 @@ public final class ApplyBQSR extends ReadWalker{
 
     @Argument(fullName = StandardArgumentDefinitions.OUTPUT_LONG_NAME, shortName = StandardArgumentDefinitions.OUTPUT_SHORT_NAME, doc="Write output to this file")
     @WorkflowOutput(optionalCompanions = {StandardArgumentDefinitions.OUTPUT_INDEX_COMPANION})
-    public GATKPath OUTPUT;
+    public GATKPath output;
 
     /**
      * This argument is required for recalibration of base qualities. The recalibration table is a file produced by
@@ -90,7 +90,7 @@ public final class ApplyBQSR extends ReadWalker{
      */
     @Argument(fullName=StandardArgumentDefinitions.BQSR_TABLE_LONG_NAME, shortName=StandardArgumentDefinitions.BQSR_TABLE_SHORT_NAME, doc="Input recalibration table for BQSR")
     @WorkflowInput
-    public File BQSR_RECAL_FILE;
+    public File bqsrRecalFile;
 
     /**
      * Command-line arguments to fine tune the recalibration.
@@ -105,12 +105,12 @@ public final class ApplyBQSR extends ReadWalker{
      */
     @Override
     public ReadTransformer makePostReadFilterTransformer(){
-        return new BQSRReadTransformer(getHeaderForReads(), BQSR_RECAL_FILE, bqsrArgs);
+        return new BQSRReadTransformer(getHeaderForReads(), bqsrRecalFile, bqsrArgs);
     }
 
     @Override
     public void onTraversalStart() {
-        outputWriter = createSAMWriter(OUTPUT, true);
+        outputWriter = createSAMWriter(output, true);
         Utils.warnOnNonIlluminaReadGroups(getHeaderForReads(), logger);
     }
 

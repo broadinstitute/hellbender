@@ -3,8 +3,6 @@ package org.broadinstitute.hellbender.utils.recalibration.covariates;
 import htsjdk.samtools.SAMFileHeader;
 import htsjdk.samtools.SAMReadGroupRecord;
 import org.broadinstitute.hellbender.utils.Utils;
-import org.broadinstitute.hellbender.utils.recalibration.RecalUtils;
-import org.broadinstitute.hellbender.utils.recalibration.RecalibrationArgumentCollection;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.read.ReadUtils;
 
@@ -16,6 +14,8 @@ import java.util.stream.Collectors;
  */
 public final class ReadGroupCovariate implements Covariate {
     private static final long serialVersionUID = 1L;
+
+    public static final int MISSING_READ_GROUP_KEY = -1;
 
     //Note: these maps are initialized and made umodifiable at construction so the whole covariate is an immutable object once it's constructed.
 
@@ -29,16 +29,16 @@ public final class ReadGroupCovariate implements Covariate {
      */
     private final Map<Integer, String> readGroupReverseLookupTable;
 
-    public ReadGroupCovariate(final RecalibrationArgumentCollection RAC, final List<String> readGroups){
+    public ReadGroupCovariate(final List<String> readGroups){
         final Map<String, Integer> rgLookupTable = new LinkedHashMap<>();
         final Map<Integer, String> rgReverseLookupTable = new LinkedHashMap<>();
 
         readGroups.forEach(
-                readGroupId -> {
-                    if (!rgLookupTable.containsKey(readGroupId)) {
+                rg -> {
+                    if (!rgLookupTable.containsKey(rg)) {
                         final int nextId = rgLookupTable.size();
-                        rgLookupTable.put(readGroupId, nextId);
-                        rgReverseLookupTable.put(nextId, readGroupId);
+                        rgLookupTable.put(rg, nextId); // read group index starts at 0 TODO: refactor to use a for loop
+                        rgReverseLookupTable.put(nextId, rg);
                     }
                 }
         );
@@ -47,21 +47,27 @@ public final class ReadGroupCovariate implements Covariate {
     }
 
     @Override
-    public void recordValues(final GATKRead read, final SAMFileHeader header, final ReadCovariates values, final boolean recordIndelValues) {
+    public void recordValues(final GATKRead read, final SAMFileHeader header, final PerReadCovariateMatrix perReadCovariateMatrix, final boolean recordIndelValues) {
         final SAMReadGroupRecord rg = ReadUtils.getSAMReadGroupRecord(read, header);
-        final String readGroupId = getID(rg);
-        final int key = keyForReadGroup(readGroupId);
+        final String readGroupIdentifier = getReadGroupIdentifier(rg); // note that the identifier by default is PU, not the ID.
+
+        final int key = keyForReadGroup(readGroupIdentifier);
+        Utils.validate(key >= -1, "key must be a nonnegative integer or the error code -1, but is " + key);
 
         final int readLength = read.getLength();
         for (int i = 0; i < readLength; i++) {
-            values.addCovariate(key, key, key, i);
+            perReadCovariateMatrix.addCovariate(key, key, key, i); // (mismatch, insertion, deletion) for the first three args
         }
     }
 
     /**
-     * Get the ID of the readgroup.
+     * If present, we use the Platform Unit (PU) as the identifier of a read group, rather than the read group ID.
+     * PU has the format {FLOWCELL_BARCODE}.{LANE}.{SAMPLE_BARCODE}.
+     *
+     * See https://gatk.broadinstitute.org/hc/en-us/articles/360035890671-Read-groups
+     *
      */
-    public static String getID(final SAMReadGroupRecord rg) {
+    public static String getReadGroupIdentifier(final SAMReadGroupRecord rg) {
         final String pu = rg.getPlatformUnit();
         return pu == null ? rg.getId() : pu;
     }
@@ -77,9 +83,22 @@ public final class ReadGroupCovariate implements Covariate {
         return keyForReadGroup((String) value);
     }
 
-    private int keyForReadGroup(final String readGroupId) {
-        Utils.validate(readGroupLookupTable.containsKey(readGroupId), () -> "The covariates table is missing " + RecalUtils.READGROUP_COLUMN_NAME + " " + readGroupId + " in " + RecalUtils.READGROUP_REPORT_TABLE_TITLE);
-        return readGroupLookupTable.get(readGroupId);
+    /**
+     * Given the identifier (PU) for the read group, return that integer code (key) that represents it
+     * in the perReadCovariateMatrix.
+     *
+     * @param readGroupIdentifier PU by default, read group ID if PU not available.
+     * @return The integer code/key if the read group exists. -1 if the read group does not exist in the recal table.
+     */
+    private int keyForReadGroup(final String readGroupIdentifier) {
+        if (readGroupLookupTable.containsKey(readGroupIdentifier)) {
+            return readGroupLookupTable.get(readGroupIdentifier);
+        } else {
+            // ApplyBQSR is responsible for handling this error code appropriately; if --allow-missing-reads is set to false,
+            // which is the default, it will throw an error.
+            // TODO: throw an error here if this part is reached from BaseRecalibrator
+            return MISSING_READ_GROUP_KEY;
+        }
     }
 
     @Override
@@ -88,6 +107,6 @@ public final class ReadGroupCovariate implements Covariate {
     }
 
     public static List<String> getReadGroupIDs(final SAMFileHeader header) {
-        return header.getReadGroups().stream().map(rg -> getID(rg)).collect(Collectors.toList());
+        return header.getReadGroups().stream().map(rg -> getReadGroupIdentifier(rg)).collect(Collectors.toList());
     }
 }

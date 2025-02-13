@@ -97,7 +97,7 @@ public final class QualQuantizer {
     }
 
     /**
-     * Represents an contiguous interval of quality scores.
+     * Represents a contiguous interval of quality scores.
      *
      * qStart and qEnd are inclusive, so qStart = qEnd = 2 is the quality score bin of 2
      */
@@ -300,7 +300,7 @@ public final class QualQuantizer {
             lastMergeOrder = Math.max(Math.max(lastMergeOrder, left.mergeOrder), right.mergeOrder);
             if ( minMerge == null || (merged.getPenalty() < minMerge.getPenalty() ) ) {
                 if ( logger.isDebugEnabled() ) logger.debug("  Updating merge " + minMerge);
-                minMerge = merged;
+                minMerge = merged; // merge two bins that when merged incur the lowest "penalty"
             }
         }
 

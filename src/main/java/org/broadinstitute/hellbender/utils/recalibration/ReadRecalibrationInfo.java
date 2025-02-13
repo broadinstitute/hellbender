@@ -2,18 +2,18 @@ package org.broadinstitute.hellbender.utils.recalibration;
 
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.read.ReadUtils;
-import org.broadinstitute.hellbender.utils.recalibration.covariates.ReadCovariates;
+import org.broadinstitute.hellbender.utils.recalibration.covariates.PerReadCovariateMatrix;
 
 public final class ReadRecalibrationInfo {
     private final GATKRead read;
     private final int length;
-    private final ReadCovariates covariates;
+    private final PerReadCovariateMatrix covariates;
     private final boolean[] skips;
     private final byte[] baseQuals, insertionQuals, deletionQuals;
     private final double[] snpErrors, insertionErrors, deletionErrors;
 
     public ReadRecalibrationInfo(final GATKRead read,
-                                 final ReadCovariates covariates,
+                                 final PerReadCovariateMatrix covariates,
                                  final boolean[] skips,
                                  final double[] snpErrors,
                                  final double[] insertionErrors,
@@ -121,7 +121,7 @@ public final class ReadRecalibrationInfo {
      * Get the ReadCovariates object carrying the mapping from offsets -> covariate key sets
      * @return a non-null ReadCovariates object
      */
-    public ReadCovariates getCovariatesValues() {
+    public PerReadCovariateMatrix getCovariatesValues() {
         return covariates;
     }
 

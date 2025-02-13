@@ -14,6 +14,9 @@ import org.broadinstitute.hellbender.utils.clipping.ReadClipper;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.recalibration.RecalibrationArgumentCollection;
 
+/**
+ * The read bases preceding and including the base in question (as opposed to reference bases).
+ */
 public final class ContextCovariate implements Covariate {
     private static final long serialVersionUID = 1L;
     private static final Logger logger = LogManager.getLogger(ContextCovariate.class);
@@ -32,6 +35,8 @@ public final class ContextCovariate implements Covariate {
     // not negative and we reserve 4 more bits to represent the length of the context; it takes 2 bits to encode one base.
     private static final int MAX_DNA_CONTEXT = 13;
     private final byte lowQualTail;
+
+    public static final int UNKNOWN_OR_ERROR_CONTEXT_CODE = -1;
 
     public ContextCovariate(final RecalibrationArgumentCollection RAC){
         mismatchesContextSize = RAC.MISMATCHES_CONTEXT_SIZE;
@@ -56,16 +61,17 @@ public final class ContextCovariate implements Covariate {
     }
 
     @Override
-    public void recordValues(final GATKRead read, final SAMFileHeader header, final ReadCovariates values, final boolean recordIndelValues) {
+    public void recordValues(final GATKRead read, final SAMFileHeader header, final PerReadCovariateMatrix values, final boolean recordIndelValues) {
 
         final int originalReadLength = read.getLength();
 
         // store the original bases and then write Ns over low quality ones
         final byte[] strandedClippedBases = getStrandedClippedBytes(read, lowQualTail);  //Note: this makes a copy of the read
 
-        //Note: we're using a non-standard library here because boxing came up on profiling as taking 20% of time in applyBQSR.
-        //IntList avoids boxing
-        final IntList mismatchKeys = contextWith(strandedClippedBases, mismatchesContextSize, mismatchesKeyMask);
+        // Note: we're using a non-standard library here because boxing came up on profiling as taking 20% of time in applyBQSR.
+        // IntList avoids boxing
+        // This list has the same length as the read and contains the n-base context at each position.
+        final IntList nBasePairContextAtEachCycle = getReadContextAtEachPosition(strandedClippedBases, mismatchesContextSize, mismatchesKeyMask);
 
         final int readLengthAfterClipping = strandedClippedBases.length;
 
@@ -84,16 +90,16 @@ public final class ContextCovariate implements Covariate {
 
         //Note: duplicated the loop to avoid checking recordIndelValues on each iteration
         if (recordIndelValues) {
-            final IntList indelKeys = contextWith(strandedClippedBases, indelsContextSize, indelsKeyMask);
+            final IntList indelKeys = getReadContextAtEachPosition(strandedClippedBases, indelsContextSize, indelsKeyMask);
             for (int i = 0; i < readLengthAfterClipping; i++) {
                 final int readOffset = getStrandedOffset(negativeStrand, i, readLengthAfterClipping);
                 final int indelKey = indelKeys.getInt(i);
-                values.addCovariate(mismatchKeys.getInt(i), indelKey, indelKey, readOffset);
+                values.addCovariate(nBasePairContextAtEachCycle.getInt(i), indelKey, indelKey, readOffset);
             }
         } else {
             for (int i = 0; i < readLengthAfterClipping; i++) {
                 final int readOffset = getStrandedOffset(negativeStrand, i, readLengthAfterClipping);
-                values.addCovariate(mismatchKeys.getInt(i), 0, 0, readOffset);
+                values.addCovariate(nBasePairContextAtEachCycle.getInt(i), 0, 0, readOffset);
             }
         }
     }
@@ -154,13 +160,20 @@ public final class ContextCovariate implements Covariate {
     }
 
     /**
-     * calculates the context of a base independent of the covariate mode (mismatch, insertion or deletion)
+     * For each position of the read, calculate the n-base-pair *read* base context (as opposed to the reference context).
+     *
+     * For example, for the read [AGCTG], return the list
+     *   [-1, "AG", "GC", "CT", "TG" ]
+     * with each string context encoded as an integer.
      *
      * @param bases       the bases in the read to build the context from
      * @param contextSize context size to use building the context
      * @param mask        mask for pulling out just the context bits
+     *
+     * @return a list that has the same length as the read and contains the (preceding) n-base context at each position.
+     *
      */
-    private static IntList contextWith(final byte[] bases, final int contextSize, final int mask) {
+    private static IntList getReadContextAtEachPosition(final byte[] bases, final int contextSize, final int mask) {
 
         final int readLength = bases.length;
 
@@ -169,7 +182,7 @@ public final class ContextCovariate implements Covariate {
 
         // the first contextSize-1 bases will not have enough previous context
         for (int i = 1; i < contextSize && i <= readLength; i++) {
-            keys.add(-1);
+            keys.add(UNKNOWN_OR_ERROR_CONTEXT_CODE);
         }
 
         if (readLength < contextSize) {

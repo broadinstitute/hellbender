@@ -181,7 +181,7 @@ public final class RecalibrationReportUnitTest extends GATKBaseTest {
 
         final int expectedKeys = expectedNumberOfKeys(length, RAC.INDELS_CONTEXT_SIZE, RAC.MISMATCHES_CONTEXT_SIZE);
         int nKeys = 0;  // keep track of how many keys were produced
-        final ReadCovariates rc = RecalUtils.computeCovariates(read, header, covariateList, true, new CovariateKeyCache());
+        final PerReadCovariateMatrix rc = RecalUtils.computeCovariates(read, header, covariateList, true, new CovariateKeyCache());
 
         final RecalibrationTables recalibrationTables = new RecalibrationTables(covariateList);
         final NestedIntegerArray<RecalDatum> rgTable = recalibrationTables.getReadGroupTable();
@@ -191,7 +191,7 @@ public final class RecalibrationReportUnitTest extends GATKBaseTest {
 
             for (EventType errorMode : EventType.values()) {
 
-                final int[] covariates = rc.getKeySet(offset, errorMode);
+                final int[] covariates = rc.getCovariatesAtOffset(offset, errorMode);
                 final int randomMax = errorMode == EventType.BASE_SUBSTITUTION ? 10000 : 100000;
 
                 rgTable.put(createRandomRecalDatum(randomMax, 10), covariates[0], errorMode.ordinal());

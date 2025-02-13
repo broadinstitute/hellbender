@@ -50,7 +50,7 @@ public final class RecalibrationTables implements Serializable, Iterable<NestedI
         this.qualDimension = covariates.getQualityScoreCovariate().maximumKeyValue() + 1;
         this.numReadGroups = numReadGroups;
 
-        //two special tables
+        // two special (i.e. required) tables: read group table and reported quality score table
         this.readGroupTable = new NestedIntegerArray<>(numReadGroups, eventDimension);
         allTables.add(readGroupTable);
         covariateToTable.put(covariates.getReadGroupCovariate(), readGroupTable);
@@ -132,7 +132,7 @@ public final class RecalibrationTables implements Serializable, Iterable<NestedI
     }
 
     /**
-     * Merge all of the tables from toMerge into into this set of tables
+     * Merge all of the tables from toMerge into this set of tables
      */
     public RecalibrationTables combine(final RecalibrationTables toMerge) {
         if ( numTables() != toMerge.numTables() )

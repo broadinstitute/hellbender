@@ -8,6 +8,7 @@ import org.broadinstitute.hellbender.utils.QualityUtils;
  */
 public class ApplyBQSRArgumentCollection extends ApplyBQSRUniqueArgumentCollection {
     private static final long serialVersionUID = 1L;
+    public static final String USE_ORIGINAL_QUALITIES_LONG_NAME = "use-original-qualities";
 
     /**
      * This flag tells GATK not to modify quality scores less than this value. Instead they will be written out
@@ -26,6 +27,6 @@ public class ApplyBQSRArgumentCollection extends ApplyBQSRUniqueArgumentCollecti
      * are stored in the OQ tag, if they are present, rather than use the post-recalibration quality scores. If no OQ
      * tag is present for a read, the standard quality score will be used.
      */
-    @Argument(fullName="use-original-qualities", shortName = "OQ", doc = "Use the base quality scores from the OQ tag", optional = true)
+    @Argument(fullName=USE_ORIGINAL_QUALITIES_LONG_NAME, shortName = "OQ", doc = "Use the base quality scores from the OQ tag", optional = true)
     public Boolean useOriginalBaseQualities = false;
 }

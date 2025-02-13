@@ -290,7 +290,7 @@ public final class RecalibrationReport {
                 decodeByte(reportTable.get(row, RecalUtils.QUALITY_SCORE_COLUMN_NAME)); // or we use the reported quality if we are in any other table
 
         final RecalDatum datum = new RecalDatum(nObservations, nErrors, (byte)1);
-        datum.setEstimatedQReported(estimatedQReported);
+        datum.setReportedQuality(estimatedQReported);
         //datum.setEmpiricalQuality(empiricalQuality); // don't set the value here because we will want to recompute with a different conditional Q score prior value
         return datum;
     }

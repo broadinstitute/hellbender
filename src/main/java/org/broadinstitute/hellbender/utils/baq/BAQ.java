@@ -42,6 +42,8 @@ import java.io.Serializable;
    lower two bits can be 0 (an alignment match) or 1 (an
    insertion). q[i] gives the phred scaled posterior probability of
    state[i] being wrong.
+
+   See Heng Li's BAQ paper: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3072548/
  */
 public final class BAQ implements Serializable {
     private static final long serialVersionUID = 1L;
