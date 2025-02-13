@@ -2,6 +2,7 @@ package org.broadinstitute.hellbender.tools.walkers.annotator;
 
 import com.google.common.annotations.VisibleForTesting;
 import htsjdk.variant.variantcontext.Allele;
+import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.GenotypesContext;
 import htsjdk.variant.variantcontext.VariantContext;
 import org.apache.commons.lang3.tuple.Pair;
@@ -78,6 +79,15 @@ public final class InbreedingCoeff extends PedigreeAnnotation implements InfoFie
                     " and possibly subsequent; at least " + MIN_SAMPLES + " samples must have called genotypes");
             return Collections.emptyMap();
         }
+
+        // See: https://github.com/broadinstitute/gatk/issues/7938
+        if (genotypes.stream().anyMatch(g -> !g.hasLikelihoods())) {
+            oneShotLogger.warn("InbreedingCoeff will not be calculated at position " + vc.getContig() + ":" + vc.getStart() +
+                    " and possibly subsequent sites. This site lacks genotype likelihoods for at least one sample");
+
+            return Collections.emptyMap();
+        }
+
         final Pair<Integer, Double> sampleCountCoeff = calculateIC(vc, genotypes);
         final int sampleCount = sampleCountCoeff.getLeft();
         final double F = sampleCountCoeff.getRight();

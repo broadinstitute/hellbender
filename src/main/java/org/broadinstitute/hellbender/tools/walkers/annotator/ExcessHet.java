@@ -3,6 +3,7 @@ package org.broadinstitute.hellbender.tools.walkers.annotator;
 
 import com.google.common.annotations.VisibleForTesting;
 import htsjdk.variant.variantcontext.Allele;
+import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.GenotypesContext;
 import htsjdk.variant.variantcontext.VariantContext;
 import org.apache.commons.lang3.tuple.Pair;
@@ -16,6 +17,7 @@ import org.broadinstitute.hellbender.utils.GenotypeUtils;
 import org.broadinstitute.hellbender.utils.Utils;
 import org.broadinstitute.hellbender.utils.genotyper.AlleleLikelihoods;
 import org.broadinstitute.hellbender.utils.help.HelpConstants;
+import org.broadinstitute.hellbender.utils.logging.OneShotLogger;
 import org.broadinstitute.hellbender.utils.read.GATKRead;
 import org.broadinstitute.hellbender.utils.variant.GATKVCFConstants;
 
@@ -54,6 +56,7 @@ import java.util.*;
  */
 @DocumentedFeature(groupName=HelpConstants.DOC_CAT_ANNOTATORS, groupSummary=HelpConstants.DOC_CAT_ANNOTATORS_SUMMARY, summary="Phred-scaled p-value for exact test of excess heterozygosity (ExcessHet)")
 public final class ExcessHet extends PedigreeAnnotation implements InfoFieldAnnotation, StandardAnnotation {
+    private static final OneShotLogger oneShotLogger = new OneShotLogger(ExcessHet.class);
 
     private static final double MIN_NEEDED_VALUE = 1.0E-16;
     private static final boolean ROUND_GENOTYPE_COUNTS = true;
@@ -81,6 +84,14 @@ public final class ExcessHet extends PedigreeAnnotation implements InfoFieldAnno
         if (genotypes == null || genotypes.isEmpty() || !vc.isVariant()) {
             return Collections.emptyMap();
         }
+
+        // See: https://github.com/broadinstitute/gatk/issues/7938
+        if (genotypes.stream().anyMatch(g -> !g.hasLikelihoods())) {
+            oneShotLogger.warn("ExcessHet will not be calculated at position " + vc.getContig() + ":" + vc.getStart() +
+                    " and possibly subsequent sites. This site lacks genotype likelihoods for at least one sample");
+            return Collections.emptyMap();
+        }
+
         final Pair<Integer, Double> sampleCountEH = calculateEH(vc, genotypes);
         final int sampleCount = sampleCountEH.getLeft();
         final double eh =  sampleCountEH.getRight();
