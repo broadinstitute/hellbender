@@ -577,7 +577,7 @@ task CreateManifestAndOptionallyCopyOutputs {
     if [ -n "$OUTPUT_GCS_DIR" ]; then
       # Copy VCFs, indexes and the manifest to the output directory.
       echo manifest.txt >> vcf_manifest.txt
-      cat vcf_manifest.txt | gcloud storage cp -I ${OUTPUT_GCS_DIR}
+      cat vcf_manifest.txt | xargs -IFILE gsutil cp FILE ${OUTPUT_GCS_DIR}
     fi
   >>>
   output {
