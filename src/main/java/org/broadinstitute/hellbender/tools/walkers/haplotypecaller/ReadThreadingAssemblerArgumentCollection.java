@@ -57,7 +57,7 @@ public abstract class ReadThreadingAssemblerArgumentCollection implements Serial
      */
     @Advanced
     @Argument(fullName= KMER_SIZE_LONG_NAME, doc="Kmer size to use in the read threading assembler", optional = true)
-    public List<Integer> kmerSizes = Lists.newArrayList(10, 25);
+    public List<Integer> kmerSizes = Lists.newArrayList(45);
 
     /**
      * When graph cycles are detected, the normal behavior is to increase kmer sizes iteratively until the cycles are
