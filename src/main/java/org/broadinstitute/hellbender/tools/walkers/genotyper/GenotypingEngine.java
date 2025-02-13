@@ -346,6 +346,9 @@ public abstract class GenotypingEngine<Config extends StandardCallerArgumentColl
         }
 
         for (final Allele allele : emittedAlleles) {
+            if (allele.isNonRefAllele()) {
+                continue;
+            }
             final int deletionSize = vc.getReference().length() - allele.length();
 
             // In a deletion
