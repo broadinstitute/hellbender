@@ -335,7 +335,7 @@ public class SomaticGenotypingEngine implements AutoCloseable {
 
             // TODO: We shouldn't always assume that the genotype in the normal is hom ref
             final Allele ref = logMatrix.getAllele(getRefIndex(logMatrix));
-            return new GenotypeBuilder(sample, normalSamples.contains(sample) ? Collections.nCopies(2, ref) : logMatrix.alleles())
+            return new GenotypeBuilder(sample)
                     .AD(Arrays.stream(alleleCounts).mapToInt(x -> (int) FastMath.round(x)).toArray())
                     .attribute(GATKVCFConstants.ALLELE_FRACTION_KEY, Arrays.copyOfRange(tumorAlleleFractionsMean, 1, tumorAlleleFractionsMean.length))
                     .make();
