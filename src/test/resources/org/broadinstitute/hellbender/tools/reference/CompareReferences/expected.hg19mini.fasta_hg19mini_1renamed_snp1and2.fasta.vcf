@@ -1,0 +1,9 @@
+##fileformat=VCFv4.2
+##SequenceEquivalency=<ID=1,FirstSequence=1,FirstReference=hg19mini.fasta,SecondSequence=chr1,SecondReference=hg19mini_1renamed_snp1and2.fasta>
+##contig=<ID=1,length=16000>
+##contig=<ID=2,length=16000>
+##contig=<ID=3,length=16000>
+##contig=<ID=4,length=16000>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+1	13841	.	T	A	.	.	.
+2	11281	.	G	T	.	.	.

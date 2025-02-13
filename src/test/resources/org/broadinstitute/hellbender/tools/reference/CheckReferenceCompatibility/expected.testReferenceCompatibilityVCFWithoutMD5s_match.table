@@ -1,3 +1,3 @@
 #Current Reference: example_variants_withSequenceDict_withoutmd5s.vcf
 Reference	Compatibility	Summary
-hg19mini.fasta	COMPATIBLE	All sequence names and lengths match in the sequence dictionaries. Since the MD5s are lacking, we can't confirm there aren't mismatching bases in the references.
+hg19mini.fasta	MAYBE_COMPATIBLE	All sequence names and lengths match in the sequence dictionaries. Since the MD5s are lacking, we can't confirm there aren't mismatching bases in the references.

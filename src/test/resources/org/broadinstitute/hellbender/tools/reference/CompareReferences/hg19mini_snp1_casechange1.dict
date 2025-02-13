@@ -1,0 +1,5 @@
+@HD	VN:1.6
+@SQ	SN:1	LN:16000	M5:61d625c50d15cd090e7c2347c4e0de52	UR:file:/Users/ocohen/workingcode/gatk/./src/test/resources/org/broadinstitute/hellbender/tools/reference/CompareReferences/hg19mini_snp1_casechange1.fasta
+@SQ	SN:2	LN:16000	M5:5f8388fe3fb34aa38375ae6cf5e45b89	UR:file:/Users/ocohen/workingcode/gatk/./src/test/resources/org/broadinstitute/hellbender/tools/reference/CompareReferences/hg19mini_snp1_casechange1.fasta
+@SQ	SN:3	LN:16000	M5:94de808a3a2203dbb02434a47bd8184f	UR:file:/Users/ocohen/workingcode/gatk/./src/test/resources/org/broadinstitute/hellbender/tools/reference/CompareReferences/hg19mini_snp1_casechange1.fasta
+@SQ	SN:4	LN:16000	M5:7d397ee919e379328d8f52c57a54c778	UR:file:/Users/ocohen/workingcode/gatk/./src/test/resources/org/broadinstitute/hellbender/tools/reference/CompareReferences/hg19mini_snp1_casechange1.fasta

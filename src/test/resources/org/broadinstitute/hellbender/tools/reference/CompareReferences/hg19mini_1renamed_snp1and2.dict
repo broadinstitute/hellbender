@@ -1,0 +1,5 @@
+@HD	VN:1.6
+@SQ	SN:chr1	LN:16000	M5:e2bfaaf2484090258a2666ce63e74b3d	UR:file:/Users/ocohen/workingcode/gatk/src/test/resources/org/broadinstitute/hellbender/tools/reference/CompareReferences/hg19mini_1renamed_snp1and2.fasta
+@SQ	SN:2	LN:16000	M5:e0de71bc2ecd35c20c3ef29fbe733595	UR:file:/Users/ocohen/workingcode/gatk/src/test/resources/org/broadinstitute/hellbender/tools/reference/CompareReferences/hg19mini_1renamed_snp1and2.fasta
+@SQ	SN:3	LN:16000	M5:94de808a3a2203dbb02434a47bd8184f	UR:file:/Users/ocohen/workingcode/gatk/src/test/resources/org/broadinstitute/hellbender/tools/reference/CompareReferences/hg19mini_1renamed_snp1and2.fasta
+@SQ	SN:4	LN:16000	M5:7d397ee919e379328d8f52c57a54c778	UR:file:/Users/ocohen/workingcode/gatk/src/test/resources/org/broadinstitute/hellbender/tools/reference/CompareReferences/hg19mini_1renamed_snp1and2.fasta

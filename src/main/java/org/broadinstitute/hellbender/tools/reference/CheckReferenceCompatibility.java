@@ -228,7 +228,7 @@ public class CheckReferenceCompatibility extends GATKTool {
         String referenceDictName = referenceDictPath.toPath().getFileName().toString();
         SequenceDictionaryUtils.SequenceDictionaryCompatibility compatibilityStatus = SequenceDictionaryUtils.compareDictionaries(referenceDict, queryDictionary, false);
         if(compatibilityStatus.equals(SequenceDictionaryUtils.SequenceDictionaryCompatibility.IDENTICAL)){
-            return new CompatibilityRecord(referenceDictPath, CompatibilityRecord.Compatibility.COMPATIBLE, "All sequence names and lengths match in the sequence dictionaries. Since the MD5s are lacking, we can't confirm there aren't mismatching bases in the references.");
+            return new CompatibilityRecord(referenceDictPath, CompatibilityRecord.Compatibility.MAYBE_COMPATIBLE, "All sequence names and lengths match in the sequence dictionaries. Since the MD5s are lacking, we can't confirm there aren't mismatching bases in the references.");
         }
         else if(compatibilityStatus.equals(SequenceDictionaryUtils.SequenceDictionaryCompatibility.SUPERSET)){
             return new CompatibilityRecord(referenceDictPath, CompatibilityRecord.Compatibility.COMPATIBLE_SUBSET, String.format("All sequence names and lengths present in the sequence dictionaries match, but %s is a subset of %s. Missing sequence(s): %s. Since the MD5s are lacking, we can't confirm there aren't mismatching bases in the references.", queryDictionaryName, referenceDictName, getMissingSequencesIfSubset(referenceDict)));
@@ -256,7 +256,8 @@ public class CheckReferenceCompatibility extends GATKTool {
         private enum Compatibility{
             COMPATIBLE,
             COMPATIBLE_SUBSET,
-            NOT_COMPATIBLE
+            NOT_COMPATIBLE,
+            MAYBE_COMPATIBLE
         }
         private final String summary;
 

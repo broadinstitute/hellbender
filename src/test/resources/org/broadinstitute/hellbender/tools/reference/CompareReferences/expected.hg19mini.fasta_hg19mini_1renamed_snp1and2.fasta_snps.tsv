@@ -1,0 +1,4 @@
+###SequenceEquivalency=<FirstSequence=1,FirstReference=hg19mini.fasta,SecondSequence=chr1,SecondReference=hg19mini_1renamed_snp1and2.fasta>
+Sequence Name	Position	hg19mini.fasta	hg19mini_1renamed_snp1and2.fasta
+1	13841	T	A
+2	11281	G	T

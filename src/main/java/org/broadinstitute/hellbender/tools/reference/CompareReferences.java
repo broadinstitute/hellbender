@@ -7,6 +7,7 @@ import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.variantcontext.VariantContextBuilder;
 import htsjdk.variant.variantcontext.writer.VariantContextWriter;
 import htsjdk.variant.vcf.VCFHeader;
+import htsjdk.variant.vcf.VCFSimpleHeaderLine;
 import org.broadinstitute.barclay.argparser.Argument;
 import org.broadinstitute.barclay.argparser.CommandLineException;
 import org.broadinstitute.barclay.argparser.CommandLineProgramProperties;
@@ -19,12 +20,14 @@ import org.broadinstitute.hellbender.engine.ReferenceDataSource;
 import org.broadinstitute.hellbender.exceptions.GATKException;
 import org.broadinstitute.hellbender.exceptions.UserException;
 import org.broadinstitute.hellbender.tools.funcotator.FilterFuncotations;
+import org.broadinstitute.hellbender.tools.walkers.contamination.PileupSummary;
 import org.broadinstitute.hellbender.utils.SimpleInterval;
 import org.broadinstitute.hellbender.utils.alignment.MummerExecutor;
 import org.broadinstitute.hellbender.utils.io.IOUtils;
 import org.broadinstitute.hellbender.utils.text.XReadLines;
 import org.broadinstitute.hellbender.utils.tsv.DataLine;
 import org.broadinstitute.hellbender.utils.tsv.TableColumnCollection;
+import org.broadinstitute.hellbender.utils.tsv.TableReader;
 import org.broadinstitute.hellbender.utils.tsv.TableWriter;
 import picard.cmdline.programgroups.ReferenceProgramGroup;
 
@@ -114,6 +117,11 @@ public class CompareReferences extends GATKTool {
     @Argument(fullName = "base-comparison-output", doc = "Output directory for base comparison outputs. Required for running base-comparison in FULL_ALIGNMENT or FIND_SNPS_ONLY mode.", optional = true)
     private GATKPath baseComparisonOutputDirectory;
 
+    @Argument(fullName = "sequences-to-align", doc="", optional=true)
+    private GATKPath sequenceEquivalencyFile;
+
+    @Argument(fullName = "ignore-case-level-differences", doc = "If provided, FIND_SNPS mode will ignore case level differences in the MD5.", optional = true)
+    private boolean ignoreCaseLevelDifferences = false;
 
     public enum MD5CalculationMode {
         // use only MD5s found in dictionary; if MD5 missing, crashes
@@ -134,6 +142,8 @@ public class CompareReferences extends GATKTool {
     }
 
     private Map<GATKPath, ReferenceDataSource> referenceSources;
+
+    private Map<String, String> equivalentSequences = new HashMap<>();
 
     @Override
     public boolean requiresReference() {
@@ -162,6 +172,7 @@ public class CompareReferences extends GATKTool {
             if(referenceSources.size() != 2) {
                 throw new UserException.BadInput("Base comparison modes can only be run on 2 references.");
             }
+
         }
     }
 
@@ -186,6 +197,24 @@ public class CompareReferences extends GATKTool {
             System.out.println(pair);
         }
 
+
+        if(baseComparisonMode != BaseComparisonMode.NO_BASE_COMPARISON){
+            if(sequenceEquivalencyFile != null){
+                // read in equivalent sequences from file, populate map to establish equivalency relationship
+                try (SequenceEquivalencyTableReader reader = new SequenceEquivalencyTableReader(sequenceEquivalencyFile.toPath())) {
+                    Iterator<EquivalentSequencesRecord> i = reader.iterator();
+                    while (i.hasNext()) {
+                        EquivalentSequencesRecord record = reader.readRecord();
+                        // add twice to hold equivalent sequences bidirectionally
+                        equivalentSequences.put(record.getSequence(), record.getEquivalentSequence());
+                        equivalentSequences.put(record.getEquivalentSequence(), record.getSequence());
+                    }
+                } catch (IOException e) {
+                    throw new UserException.BadInput("");
+                }
+            }
+        }
+
         ReferencePair refPair = referencePairs.get(0);
         switch (baseComparisonMode) {
             case FULL_ALIGNMENT:
@@ -196,7 +225,6 @@ public class CompareReferences extends GATKTool {
                 break;
         }
     }
-
 
     /**
      * Given a table, write table to output.
@@ -270,11 +298,39 @@ public class CompareReferences extends GATKTool {
      */
     private void runFullAlignment(ReferencePair refPair, ReferenceSequenceTable table){
         List<File> snpsFiles = new ArrayList<>();
-        if(refPair.getAnalysis().contains(ReferencePair.Status.DIFFER_IN_SEQUENCE)) {
-            // find the mismatch sequence
+        if(refPair.getAnalysis().contains(ReferencePair.Status.DIFFER_IN_SEQUENCE) || Files.exists(sequenceEquivalencyFile.toPath())) {
+
             for (String sequenceName : table.getAllSequenceNames()) {
                 Set<ReferenceSequenceTable.TableRow> rows = table.queryBySequenceName(sequenceName);
-                // rows.size()==2 indicates that 2 MD5s found with the same name
+
+                // EQUIVALENT SEQS: equivalency relationship defined in map indicates an equivalent
+                if(sequenceEquivalencyFile != null) {
+                    String equivalentSeq = equivalentSequences.get(sequenceName);
+                    if (equivalentSeq != null) {
+                        GATKPath ref1Path = refPair.getRef1();
+                        GATKPath ref2Path = refPair.getRef2();
+
+                        String sequenceInRef1Name = ref1Path.toPath().getFileName() + "." + sequenceName;
+                        String sequenceInRef2Name = ref2Path.toPath().getFileName() + "." + equivalentSeq;
+
+                        File ref1TempFastaOutput = IOUtils.createTempFile(sequenceInRef1Name, ".fasta");
+                        File ref2TempFastaOutput = IOUtils.createTempFile(sequenceInRef2Name, ".fasta");
+
+                        GATKPath ref1Fasta = generateFastaForSequence(ref1Path, sequenceName, new GATKPath(ref1TempFastaOutput.toString()));
+                        GATKPath ref2Fasta = generateFastaForSequence(ref2Path, equivalentSeq, new GATKPath(ref2TempFastaOutput.toString()));
+
+                        // pass fastas into mummer, get back a vcf and add to list
+                        MummerExecutor executor = new MummerExecutor();
+                        logger.info("Running mummer alignment on sequence " + sequenceName + " and " + equivalentSeq);
+                        File tempSnpsDirectory = IOUtils.createTempDir("tempsnps");
+                        File mummerOutput = executor.executeMummer(ref1Fasta.toPath().toFile(), ref2Fasta.toPath().toFile(), tempSnpsDirectory);
+                        logger.info("Finished running mummer alignment on sequence " + sequenceName + " and " + equivalentSeq);
+                        snpsFiles.add(mummerOutput);
+                    }
+                    equivalentSequences.remove(equivalentSeq);
+                }
+
+                // MISTMATCHING SEQS: rows.size()==2 indicates that 2 MD5s found with the same name
                 if (rows.size() == 2) {
                     // generate fasta files for mismatching sequences
                     GATKPath ref1Path = refPair.getRef1();
@@ -336,7 +392,24 @@ public class CompareReferences extends GATKTool {
 
             VCFHeader header = new VCFHeader();
             header.setSequenceDictionary(getReferenceDictionary());
+
+            if(sequenceEquivalencyFile != null) {
+                Map<String, String> referenceHeaderMap = new HashMap<>();
+                int IDCounter = 1;
+                for (String s : equivalentSequences.keySet()) {
+                    String id = String.valueOf(IDCounter);
+                    referenceHeaderMap.put("ID", id);
+                    referenceHeaderMap.put("FirstReference", refPair.getRef1AsString());
+                    referenceHeaderMap.put("FirstSequence", s);
+                    referenceHeaderMap.put("SecondReference", refPair.getRef2AsString());
+                    referenceHeaderMap.put("SecondSequence", equivalentSequences.get(s));
+                    IDCounter++;
+                }
+                header.addMetaDataLine(new VCFSimpleHeaderLine("SequenceEquivalency", referenceHeaderMap));
+            }
+
             writer.writeHeader(header);
+
             MummerIndel currentIndel = null;
             int previousPos = -1;
             for (String line : reader) {
@@ -397,22 +470,55 @@ public class CompareReferences extends GATKTool {
     }
 
     /**
-     * Method to do base-by-base comparison of a pair of references. Detects mismatching sequence
+     * Method to do base-by-base comparison of a pair of references. Detects mismatching sequences
      *
      * @param refPair pair of references to be aligned
      * @param table
      */
     private void runFindSNPS(ReferencePair refPair, ReferenceSequenceTable table) {
-        if(refPair.getAnalysis().contains(ReferencePair.Status.DIFFER_IN_SEQUENCE)) {
+        if(refPair.getAnalysis().contains(ReferencePair.Status.DIFFER_IN_SEQUENCE) || sequenceEquivalencyFile != null) {
             TableColumnCollection columns = new TableColumnCollection(Arrays.asList("Sequence Name", "Position", refPair.getRef1AsString(), refPair.getRef2AsString()));
             File snpsOutput = new File(baseComparisonOutputDirectory.toPath().toString(), String.format("%s_%s_snps.tsv", refPair.getRef1AsString(), refPair.getRef2AsString()));
 
-            try(FindSNPsOnlyTableWriter writer = new FindSNPsOnlyTableWriter(snpsOutput.toPath(), columns); final ReferenceDataSource source1 = ReferenceDataSource.of(refPair.getRef1().toPath(), true);
-                final ReferenceDataSource source2 = ReferenceDataSource.of(refPair.getRef2().toPath(), true)){
-                writer.writeHeaderIfApplies();
+            boolean preserveCapitalization = !ignoreCaseLevelDifferences;
 
-                // find the mismatch sequence
+            try(FindSNPsOnlyTableWriter writer = new FindSNPsOnlyTableWriter(snpsOutput.toPath(), columns); final ReferenceDataSource source1 = ReferenceDataSource.of(refPair.getRef1().toPath(), preserveCapitalization);
+                final ReferenceDataSource source2 = ReferenceDataSource.of(refPair.getRef2().toPath(), preserveCapitalization)){
+                List<SNPRecord> records = new ArrayList<>();
+
                 for (String sequenceName : table.getAllSequenceNames()) {
+                    if(sequenceEquivalencyFile != null){
+                        String equivalentSeq = equivalentSequences.get(sequenceName);
+                        if(equivalentSeq != null){
+                            int sequence1Length = source1.getSequenceDictionary().getSequence(sequenceName).getSequenceLength();
+                            int sequence2Length = source2.getSequenceDictionary().getSequence(equivalentSeq).getSequenceLength();
+                            if(sequence1Length != sequence2Length){
+                                logger.warn("Lengths for sequence " + sequenceName  + " are not equal and can't be compared. Consider running in FULL_ALIGNMENT mode.");
+                                continue;
+                            }
+                            Iterator<Byte> ref1BaseIterator = source1.query(new SimpleInterval(sequenceName, 1, sequence1Length));
+                            Iterator<Byte> ref2BaseIterator = source2.query(new SimpleInterval(equivalentSeq, 1, sequence2Length));
+                            int position = 0;
+
+                            // find SNPS and generate SNPRecords
+                            while (ref1BaseIterator.hasNext() && ref2BaseIterator.hasNext()) {
+                                position++;
+                                Byte ref1Allele = ref1BaseIterator.next();
+                                Byte ref2Allele = ref2BaseIterator.next();
+                                if (!ref1Allele.equals(ref2Allele)) {
+                                    SNPRecord record = new SNPRecord(sequenceName, position, new String(new byte[]{ref1Allele}), new String(new byte[]{ref2Allele}), refPair.getRef1AsString(), refPair.getRef2AsString());
+                                    records.add(record);
+                                    //writer.writeRecord(record);
+                                }
+                            }
+                            if(ref1BaseIterator.hasNext() || ref2BaseIterator.hasNext()){
+                                throw new GATKException.ShouldNeverReachHereException("");
+                            }
+                            equivalentSequences.remove(equivalentSeq);
+                        }
+                    }
+
+                    // find the mismatch sequence
                     Set<ReferenceSequenceTable.TableRow> rows = table.queryBySequenceName(sequenceName);
                     // rows.size()==2 indicates that 2 MD5s found with the same name
                     if (rows.size() == 2) {
@@ -435,13 +541,22 @@ public class CompareReferences extends GATKTool {
                             Byte ref2Allele = ref2BaseIterator.next();
                             if (!ref1Allele.equals(ref2Allele)) {
                                 SNPRecord record = new SNPRecord(sequenceName, position, new String(new byte[]{ref1Allele}), new String(new byte[]{ref2Allele}), refPair.getRef1AsString(), refPair.getRef2AsString());
-                                writer.writeRecord(record);
+                                //writer.writeRecord(record);
+                                records.add(record);
                             }
                         }
                         if(ref1BaseIterator.hasNext() || ref2BaseIterator.hasNext()){
                             throw new GATKException.ShouldNeverReachHereException("");
                         }
                     }
+                }
+                if(sequenceEquivalencyFile != null){
+                    String equivalencyMetidata = findSNPSWriteEquivalencyMetidata(refPair);
+                    writer.writeComment(equivalencyMetidata);
+                }
+                writer.writeHeaderIfApplies();
+                for(SNPRecord r : records){
+                    writer.writeRecord(r);
                 }
             }
             catch(IOException exception){
@@ -451,6 +566,28 @@ public class CompareReferences extends GATKTool {
         else{
             logger.info("No mismatching sequences found.");
         }
+    }
+
+    public String findSNPSWriteEquivalencyMetidata(ReferencePair refPair){
+        Map<String, String> equivalencyMetidataMap = new HashMap<>();
+        for(String s : equivalentSequences.keySet()) {
+            equivalencyMetidataMap.put("FirstReference", refPair.getRef1AsString());
+            equivalencyMetidataMap.put("FirstSequence", s);
+            equivalencyMetidataMap.put("SecondReference", refPair.getRef2AsString());
+            equivalencyMetidataMap.put("SecondSequence", equivalentSequences.get(s));
+        }
+
+        String equivalencyMetidata = "##SequenceEquivalency=<";
+        int count = 1;
+        for (String str : equivalencyMetidataMap.keySet()) {
+            if (count == equivalencyMetidataMap.size()) {
+                equivalencyMetidata += str + "=" + equivalencyMetidataMap.get(str) + ">";
+            } else {
+                equivalencyMetidata += str + "=" + equivalencyMetidataMap.get(str) + ",";
+            }
+            count++;
+        }
+        return equivalencyMetidata;
     }
 
     /**
@@ -487,6 +624,41 @@ public class CompareReferences extends GATKTool {
     }
 
     /**
+     * Minimal class representing a pair of equivalent sequences in different references (ie. chr3 = 3).
+     */
+    private static class EquivalentSequencesRecord{
+        public static final TableColumnCollection EquivalentSequencesTableColumns = new TableColumnCollection("Sequence", "Equivalent Sequence");
+        String sequence;
+        String equivalentSequence;
+
+        public EquivalentSequencesRecord(String sequence, String equivalentSequence){
+            this.sequence = sequence;
+            this.equivalentSequence = equivalentSequence;
+        }
+
+        public String getSequence(){
+            return this.sequence;
+        }
+
+        public String getEquivalentSequence(){
+            return this.equivalentSequence;
+        }
+    }
+
+    /**
+     * TableReader to read in EquivalentSequence records from a provided equivalency file.
+     */
+    private static class SequenceEquivalencyTableReader extends TableReader<EquivalentSequencesRecord> {
+        public SequenceEquivalencyTableReader(final Path path) throws IOException { super(path); }
+        protected EquivalentSequencesRecord createRecord(DataLine dataLine) {
+            final String sequence = dataLine.get("Sequence");
+            final String equivalentSequence = dataLine.get("Equivalent Sequence");
+
+            return new EquivalentSequencesRecord(sequence, equivalentSequence);
+        }
+    }
+
+    /**
      * TableWriter to format and write the table output.
      */
     public static class CompareReferencesOutputTableWriter extends TableWriter<ReferenceSequenceTable.TableRow> {
@@ -510,7 +682,7 @@ public class CompareReferences extends GATKTool {
     }
 
     /**
-     * Minimal class representing a single SNP in a pair of references.
+     * Minimal class representing a single SNP on a pair of references.
      * Stores the sequence, position of the SNP, and the allele in each reference.
      */
     private static class SNPRecord{
