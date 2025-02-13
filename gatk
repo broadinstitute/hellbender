@@ -398,6 +398,14 @@ def runGATK(sparkRunner, suppliedSparkSubmitCommand, dryrun, gatkArgs, sparkArgs
         raise GATKLaunchException("Value: " + sparkRunner + " is not a valid value for --spark-runner.  Choose one of LOCAL, SPARK, GCS")
 
 def runCommand(cmd, dryrun):
+    # If not already set to some value, set MALLOC_ARENA_MAX to constrain the number of memory pools (arenas)
+    # used by glibc to a reasonable number.  The default behaviour is to scale with the number of CPUs, which
+    # can cause VIRTUAL memory usage to be ~0.5GB per cpu core in the system, e.g. 32GB of a 64-core machine
+    # even when the heap and resident memory are only 1-4GB!  See the following link for more discussion:
+    #  https://www.ibm.com/developerworks/community/blogs/kevgrig/entry/linux_glibc_2_10_rhel_6_malloc_may_show_excessive_virtual_memory_usage?lang=en
+    if not os.environ.get("MALLOC_ARENA_MAX"):
+        os.environ["MALLOC_ARENA_MAX"] = "4"
+
     if dryrun:
         print("\nDry run:\n")
 
