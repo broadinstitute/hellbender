@@ -35,7 +35,7 @@ public class FilteredHaplotypeFilter extends Mutect2VariantFilter {
                 .max(Comparator.comparingDouble(g -> MathUtils.arrayMax(VariantContextGetters.getAttributeAsDoubleArray(g, VCFConstants.ALLELE_FREQUENCY_KEY,
                         () -> new double[] {0.0}, 0.0)))).get();
 
-        final Optional<String> phasingString = makePhasingString(tumorGenotype);
+        final Optional<String> phasingString = makePhasingString(vc.getContig(), tumorGenotype);
         if (!phasingString.isPresent()) {
             return 0.0;
         }
@@ -78,7 +78,7 @@ public class FilteredHaplotypeFilter extends Mutect2VariantFilter {
                 continue;
             }
 
-            final Optional<String> phasingString = makePhasingString(tumorGenotype);
+            final Optional<String> phasingString = makePhasingString(vc.getContig(), tumorGenotype);
 
             if (!phasingString.isPresent()) {
                 continue;
@@ -116,9 +116,9 @@ public class FilteredHaplotypeFilter extends Mutect2VariantFilter {
     public Optional<String> phredScaledPosteriorAnnotationName() { return Optional.empty(); }
 
     // concatenate the PGT and PID strings, if present
-    private static Optional<String> makePhasingString(final Genotype genotype) {
+    private static Optional<String> makePhasingString(final String contig, final Genotype genotype) {
         final String pgt = (String) genotype.getExtendedAttribute(GATKVCFConstants.HAPLOTYPE_CALLER_PHASING_GT_KEY, null);
         final String pid = (String) genotype.getExtendedAttribute(GATKVCFConstants.HAPLOTYPE_CALLER_PHASING_ID_KEY, null);
-        return (pgt == null || pid == null) ? Optional.empty() : Optional.of(pgt + pid);
+        return (pgt == null || pid == null) ? Optional.empty() : Optional.of(pgt + pid + contig);
     }
 }
