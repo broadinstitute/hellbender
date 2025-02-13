@@ -137,6 +137,9 @@ public final class AnalyzeSaturationMutagenesis extends GATKTool {
     @Argument(doc = "write BAM of rejected reads", fullName = "write-rejected-reads")
     private static boolean writeRejectedReads = false;
 
+    @Argument(doc = "write query template names to variantCounts file", fullName = "write-qnames")
+    private static boolean writeQNames = false;
+
     @VisibleForTesting static Reference reference;
     @VisibleForTesting static CodonTracker codonTracker; // device for turning SNVs into CodonVariations
     @VisibleForTesting static SAMFileGATKReadWriter rejectedReadsBAMWriter;
@@ -302,6 +305,10 @@ public final class AnalyzeSaturationMutagenesis extends GATKTool {
                     writer.write(snv.toString());
                 }
                 describeVariantsAsCodons(writer, snvs);
+                if ( writeQNames ) {
+                    writer.write('\t');
+                    writer.write(entry.getQNames());
+                }
                 writer.newLine();
             }
         } catch ( final IOException ioe ) {
@@ -388,6 +395,9 @@ public final class AnalyzeSaturationMutagenesis extends GATKTool {
         if ( codonVariationGroup != null && !codonVariationGroup.isEmpty() ) {
             writer.write(sep);
             writer.write(codonVariationGroup.asHGVSString());
+        } else {
+            // if the last variation was synonymous, we need to write a blank column
+            writer.write(sep);
         }
     }
 
@@ -878,12 +888,26 @@ public final class AnalyzeSaturationMutagenesis extends GATKTool {
             implements Map.Entry<SNVCollectionCount, Long>, Comparable<SNVCollectionCount> {
         private static final SNV[] emptyArray = new SNV[0];
         private final SNV[] snvs;
+        private final HashSet<String> qnames; // names of reads that contain this set of SNVs -- not part of key
         private long count; // number of observations of this set of SNVs -- not part of key
         private int totalRefCoverage; // the sum of the reference coverage over all observations -- not part of key
         private final int hash; // depends only on the array of SNVs
 
         public SNVCollectionCount( final List<SNV> snvs, final int refCoverage ) {
             this.snvs = snvs.toArray(emptyArray);
+            this.qnames = new HashSet<String>();
+            this.count = 1;
+            this.totalRefCoverage = refCoverage;
+            int hashVal = 0;
+            for ( final SNV snv : snvs ) {
+                hashVal = 47 * hashVal + snv.hashCode();
+            }
+            hash = 47 * hashVal;
+        }
+
+        public SNVCollectionCount( final List<SNV> snvs, final int refCoverage, final HashSet<String> qnames ) {
+            this.snvs = snvs.toArray(emptyArray);
+            this.qnames = qnames;
             this.count = 1;
             this.totalRefCoverage = refCoverage;
             int hashVal = 0;
@@ -907,6 +931,18 @@ public final class AnalyzeSaturationMutagenesis extends GATKTool {
         }
 
         public List<SNV> getSNVs() { return Arrays.asList(snvs); }
+        
+        public String getQNames() { 
+            StringBuilder qname_string = new StringBuilder();
+            for (String value : qnames) {
+                qname_string.append(value).append(",");
+            }
+            qname_string.setLength(qname_string.length() - 1);
+            return qname_string.toString();                        
+        }
+
+        public void addQName( final HashSet<String> qname ) { qnames.addAll(qname); }
+
         public long getCount() { return count; }
 
         public void bumpCount( final int refCoverage ) {
@@ -1469,10 +1505,14 @@ public final class AnalyzeSaturationMutagenesis extends GATKTool {
     @VisibleForTesting static final class ReadReport {
         final List<Interval> refCoverage;
         final List<SNV> snvList;
+        final HashSet<String> readNames;
 
         public ReadReport( final GATKRead read, final Interval trim, final byte[] refSeq ) {
             snvList = new ArrayList<>();
             refCoverage = new ArrayList<>();
+            readNames = new HashSet<String>();
+            readNames.add(read.getName());
+
 
             // figure out what parts of the reference are covered by the read, and which base calls are variant
             // with respect to reference.  process only the high-quality part of the read, as directed by the trim
@@ -1487,6 +1527,7 @@ public final class AnalyzeSaturationMutagenesis extends GATKTool {
 
             final byte[] readSeq = read.getBasesNoCopy();
             final byte[] readQuals = read.getBaseQualitiesNoCopy();
+
 
             int refIndex = read.getStart() - 1; // 0-based numbering
             int readIndex = 0;
@@ -1557,10 +1598,17 @@ public final class AnalyzeSaturationMutagenesis extends GATKTool {
         public ReadReport( final ReadReport report1, final ReadReport report2 ) {
             refCoverage = combineCoverage(report1, report2);
             snvList = combineVariations(report1, report2);
+
+            readNames = combineNames(report1, report2);
+
         }
 
         public List<Interval> getRefCoverage() {
             return refCoverage;
+        }
+        
+        public HashSet<String> getReadNames() {
+            return readNames;
         }
 
         public int getFirstRefIndex() { return refCoverage.get(0).getStart(); }
@@ -1614,10 +1662,11 @@ public final class AnalyzeSaturationMutagenesis extends GATKTool {
             }
 
             codonTracker.reportVariantCodonCounts(totalCoverage, codonTracker.encodeSNVsAsCodons(snvList));
-            final SNVCollectionCount newVal = new SNVCollectionCount(snvList, coverage);
+            final SNVCollectionCount newVal = new SNVCollectionCount(snvList, coverage, readNames);
             final SNVCollectionCount oldVal = variationCounts.find(newVal);
             if ( oldVal != null ) {
                 oldVal.bumpCount(coverage);
+                oldVal.addQName(readNames);
             } else {
                 variationCounts.add(newVal);
             }
@@ -1769,6 +1818,19 @@ public final class AnalyzeSaturationMutagenesis extends GATKTool {
             return combinedCoverage;
         }
 
+        private static HashSet<String> combineNames ( final ReadReport report1, final ReadReport report2 ) {
+            final HashSet<String> readNames1 = report1.getReadNames();
+            final HashSet<String> readNames2 = report2.getReadNames();
+            if ( readNames1.isEmpty() ) return readNames2;
+            if ( readNames2.isEmpty() ) return readNames1;
+
+            final HashSet<String> combinedNames = new HashSet<>();
+            combinedNames.addAll(readNames1);
+            combinedNames.addAll(readNames2);
+
+            return combinedNames;
+        }
+
         // if the reports have overlapping coverage, check that the SNVs agree in the overlapping part,
         // and if they don't, return a null snvList.
         // if there's no overlap, just glue the two lists together
@@ -1831,6 +1893,13 @@ public final class AnalyzeSaturationMutagenesis extends GATKTool {
         @VisibleForTesting ReadReport( final List<Interval> refCoverage, final List<SNV> snvList ) {
             this.refCoverage = refCoverage;
             this.snvList = snvList;
+            this.readNames = new HashSet<String>();
+        }
+
+        @VisibleForTesting ReadReport( final List<Interval> refCoverage, final List<SNV> snvList, final HashSet<String> readNames) {
+            this.refCoverage = refCoverage;
+            this.snvList = snvList;
+            this.readNames = readNames;
         }
 
         public static ReadReport NULL_REPORT = new ReadReport(new ArrayList<>(), new ArrayList<>());
