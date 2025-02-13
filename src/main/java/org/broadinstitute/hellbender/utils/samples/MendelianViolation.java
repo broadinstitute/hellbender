@@ -161,24 +161,42 @@ public class MendelianViolation {
      * @return true if the three genotypes represent a Mendelian violation; false otherwise
      */
     public static boolean isViolation(final Genotype gMom, final Genotype gDad, final Genotype gChild) {
-        if (gChild.isNoCall()){ //cannot possibly be a violation is child is no call
-            return false;
-        }
-        if(gMom.isHomRef() && gDad.isHomRef() && gChild.isHomRef()) {
-            return false;
-        }
+        switch (gChild.getPloidy()) {
+            case 1 : {
+                final Allele child_allele = gChild.getAlleles().get(0);
+                if (child_allele.isNoCall()){ //cannot possibly be a violation if allele child is no call
+                    return false;
+                    }
+                //one parents is no "call
+                if(!gMom.isCalled() || !gDad.isCalled()){
+                    return false;
+                    }
+                return  !gMom.getAlleles().contains(child_allele) && !gDad.getAlleles().contains(child_allele);
+                }
+            case 2 : {
+                if (gChild.isNoCall()){ //cannot possibly be a violation if child is no call
+                    return false;
+                }
+                if(gMom.isHomRef() && gDad.isHomRef() && gChild.isHomRef()) {
+                    return false;
+                }
 
-        //1 parent is no "call
-        if(!gMom.isCalled()){
-            return (gDad.isHomRef() && gChild.isHomVar()) || (gDad.isHomVar() && gChild.isHomRef());
+                //1 parent is no "call
+                if(!gMom.isCalled()){
+                    return (gDad.isHomRef() && gChild.isHomVar()) || (gDad.isHomVar() && gChild.isHomRef());
+                }
+                else if(!gDad.isCalled()){
+                    return (gMom.isHomRef() && gChild.isHomVar()) || (gMom.isHomVar() && gChild.isHomRef());
+                }
+                //Both parents have genotype information
+                final Allele childRef = gChild.getAlleles().get(0);
+                return !(gMom.getAlleles().contains(childRef) && gDad.getAlleles().contains(gChild.getAlleles().get(1)) ||
+                    gMom.getAlleles().contains(gChild.getAlleles().get(1)) && gDad.getAlleles().contains(childRef));
+                }
+            default: {
+                return false;
+                }
         }
-        else if(!gDad.isCalled()){
-            return (gMom.isHomRef() && gChild.isHomVar()) || (gMom.isHomVar() && gChild.isHomRef());
-        }
-        //Both parents have genotype information
-        final Allele childRef = gChild.getAlleles().get(0);
-        return !(gMom.getAlleles().contains(childRef) && gDad.getAlleles().contains(gChild.getAlleles().get(1)) ||
-            gMom.getAlleles().contains(gChild.getAlleles().get(1)) && gDad.getAlleles().contains(childRef));
     }
 
     private void createInheritanceMap(){
